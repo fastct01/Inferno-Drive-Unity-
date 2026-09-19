@@ -1,91 +1,29 @@
+using Supabase.Postgrest.Attributes;
 using Supabase.Postgrest.Models;
 
+// Attribute arguments recovered from global-metadata.dat (custom attribute blob at 0xaaefdf):
+// [Table("profiles")], [PrimaryKey("id", false)], [Column("crystals")], [Column("car_1")..("car_4")].
 namespace ShadowRun.Services
 {
+	[Table("profiles")]
 	public sealed class PlayerProfile : BaseModel
 	{
-		private string Id__BackingField;
+		[PrimaryKey("id", false)]
+		public string Id { get; set; }
 
-		private int Crystals__BackingField;
+		[Column("crystals")]
+		public int Crystals { get; set; }
 
-		private bool Car1__BackingField;
+		[Column("car_1")]
+		public bool Car1 { get; set; }
 
-		private bool Car2__BackingField;
+		[Column("car_2")]
+		public bool Car2 { get; set; }
 
-		private bool Car3__BackingField;
+		[Column("car_3")]
+		public bool Car3 { get; set; }
 
-		private bool Car4__BackingField;
-
-		public string Id
-		{
-			get
-			{
-				return Id__BackingField;
-			}
-			set
-			{
-				Id__BackingField = value;
-			}
-		}
-
-		public int Crystals
-		{
-			get
-			{
-				return Crystals__BackingField;
-			}
-			set
-			{
-				Crystals__BackingField = value;
-			}
-		}
-
-		public bool Car1
-		{
-			get
-			{
-				return Car1__BackingField;
-			}
-			set
-			{
-				Car1__BackingField = value;
-			}
-		}
-
-		public bool Car2
-		{
-			get
-			{
-				return Car2__BackingField;
-			}
-			set
-			{
-				Car2__BackingField = value;
-			}
-		}
-
-		public bool Car3
-		{
-			get
-			{
-				return Car3__BackingField;
-			}
-			set
-			{
-				Car3__BackingField = value;
-			}
-		}
-
-		public bool Car4
-		{
-			get
-			{
-				return Car4__BackingField;
-			}
-			set
-			{
-				Car4__BackingField = value;
-			}
-		}
+		[Column("car_4")]
+		public bool Car4 { get; set; }
 	}
 }
