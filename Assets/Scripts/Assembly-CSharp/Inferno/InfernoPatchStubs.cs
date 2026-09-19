@@ -20,7 +20,10 @@ public sealed partial class ShadowRunPrototype
 		public static void Layout(ShadowRunPrototype game) { }
 		public static void Show(ShadowRunPrototype game) { }
 		public static void RefreshGoalRewards(ShadowRunPrototype game) { }
-		public static int GoalReward(int kind) { return 0; }
+		// Crystals paid for a claimed daily goal, by goal kind (0 distance, 1 runs, 2 boosts, 3 drift,
+		// 4 cars passed, 5 cases opened). The original paid a single crystal.
+		private static readonly int[] GoalRewards = { 15, 10, 10, 15, 10, 20 };
+		public static int GoalReward(int kind) { return kind >= 0 && kind < 6 ? GoalRewards[kind] : 10; }
 		public static void CaseVisibility(ShadowRunPrototype game, bool visible) { }
 		public static void BuildGameOver(ShadowRunPrototype game, Transform parent) { }
 		public static bool IsHeartResource(string name) { return false; }
