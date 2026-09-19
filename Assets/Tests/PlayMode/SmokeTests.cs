@@ -52,6 +52,7 @@ public class SmokeTests
 		{
 			Directory.CreateDirectory(ShotDir);
 			Camera cam = Camera.main;
+			if (cam == null) { Component g = Game(); if (g != null) cam = (Camera)Field(g, "cam"); }
 			if (cam == null) { Debug.Log("[SmokeTests] no main camera for " + name); yield break; }
 			var canvases = UnityEngine.Object.FindObjectsByType<Canvas>(FindObjectsSortMode.None);
 			var restore = new System.Collections.Generic.List<(Canvas, RenderMode, Camera, float)>();
@@ -88,16 +89,72 @@ public class SmokeTests
 		while (Time.realtimeSinceStartup < end) yield return null;
 	}
 
+#if UNITY_EDITOR
+	// Portrait 1080x1920 Game view so the procedural UI lays out as on the phone (only with an editor
+	// window; in -batchmode Screen stays 640x480 and only the render-texture captures are portrait).
+	private static void SetPortraitGameView()
+	{
+		try
+		{
+			var editor = typeof(UnityEditor.Editor).Assembly;
+			Type gameViewType = editor.GetType("UnityEditor.GameView");
+			Type sizesType = editor.GetType("UnityEditor.GameViewSizes");
+			Type sizeType = editor.GetType("UnityEditor.GameViewSize");
+			Type sizeKind = editor.GetType("UnityEditor.GameViewSizeType");
+			Type groupKind = editor.GetType("UnityEditor.GameViewSizeGroupType");
+			object instance = typeof(UnityEditor.ScriptableSingleton<>).MakeGenericType(sizesType).GetProperty("instance").GetValue(null);
+			object groupType = sizesType.GetProperty("currentGroupType").GetValue(instance);
+			object group = sizesType.GetMethod("GetGroup").Invoke(instance, new[] { groupType });
+			Type groupClass = group.GetType();
+			int total = (int)groupClass.GetMethod("GetTotalCount").Invoke(group, null);
+			int index = -1;
+			for (int i = 0; i < total; i++)
+			{
+				object size = groupClass.GetMethod("GetGameViewSize").Invoke(group, new object[] { i });
+				if ((int)sizeType.GetProperty("width").GetValue(size) == 1080 && (int)sizeType.GetProperty("height").GetValue(size) == 1920) { index = i; break; }
+			}
+			if (index < 0)
+			{
+				object size = Activator.CreateInstance(sizeType, Enum.Parse(sizeKind, "FixedResolution"), 1080, 1920, "Inferno Portrait");
+				groupClass.GetMethod("AddCustomSize").Invoke(group, new[] { size });
+				index = total;
+			}
+			var window = UnityEditor.EditorWindow.GetWindow(gameViewType);
+			gameViewType.GetMethod("SizeSelectionCallback", Any).Invoke(window, new object[] { index, null });
+			Debug.Log("[SmokeTests] game view size index " + index + " -> " + Screen.width + "x" + Screen.height);
+		}
+		catch (Exception e)
+		{
+			Debug.Log("[SmokeTests] game view size not set: " + e.Message);
+		}
+	}
+#endif
+
 	[UnityTest]
 	public IEnumerator BootsLobbyPagesRunAndGameOver()
 	{
 		Assert.IsNotNull(GameType, "Assembly-CSharp.ShadowRunPrototype");
+#if UNITY_EDITOR
+		SetPortraitGameView();
+		yield return null;
+#endif
 		// AutoStart (RuntimeInitializeOnLoadMethod AfterSceneLoad) created the game when play mode began.
 		yield return null;
 		if (Game() == null) new GameObject("Shadow Run Prototype").AddComponent(GameType);
 		yield return Seconds(2f);
 		Component game = Game();
 		Assert.IsNotNull(game, "ShadowRunPrototype instance");
+		// First launch: the authorization screen sits over the lobby. Capture it, then close it the
+		// way a completed sign-in would (its private Close) instead of creating a guest account on
+		// the real backend.
+		Type authType = Type.GetType("ShadowRun.Services.FirstLaunchAuthScreen, Assembly-CSharp");
+		var auth = (Component)UnityEngine.Object.FindFirstObjectByType(authType);
+		if (auth != null)
+		{
+			yield return Shot("00-first-launch-auth");
+			authType.GetMethod("Close", Any).Invoke(auth, null);
+			yield return Seconds(1f);
+		}
 		Assert.IsNotNull(Field(game, "menuSceneRoot"), "menuSceneRoot built by MakeUI");
 		Assert.IsNotNull(Field(game, "hudRoot"), "hudRoot built by MakeUI");
 		Assert.IsFalse((bool)Field(game, "running"), "menu first");
@@ -115,15 +172,21 @@ public class SmokeTests
 		Call(game, "ShowCaseOverlay");
 		yield return Seconds(1f);
 		yield return Shot("04-case-overlay");
-		Call(game, "ShowMainMenu");
+		Call(game, "HideCaseOverlay");   // the X button; ShowMainMenu leaves the overlay up, as shipped
 		yield return Seconds(0.5f);
 
 		Call(game, "ShowGemShop");
 		yield return Seconds(1f);
 		yield return Shot("05-gem-shop");
-		Call(game, "ShowMainMenu");
+		Call(game, "HideGemShop");
 		yield return Seconds(0.5f);
 
+		// The first run shows the tutorial (gameplay scale 0 until its stages are passed); the smoke
+		// test drives a "returning player" run, the tutorial has its own checks below.
+		const string tutorialKey = "infernoDriveFirstRunTutorialV7";
+		bool hadTutorial = PlayerPrefs.HasKey(tutorialKey);
+		int tutorialValue = PlayerPrefs.GetInt(tutorialKey, 0);
+		PlayerPrefs.SetInt(tutorialKey, 1);
 		Call(game, "StartRun");
 		yield return Seconds(0.5f);
 		Assert.IsTrue((bool)Field(game, "running"), "running after StartRun");
@@ -149,5 +212,16 @@ public class SmokeTests
 		yield return Seconds(1f);
 		Assert.IsFalse((bool)Field(game, "running"));
 		yield return Shot("09-lobby-again");
+
+		// First-run tutorial: gameplay is frozen until the stages are passed (or time out at 25 s each).
+		PlayerPrefs.DeleteKey(tutorialKey);
+		Call(game, "StartRun");
+		yield return Seconds(1.5f);
+		Assert.IsTrue((bool)Field(game, "running"));
+		Assert.Less((float)Field(game, "distance"), 1f, "tutorial holds the car");
+		yield return Shot("10-tutorial");
+		Call(game, "ShowMainMenu");
+		yield return Seconds(0.5f);
+		if (hadTutorial) PlayerPrefs.SetInt(tutorialKey, tutorialValue); else PlayerPrefs.DeleteKey(tutorialKey);
 	}
 }

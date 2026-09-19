@@ -1,0 +1,66 @@
+Inferno Drive remake — play-mode verification log
+=================================================
+Captures: docs/parity/*.png (1080x1920, Unity 6000.6.2f1 editor Game view, tools/remake/test.sh PlayMode with GUI=1).
+Reference: the shipped iOS build (car точно финал, Unity 6000.4.5f1) — see .claude/skills/run-inferno-drive/SKILL.md there.
+
+Legend: [x] verified in play mode, [~] renders/works with a known gap (listed), [ ] not yet verified.
+
+Boot
+  [x] SupabaseBootstrap / SupabaseGameManager / RevenueCatPurchaseService / LevelPlayAdsService bootstrap
+      (BeforeSceneLoad) then ShadowRunPrototype.AutoStart + FirstLaunchAuthScreen (AfterSceneLoad): no
+      exceptions, the play-mode test fails on any error log.
+  [x] First-launch authorization screen (00-first-launch-auth.png): hero art, WELCOME, Apple / Google /
+      LOG IN / SIGN UP / PLAY AS GUEST, terms + privacy links.
+
+Lobby (01-lobby-drive.png, 09-lobby-again.png)
+  [x] 960x1440 content root above the 184 px dock, black backdrop, procedural neon octagon frames.
+  [x] Map selector ‹ › with "MAP 2 / 6" + NEON NIGHT (default selected map 1), arena card with
+      neon_night.png centre-cropped, description "Electric skyline. Endless asphalt.".
+  [x] PLAY plate ("P L A Y"), N SERIES CASE card with the live case render + OPEN CASE, DAILY GOALS with
+      three picked goals, rewards (+10 / +15 / +10) and the midnight countdown, gem counter (25).
+  [x] Dock GARAGE · DRIVE · PROFILE, selected tab full tint, others #7F739C.
+
+Garage (02-garage.png)
+  [x] "MY GARAGE", "1 OF 29 CARS UNLOCKED" (4 originals + 25 editions), carousel cards (rarity chip,
+      icon, name, class line, POWER bar), locked cards with the lock badge, 3D preview on the red pad,
+      STYLE button (InfernoStyle sheet).
+
+Profile (03-profile.png)
+  [x] PROFILE header, SIGN IN REQUIRED / NO ACCOUNT card, AUDIO card with MASTER 100% / MUSIC 70% /
+      EFFECTS 60% sliders (chrome knobs), GAME card with the VIBRATION ON switch.
+
+Case opening (04-case-overlay.png)
+  [x] CASE OPENING sheet: N SERIES CASE, CRYSTAL DROPS 2 · 3 · 5 · 10, VEHICLE JACKPOT 6% CHANCE, 3D case,
+      WATCH AD + OPEN CASE (LevelPlay rewarded path; the ad SDK is real but no ad loads in the editor).
+  [ ] Roulette spin, prize panel, SPIN AGAIN — needs an ad or a rewarded-ready override; not yet driven.
+
+Gem shop (05-gem-shop.png)
+  [x] DIAMOND SHOP artwork, three packs 30 / 70 / 100 with USD $0.99 / $1.99 / $2.49 (RevenueCat is
+      real; prices come from revenuecat.json fallbacks until the store answers), BEST badge, X.
+
+Driving (06-run.png, 07-pause.png)
+  [x] Road, lanes, neon fences, lamps every 30 m, city rows, traffic W222s in the three dark paints
+      (NextPaintStyle), player car, speedometer, distance + BEST, run-crystal counter, hearts, framed
+      pause button, BEAM button; the car accelerates (speed > 10 m/s, distance > 50 m in 6 s).
+  [x] PauseRun: PAUSED / THE CITY IS STILL MOVING / CONTINUE DRIVING / BACK TO MENU / sound toggle;
+      ResumeRun continues.
+  [~] Sky: magenta — FastSky / Pulsar Neutron Star shaders are Asset Store packages still present only
+      as compiled Metal blobs (docs/third-party-imports.md). Weather presets do not transition
+      (Dynamic Weather System stub).
+  [~] Explosions / _WOW_ / _POW_ / falling stars: CFXR prefabs play their particle systems but the
+      CFXR_Effect scripts are stubs and the CFXR shaders compiled-only.
+  [ ] Ramps, high beams, hazards (puddles, wrecking balls), road crystals, speed stages — spawn by
+      distance; not yet reached in the 6 s smoke run (a longer scripted run is the next step).
+
+Game over (08-game-over.png)
+  [x] YOU LOST / BETTER LUCK NEXT TIME / DISTANCE 0.12 KM / BEST RECORD 0.13 KM / OPEN CASE / TRY AGAIN /
+      BACK TO MENU (InfernoLobby.BuildGameOver); BACK TO MENU returns to the lobby.
+
+Tutorial (10-tutorial.png)
+  [x] First run: DRIVER TRAINING 01/05 "HOLD, THEN SLIDE SIDEWAYS" / "ACCELERATE AND STEER WITH ONE
+      FINGER", page dots, DOUBLE TAP ANYWHERE TO SKIP, hand cursor; gameplay scale 0.22 holds the car
+      (FirstRunTutorialGameplayScale).
+
+Rules (EditMode, tools/remake/test.sh)
+  [x] 20 tests: driving rules (check_driving_rules.cpp port), goal rewards, map prices, paint cycle,
+      prize roll, garage editions, style prices.

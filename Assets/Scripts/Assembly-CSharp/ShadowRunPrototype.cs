@@ -1866,7 +1866,23 @@ public sealed partial class ShadowRunPrototype : MonoBehaviour
 
 	private float nextShakeSampleTime;
 
-	private float FirstRunTutorialGameplayScale => 0f;
+	// ShadowRunPrototype_get_FirstRunTutorialGameplayScale_m8FA7F700B2F51B46C777C787A0D943323E82C875:
+	// the tutorial slows the simulation (0.22 for stages 0-3, 0.58 from stage 4) instead of freezing it.
+	private float FirstRunTutorialGameplayScale
+	{
+		get
+		{
+			if (!firstRunTutorialActive)
+			{
+				return 1f;
+			}
+			if (firstRunTutorialStage >= 4)
+			{
+				return 0.58f;
+			}
+			return 0.22f;
+		}
+	}
 
 
 }

@@ -9,7 +9,9 @@ UNITY=/Applications/Unity/Hub/Editor/6000.6.2f1/Unity.app/Contents/MacOS/Unity
 rm -f "$OUT"
 EXTRA=""
 [ "$PLATFORM" = "EditMode" ] && EXTRA="-nographics"
-"$UNITY" -batchmode $EXTRA -projectPath "$PROJECT" -runTests -testPlatform "$PLATFORM" -testResults "$OUT" -logFile "$LOG" >/dev/null 2>&1
+# GUI=1 runs the editor with its window (PlayMode captures then use a 1080x1920 Game view)
+[ "${GUI:-0}" = "1" ] && BATCH="" || BATCH="-batchmode"
+"$UNITY" $BATCH $EXTRA -projectPath "$PROJECT" -runTests -testPlatform "$PLATFORM" -testResults "$OUT" -logFile "$LOG" >/dev/null 2>&1
 echo "exit=$?"
 python3 - "$OUT" <<'PY'
 import sys, os, xml.etree.ElementTree as ET
