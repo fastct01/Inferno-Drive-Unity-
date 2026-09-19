@@ -8,7 +8,7 @@ Material:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_Name: StylisedSky
-  m_Shader: {fileID: 4800000, guid: bc6ed8516c837a546b4744ff0e1f71b3, type: 2}
+  m_Shader: {fileID: 4800000, guid: bc6ed8516c837a546b4744ff0e1f71b3, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords: []

@@ -8,7 +8,7 @@ Material:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_Name: cfxr proc glow soft nosp add
-  m_Shader: {fileID: 4800000, guid: bfcd5c1a901c04249950075e206a3f3a, type: 2}
+  m_Shader: {fileID: 4800000, guid: bfcd5c1a901c04249950075e206a3f3a, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords: []

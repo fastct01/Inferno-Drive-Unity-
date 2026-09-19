@@ -8,7 +8,7 @@ Material:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_Name: cfxr stretch ray blur add
-  m_Shader: {fileID: 4800000, guid: b93f5689c4df1ef4b9f0336fec5a6c64, type: 2}
+  m_Shader: {fileID: 4800000, guid: b93f5689c4df1ef4b9f0336fec5a6c64, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords:

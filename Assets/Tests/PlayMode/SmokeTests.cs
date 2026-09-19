@@ -224,4 +224,63 @@ public class SmokeTests
 		yield return Seconds(0.5f);
 		if (hadTutorial) PlayerPrefs.SetInt(tutorialKey, tutorialValue); else PlayerPrefs.DeleteKey(tutorialKey);
 	}
+
+	// A longer run without input: the distance-driven systems (road crystals 350-650 m, puddles 500-900 m,
+	// wrecking balls 900-1300 m, SPEED UP at 1000 m, ramps, high beams, traffic contact) all fire within
+	// ~2 km, and the run must stay error-free until game over or the time limit.
+	[UnityTest]
+	public IEnumerator LongRunReachesTheDistanceSystems()
+	{
+#if UNITY_EDITOR
+		SetPortraitGameView();
+		yield return null;
+#endif
+		yield return null;
+		if (Game() == null) new GameObject("Shadow Run Prototype").AddComponent(GameType);
+		yield return Seconds(2f);
+		Component game = Game();
+		Type authType = Type.GetType("ShadowRun.Services.FirstLaunchAuthScreen, Assembly-CSharp");
+		var auth = (Component)UnityEngine.Object.FindFirstObjectByType(authType);
+		if (auth != null) { authType.GetMethod("Close", Any).Invoke(auth, null); yield return Seconds(1f); }
+		if ((bool)Field(game, "running") || (bool)Field(game, "showingGameOver")) { Call(game, "ShowMainMenu"); yield return Seconds(1f); }
+
+		const string tutorialKey = "infernoDriveFirstRunTutorialV7";
+		bool hadTutorial = PlayerPrefs.HasKey(tutorialKey);
+		int tutorialValue = PlayerPrefs.GetInt(tutorialKey, 0);
+		PlayerPrefs.SetInt(tutorialKey, 1);
+		Call(game, "StartRun");
+		float start = Time.realtimeSinceStartup;
+		float maxDistance = 0f, maxSpeed = 0f; int shots = 0; int minLives = 6;
+		Type drivingType = GameType.GetNestedType("InfernoDriving", Any);
+		Type hazardsType = GameType.GetNestedType("InfernoHazards", Any);
+		int frames = 0;
+		// the editor may run well under 60 fps and the gameplay dt is capped at 1/30 s, so the budget is
+		// in distance (1.5 km covers every distance-driven system) with a generous time limit
+		while (Time.realtimeSinceStartup - start < 240f && maxDistance < 1500f && !(bool)Field(game, "showingGameOver"))
+		{
+			yield return null;
+			frames++;
+			float distance = (float)Field(game, "distance");
+			maxDistance = Mathf.Max(maxDistance, distance);
+			maxSpeed = Mathf.Max(maxSpeed, (float)Field(game, "speed"));
+			minLives = Mathf.Min(minLives, (int)Field(game, "lifeHalfUnits"));
+			if (distance > 300f * (shots + 1) && shots < 6) { shots++; yield return Shot("20-run-" + Mathf.RoundToInt(distance) + "m"); }
+		}
+		float elapsed = Time.realtimeSinceStartup - start;
+		Debug.Log("[SmokeTests] long run: distance " + maxDistance + " m in " + elapsed.ToString("0") + " s at " + (frames / elapsed).ToString("0") + " fps, top speed " + maxSpeed + " m/s, lives left (half units) " + minLives + ", game over " + (bool)Field(game, "showingGameOver"));
+		Assert.Greater(maxDistance, 1000f, "reaches the first speed stage (1000 m)");
+		Assert.Greater(maxSpeed, 30f, "cruise speed");
+		int runCollected = (int)drivingType.GetField("s_runCollected", Any).GetValue(null);
+		float nextCrystal = (float)drivingType.GetField("s_nextDistance", Any).GetValue(null);
+		float nextPuddle = (float)hazardsType.GetField("s_nextPuddle", Any).GetValue(null);
+		float nextBall = (float)hazardsType.GetField("s_nextBall", Any).GetValue(null);
+		Debug.Log("[SmokeTests] crystals collected " + runCollected + ", next crystal " + nextCrystal + ", next puddle " + nextPuddle + ", next ball " + nextBall);
+		Assert.Greater(nextCrystal, 650f, "a road crystal spawned (next distance advanced)");
+		Assert.Greater(nextPuddle, 900f, "a puddle spawned");
+		Assert.Greater(nextBall, 1300f, "a wrecking ball spawned");
+		yield return Shot("21-run-end");
+		if (!(bool)Field(game, "showingGameOver")) { Call(game, "ShowMainMenu"); yield return Seconds(0.5f); }
+		else { Call(game, "ShowMainMenu"); yield return Seconds(0.5f); }
+		if (hadTutorial) PlayerPrefs.SetInt(tutorialKey, tutorialValue); else PlayerPrefs.DeleteKey(tutorialKey);
+	}
 }
