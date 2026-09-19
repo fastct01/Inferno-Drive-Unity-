@@ -10,7 +10,7 @@ public sealed partial class ShadowRunPrototype
 {
 	private static partial class InfernoDriving
 	{
-		private struct Crystal
+		public struct Crystal
 		{
 			public Transform transform;
 			public bool active;
@@ -18,7 +18,7 @@ public sealed partial class ShadowRunPrototype
 		}
 
 		private static ShadowRunPrototype s_owner;
-		private static readonly Crystal[] s_crystals = new Crystal[3];
+		public static readonly Crystal[] s_crystals = new Crystal[3];   // shared with InfernoHazards (NearCrystal)
 		private static Material s_material;
 		private static Text s_feedback;
 		private static Text s_runCounter;      // HUD: crystals collected in this run
@@ -212,7 +212,7 @@ public sealed partial class ShadowRunPrototype
 			}
 		}
 
-		private static bool ClearLane(ShadowRunPrototype game, int lane, float x, float z)
+		public static bool ClearLane(ShadowRunPrototype game, int lane, float x, float z)
 		{
 			if (game.TrafficSpawnBlockedByRamp(lane, z)) return false;
 			var traffic = game.pickups;
