@@ -9,6 +9,22 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 1f4772ff4119c02024f37662de7fd11f, type: 3}
+  m_Script: {fileID: 11500000, guid: f62c9c65cf3354c93be831c8bc075510, type: 3}
   m_Name: ScreenSpaceAmbientOcclusion
-  m_EditorClassIdentifier:
+  m_EditorClassIdentifier: 
+  m_Active: 1
+  m_Settings:
+    AOMethod: 0
+    Downsample: 0
+    AfterOpaque: 0
+    Source: 1
+    NormalSamples: 1
+    Intensity: 0.4
+    DirectLightingStrength: 0.25
+    Radius: 0.3
+    Samples: 1
+    BlurQuality: 0
+    Falloff: 100
+    SampleCount: -1
+  m_Shader: {fileID: 0}
+  m_BlueNoise256Textures: []

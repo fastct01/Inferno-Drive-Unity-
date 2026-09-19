@@ -80,3 +80,42 @@ their decompiled skeletons remain (with the ripped script GUIDs) until they are 
 gives the relink procedure (`tools/remake/relink_stub_guids.py`). The Android UnityAds adapter version
 (5.11.0 / unity-ads 4.19.0) is the LevelPlay 9.5.0 pairing of the shipped iOS pod 5.9.0.0 — the shipped
 build was iOS-only, so no Android adapter version is recorded anywhere.
+
+## Rendering setup recovered from the shipped build (stage 7 parity pass)
+The ripper left every package-script asset as an empty shell with a made-up script GUID: the URP pipeline
+assets, renderer data, volume profile, Bloom, SSAO feature and the scene's UniversalAdditionalCameraData /
+UniversalAdditionalLightData / Volume components had no fields and did not bind to the package scripts, so
+the game ran on the built-in pipeline and `UniversalAdditionalCameraData.cameraStack` threw. The shipped
+build was made with Unity 6000.4.5f1 (URP 17.4); its serialized objects were read back from
+`Data/data.unity3d` (UnityPy raw bytes + the 6000.4 field layouts from the IL2CPP structs) and rewritten as
+17.6 YAML with the real package GUIDs, same asset GUIDs:
+- `Mobile_RPAsset` (the only quality level, "Mobile"): Forward renderer, no renderer features, native
+  render pass, HDR on, MSAA off, render scale 0.86, FSR upscaling with sharpness override 0.82, depth
+  texture on, opaque texture off, shadows off (main/additional/soft), 1 cascade, shadow distance 28,
+  additional lights per object 4, reflection probe blending/box/atlas on, SRP batcher + dynamic batching,
+  adaptive performance on, LUT 32, LOD cross-fade blue noise; `PC_RPAsset` differs in 2x bilinear opaque
+  downsampling, 2048 main shadowmap, cascade splits, biases 0.1/0.5, cookie 2048/format 3, and its renderer
+  (`PC_Renderer`) is Forward+ with the ScreenSpaceAmbientOcclusion feature (intensity 0.4, radius 0.3,
+  direct lighting 0.25, falloff 100, depth-normals source, 1 sample, blur low) and stencil ref 1 / Equal.
+- Volume profile `SampleSceneProfile` = one Bloom: threshold 1.1, intensity 0.35, scatter 0.5,
+  skipIterations 0, dirt intensity 0, high-quality filtering off (overrides), clamp/tint/downscale/
+  maxIterations left at defaults (tint value 0.877/0.203/0.203 not overridden). The scene's Global Volume
+  is global, priority 0, weight 1 with this profile; the camera data has post-processing on, volume layer
+  mask Default, TAA quality 3 / 0.1 / 0.9 (unused), light data defaults.
+- The renderer's `postProcessData` points at the URP package asset (the ripped copy was empty).
+
+## Shaders: the game's own five re-authored from Metal source, third-party ones still compiled-only
+Ripped shaders are compiled YAML shader assets (iOS Metal programs only) that cannot render in the editor
+or on other platforms. Their LZ4 `compressedBlob` still holds the Metal *source*, so the game's own
+shaders were re-authored as HLSL from it, keeping the ripped GUIDs: `ShadowRun/TrafficLampUnlit`,
+`ShadowRun/VehicleSmokeMobile`, `ShadowRun/RampUnlit`, `ShadowRun/SolidColorSkybox`, `Inferno Drive/UI
+Grayscale` (render state, tags, queues, property defaults and the exact fragment maths are in each file's
+header comment). `Universal Render Pipeline/Lit|Unlit`, the `Hidden/…` URP/core shaders (package copies) and
+`Shader Graphs/glTF-pbrMetallicRoughness` (from `com.unity.cloud.gltfast` 6.20.0, editor-only dependency —
+the shipped build linked no glTFast assembly, only its shader) were deleted and the 109 + 20 materials
+remapped to the package GUIDs; `VolumetricSpotlight` is the original shader graph from
+github.com/Josephy5/FakeVolumetricLight-Unity. Still compiled-only (Asset Store packages to import):
+Cartoon FX Remaster (`Cartoon FX/Remaster/*`, 193 materials), FastSky (`GapperGames/…`), Pulsar Neutron
+Star (`Shader Graphs/SkyBox_SH|SunCore|HaloPulse`), MonoLimboStudio (`Shader Graphs/VolumLight[ Triplanir]`).
+The shipped build never contained `ShadowRun/Sky360NoFog`, `ShadowRun/Sky360CloudLayer` or
+`UI/IconAlphaTint`: the code's `Shader.Find` fallbacks (URP/Unlit, no tint material) are what shipped.

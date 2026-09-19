@@ -1,0 +1,153 @@
+using System;
+using System.Collections;
+using System.IO;
+using System.Reflection;
+using NUnit.Framework;
+using UnityEngine;
+using UnityEngine.TestTools;
+
+// Play-mode smoke pass: the game boots itself (AutoStart), builds the lobby, walks the three
+// dock pages, starts a run, survives several seconds of simulation and reaches game over —
+// with no error logs (the test framework fails on unexpected Debug.LogError / exceptions).
+// Every stop writes a screenshot to $INFERNO_SHOTS (default /tmp/inferno-shots) for the
+// side-by-side parity checklist (docs/remake-verified.txt).
+public class SmokeTests
+{
+	private static readonly BindingFlags Any = BindingFlags.Instance | BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Public;
+	private static readonly Type GameType = Type.GetType("ShadowRunPrototype, Assembly-CSharp");
+	private static readonly string ShotDir = Environment.GetEnvironmentVariable("INFERNO_SHOTS") ?? "/tmp/inferno-shots";
+
+	private static Component Game()
+	{
+		return (Component)UnityEngine.Object.FindFirstObjectByType(GameType);
+	}
+
+	private static object Call(Component game, string method, params object[] args)
+	{
+		MethodInfo m = null;
+		foreach (var candidate in GameType.GetMethods(Any))
+			if (candidate.Name == method && candidate.GetParameters().Length == args.Length) { m = candidate; break; }
+		Assert.IsNotNull(m, "method " + method);
+		return m.Invoke(game, args);
+	}
+
+	private static object Field(Component game, string name)
+	{
+		FieldInfo f = GameType.GetField(name, Any);
+		Assert.IsNotNull(f, "field " + name);
+		return f.GetValue(game);
+	}
+
+	private static void SetField(Component game, string name, object value)
+	{
+		GameType.GetField(name, Any).SetValue(game, value);
+	}
+
+	// Batch mode has no window (WaitForEndOfFrame never returns, ScreenCapture is empty), so a stop is
+	// captured by rendering the main camera into a portrait render texture with the overlay canvas
+	// temporarily switched to ScreenSpaceCamera, then restored.
+	private static IEnumerator Shot(string name)
+	{
+		yield return null;
+		{
+			Directory.CreateDirectory(ShotDir);
+			Camera cam = Camera.main;
+			if (cam == null) { Debug.Log("[SmokeTests] no main camera for " + name); yield break; }
+			var canvases = UnityEngine.Object.FindObjectsByType<Canvas>(FindObjectsSortMode.None);
+			var restore = new System.Collections.Generic.List<(Canvas, RenderMode, Camera, float)>();
+			foreach (var c in canvases)
+			{
+				if (c.renderMode != RenderMode.ScreenSpaceOverlay || c.transform.parent != null) continue;
+				restore.Add((c, c.renderMode, c.worldCamera, c.planeDistance));
+				c.renderMode = RenderMode.ScreenSpaceCamera;
+				c.worldCamera = cam;
+				c.planeDistance = 0.5f;
+			}
+			var rt = new RenderTexture(1080, 1920, 24, RenderTextureFormat.ARGB32);
+			var previous = cam.targetTexture;
+			cam.targetTexture = rt;
+			cam.Render();
+			cam.targetTexture = previous;
+			RenderTexture.active = rt;
+			var tex = new Texture2D(rt.width, rt.height, TextureFormat.RGB24, false);
+			tex.ReadPixels(new Rect(0, 0, rt.width, rt.height), 0, 0);
+			tex.Apply();
+			RenderTexture.active = null;
+			foreach (var (c, mode, wc, pd) in restore) { c.renderMode = mode; c.worldCamera = wc; c.planeDistance = pd; }
+			File.WriteAllBytes(Path.Combine(ShotDir, name + ".png"), tex.EncodeToPNG());
+			Debug.Log("[SmokeTests] screenshot " + name + " " + tex.width + "x" + tex.height + " screen " + Screen.width + "x" + Screen.height);
+			UnityEngine.Object.Destroy(tex);
+			rt.Release();
+			UnityEngine.Object.Destroy(rt);
+		}
+	}
+
+	private static IEnumerator Seconds(float s)
+	{
+		float end = Time.realtimeSinceStartup + s;
+		while (Time.realtimeSinceStartup < end) yield return null;
+	}
+
+	[UnityTest]
+	public IEnumerator BootsLobbyPagesRunAndGameOver()
+	{
+		Assert.IsNotNull(GameType, "Assembly-CSharp.ShadowRunPrototype");
+		// AutoStart (RuntimeInitializeOnLoadMethod AfterSceneLoad) created the game when play mode began.
+		yield return null;
+		if (Game() == null) new GameObject("Shadow Run Prototype").AddComponent(GameType);
+		yield return Seconds(2f);
+		Component game = Game();
+		Assert.IsNotNull(game, "ShadowRunPrototype instance");
+		Assert.IsNotNull(Field(game, "menuSceneRoot"), "menuSceneRoot built by MakeUI");
+		Assert.IsNotNull(Field(game, "hudRoot"), "hudRoot built by MakeUI");
+		Assert.IsFalse((bool)Field(game, "running"), "menu first");
+		yield return Shot("01-lobby-drive");
+
+		Call(game, "SelectMenuTab", 0, true);
+		yield return Seconds(1f);
+		yield return Shot("02-garage");
+		Call(game, "SelectMenuTab", 2, true);
+		yield return Seconds(1f);
+		yield return Shot("03-profile");
+		Call(game, "SelectMenuTab", 1, true);
+		yield return Seconds(0.5f);
+
+		Call(game, "ShowCaseOverlay");
+		yield return Seconds(1f);
+		yield return Shot("04-case-overlay");
+		Call(game, "ShowMainMenu");
+		yield return Seconds(0.5f);
+
+		Call(game, "ShowGemShop");
+		yield return Seconds(1f);
+		yield return Shot("05-gem-shop");
+		Call(game, "ShowMainMenu");
+		yield return Seconds(0.5f);
+
+		Call(game, "StartRun");
+		yield return Seconds(0.5f);
+		Assert.IsTrue((bool)Field(game, "running"), "running after StartRun");
+		yield return Seconds(6f);
+		Assert.Greater((float)Field(game, "distance"), 50f, "the road scrolls");
+		Assert.Greater((float)Field(game, "speed"), 10f, "the car accelerates");
+		yield return Shot("06-run");
+
+		Call(game, "PauseRun");
+		yield return Seconds(0.5f);
+		Assert.IsTrue((bool)Field(game, "paused"));
+		yield return Shot("07-pause");
+		Call(game, "ResumeRun");
+		yield return Seconds(1f);
+		Assert.IsFalse((bool)Field(game, "paused"));
+
+		SetField(game, "lifeHalfUnits", 0);
+		yield return Seconds(2f);
+		Assert.IsTrue((bool)Field(game, "showingGameOver"), "game over after losing all lives");
+		yield return Shot("08-game-over");
+
+		Call(game, "ShowMainMenu");
+		yield return Seconds(1f);
+		Assert.IsFalse((bool)Field(game, "running"));
+		yield return Shot("09-lobby-again");
+	}
+}
