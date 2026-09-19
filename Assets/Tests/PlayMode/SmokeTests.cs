@@ -297,22 +297,57 @@ public class SmokeTests
 		int frames = 0;
 		// the editor may run well under 60 fps and the gameplay dt is capped at 1/30 s, so the budget is
 		// in distance (1.5 km covers every distance-driven system) with a generous time limit
+		// A simple driver: steer toward the lane whose nearest car ahead is farthest (traffic sits in
+		// `pickups`, ahead = smaller z than the player at z 5) using the same touch pointer sets a finger
+		// would fill; boost is held all the way.
+		var lanes = (float[])Field(game, "lanes");
+		var leftSet = (System.Collections.Generic.HashSet<int>)Field(game, "touchSteerLeftPointers");
+		var rightSet = (System.Collections.Generic.HashSet<int>)Field(game, "touchSteerRightPointers");
+		var pickupsList = (System.Collections.IList)Field(game, "pickups");
+		Type pickupType = GameType.GetNestedType("Pickup", Any);
+		var transformField = pickupType.GetField("Transform", Any);
+		SetField(game, "touchBoostHeld", true);
 		while (Time.realtimeSinceStartup - start < 240f && maxDistance < 1500f && !(bool)Field(game, "showingGameOver"))
 		{
 			yield return null;
 			frames++;
+			{
+				float px = (float)Field(game, "playerX");
+				float best = -1f; int bestLane = 0; float current = 0f;
+				for (int lane = 0; lane < lanes.Length; lane++)
+				{
+					float gap = 400f;
+					foreach (object car in pickupsList)
+					{
+						var t = (Transform)transformField.GetValue(car);
+						if (t == null || !t.gameObject.activeInHierarchy) continue;
+						Vector3 cp = t.position;
+						if (Mathf.Abs(cp.x - lanes[lane]) > 1.6f) continue;
+						float ahead = 5f - cp.z;   // metres in front of the car
+						if (ahead > -6f && ahead < gap) gap = ahead;
+					}
+					if (Mathf.Abs(px - lanes[lane]) < 1.2f) current = gap;
+					if (gap > best) { best = gap; bestLane = lane; }
+				}
+				float targetX = current > 45f ? px : lanes[bestLane];
+				leftSet.Clear(); rightSet.Clear();
+				if (targetX < px - 0.3f) leftSet.Add(1); else if (targetX > px + 0.3f) rightSet.Add(2);
+			}
 			float distance = (float)Field(game, "distance");
 			maxDistance = Mathf.Max(maxDistance, distance);
 			maxSpeed = Mathf.Max(maxSpeed, (float)Field(game, "speed"));
 			minLives = Mathf.Min(minLives, (int)Field(game, "lifeHalfUnits"));
 			if (distance > 300f * (shots + 1) && shots < 6) { shots++; yield return Shot("20-run-" + Mathf.RoundToInt(distance) + "m"); }
 		}
+		leftSet.Clear(); rightSet.Clear(); SetField(game, "touchBoostHeld", false);
 		float elapsed = Time.realtimeSinceStartup - start;
 		Debug.Log("[SmokeTests] long run: distance " + maxDistance + " m in " + elapsed.ToString("0") + " s at " + (frames / elapsed).ToString("0") + " fps, top speed " + maxSpeed + " m/s, lives left (half units) " + minLives + ", game over " + (bool)Field(game, "showingGameOver"));
 		// Without steering the car usually wrecks on traffic before 1 km (three hearts): both outcomes are
 		// valid ends; the systems whose spawn window was passed must have fired.
 		bool over = (bool)Field(game, "showingGameOver");
 		Assert.IsTrue(maxDistance >= 1000f || over, "reached 1 km or wrecked");
+		int stage = (int)drivingType.GetField("s_stage", Any).GetValue(null);
+		Debug.Log("[SmokeTests] speed stage reached " + stage);
 		Assert.Greater(maxDistance, 300f, "a real run");
 		Assert.Greater(maxSpeed, 28f, "cruise speed");
 		if (over) Assert.AreEqual(0, minLives, "game over comes from losing every half heart");

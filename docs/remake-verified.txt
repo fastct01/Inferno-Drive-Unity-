@@ -64,8 +64,12 @@ Driving (06-run.png, 07-pause.png)
       the run; touchBoostHeld + a left steering pointer reach 37.9 m/s and playerX -3.85 (PlayerMinX);
       BEAM opens the 5 s high-beam window; Pause HUD Button pauses, Pause Sound Toggle, Pause Continue
       resumes.
-  [ ] Wrecking balls (first at 900-1300 m) and SPEED UP stages (1000 m) need a run that survives past
-      1 km — a lane-avoiding steering script for the test is the next step.
+  [x] With the lane-avoiding driver (boost held, pointer steering toward the emptiest lane) the long run
+      reaches 1265 m at 48.9 m/s (boost top 49): SPEED UP stage 1 announced at 1000 m, the wrecking-ball
+      gantry spawns (20-run-1200m.png: posts, beam with the neon strip, swinging ball), lost hearts render
+      through the grayscale UI shader, boost exhaust flames show.
+  [ ] Ramps / jumps, the rewarded-ad path with a real ad, sign-in flows (Apple / Google / email) and
+      purchases need a device with the store / ad SDKs — outside the editor pass.
 
 Game over (08-game-over.png)
   [x] YOU LOST / BETTER LUCK NEXT TIME / DISTANCE 0.12 KM / BEST RECORD 0.13 KM / OPEN CASE / TRY AGAIN /
