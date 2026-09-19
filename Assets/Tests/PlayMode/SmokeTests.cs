@@ -329,4 +329,151 @@ public class SmokeTests
 		else { Call(game, "ShowMainMenu"); yield return Seconds(0.5f); }
 		if (hadTutorial) PlayerPrefs.SetInt(tutorialKey, tutorialValue); else PlayerPrefs.DeleteKey(tutorialKey);
 	}
+
+	// ---- driving the real UI ------------------------------------------------------------------------
+	private static UnityEngine.UI.Button FindButton(string objectName)
+	{
+		foreach (var b in UnityEngine.Object.FindObjectsByType<UnityEngine.UI.Button>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+			if (b.gameObject.name == objectName && b.gameObject.activeInHierarchy) return b;
+		return null;
+	}
+
+	private static bool Click(string objectName)
+	{
+		var b = FindButton(objectName);
+		if (b == null) { Debug.Log("[SmokeTests] no active button " + objectName); return false; }
+		b.onClick.Invoke();
+		return true;
+	}
+
+	// Buttons built on EventTrigger (pause, BEAM): fire their PointerDown / PointerUp entries.
+	private static bool Press(string objectName)
+	{
+		foreach (var t in UnityEngine.Object.FindObjectsByType<UnityEngine.EventSystems.EventTrigger>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+		{
+			if (t.gameObject.name != objectName || !t.gameObject.activeInHierarchy) continue;
+			var data = new UnityEngine.EventSystems.PointerEventData(UnityEngine.EventSystems.EventSystem.current);
+			foreach (var e in t.triggers) if (e.eventID == UnityEngine.EventSystems.EventTriggerType.PointerDown) e.callback.Invoke(data);
+			foreach (var e in t.triggers) if (e.eventID == UnityEngine.EventSystems.EventTriggerType.PointerUp) e.callback.Invoke(data);
+			return true;
+		}
+		Debug.Log("[SmokeTests] no event trigger " + objectName);
+		return false;
+	}
+
+	private static string Names(string prefix)
+	{
+		var list = new System.Collections.Generic.List<string>();
+		foreach (var b in UnityEngine.Object.FindObjectsByType<UnityEngine.UI.Button>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+			if (b.gameObject.activeInHierarchy && b.gameObject.name.StartsWith(prefix)) list.Add(b.gameObject.name);
+		return string.Join(", ", list);
+	}
+
+	// Lobby, garage, style sheet, settings and HUD controls through their own buttons, plus boost /
+	// steering / high beam through the touch state the game reads (touchBoostHeld, touchSteer pointers).
+	[UnityTest]
+	public IEnumerator ControlsAndScreensThroughTheirButtons()
+	{
+		LogAssert.ignoreFailingMessages = true;
+#if UNITY_EDITOR
+		SetPortraitGameView();
+		yield return null;
+#endif
+		yield return null;
+		if (Game() == null) new GameObject("Shadow Run Prototype").AddComponent(GameType);
+		yield return Seconds(2f);
+		Component game = Game();
+		Type authType = Type.GetType("ShadowRun.Services.FirstLaunchAuthScreen, Assembly-CSharp");
+		var auth = (Component)UnityEngine.Object.FindFirstObjectByType(authType);
+		if (auth != null) { authType.GetMethod("Close", Any).Invoke(auth, null); yield return Seconds(1f); }
+		if ((bool)Field(game, "running") || (bool)Field(game, "showingGameOver")) { Call(game, "ShowMainMenu"); yield return Seconds(1f); }
+		Type lobby = GameType.GetNestedType("InfernoLobby", Any);
+
+		// map selector: › steps to RAIN RUN (locked, price 150 > 25 crystals) -> PLAY reads U N L O C K 150,
+		// tapping it shows NEED n MORE CRYSTALS; ‹ twice back to NEON NIGHT
+		int mapBefore = (int)lobby.GetMethod("SelectedMap", Any).Invoke(null, null);
+		Assert.IsTrue(Click("NextMap"), "NextMap button");
+		yield return Seconds(0.3f);
+		Assert.AreEqual((mapBefore + 1) % 6, (int)lobby.GetMethod("SelectedMap", Any).Invoke(null, null));
+		var primary = (UnityEngine.UI.Text)Field(game, "primaryButtonLabel");
+		Debug.Log("[SmokeTests] map " + lobby.GetMethod("SelectedMap", Any).Invoke(null, null) + " primary label '" + primary.text + "'");
+		if (primary.text.StartsWith("U N L O C K"))
+		{
+			((UnityEngine.UI.Button)Field(game, "primaryOverlayButton")).onClick.Invoke();
+			yield return Seconds(0.3f);
+			yield return Shot("30-map-locked");
+			Debug.Log("[SmokeTests] locked map note '" + primary.text + "'");
+		}
+		Assert.IsTrue(Click("PreviousMap")); yield return Seconds(0.2f);
+		while ((int)lobby.GetMethod("SelectedMap", Any).Invoke(null, null) != mapBefore) { Click("PreviousMap"); yield return Seconds(0.2f); }
+
+		// daily goal claim buttons exist (three goals) and the gem counter opens the shop
+		Debug.Log("[SmokeTests] lobby buttons: " + Names(""));
+		Assert.IsTrue(Click("GemCounter")); yield return Seconds(0.5f);
+		Call(game, "HideGemShop"); yield return Seconds(0.3f);
+
+		// garage through the dock: select the next card, try the purchase (25 < 100 crystals -> "Need 75 more"),
+		// open the STYLE sheet, page each row, pick a free item, close
+		Assert.IsTrue(Click("Garage")); yield return Seconds(1f);
+		Call(game, "SelectGarageVehicleCard", 1); yield return Seconds(0.8f);
+		var purchaseText = (UnityEngine.UI.Text)Field(game, "garagePurchaseButtonText");
+		Debug.Log("[SmokeTests] garage card 1 purchase label '" + (purchaseText != null ? purchaseText.text : "-") + "'");
+		if (FindButton("Unlock Selected Vehicle Button") != null)
+		{
+			Click("Unlock Selected Vehicle Button"); yield return Seconds(1.5f);
+			Debug.Log("[SmokeTests] after purchase attempt '" + purchaseText.text + "'");
+		}
+		yield return Shot("31-garage-card-1");
+		Call(game, "SelectGarageVehicleCard", 0); yield return Seconds(0.5f);
+		Assert.IsTrue(Click("StyleButton"), "STYLE button"); yield return Seconds(0.5f);
+		yield return Shot("32-style-sheet");
+		Assert.IsTrue(Click("Next")); yield return Seconds(0.3f);   // first row's › (TIRES page 2)
+		Click("Prev"); yield return Seconds(0.3f);
+		Click("Chip"); yield return Seconds(0.5f);                   // STOCK (free) — already selected, no-op
+		yield return Shot("33-style-paged");
+		Assert.IsTrue(Click("Close")); yield return Seconds(0.3f);
+
+		// profile: vibration switch toggles the pref, sound toggle mutes the listener
+		Assert.IsTrue(Click("Profile")); yield return Seconds(0.8f);
+		bool vibrationBefore = (bool)Field(game, "vibrationOn");
+		Assert.IsTrue(Click("VibrationSwitch")); yield return Seconds(0.3f);
+		Assert.AreNotEqual(vibrationBefore, (bool)Field(game, "vibrationOn"), "vibration toggles");
+		Click("VibrationSwitch"); yield return Seconds(0.3f);
+		yield return Shot("34-profile-after-toggle");
+		Assert.IsTrue(Click("Home")); yield return Seconds(0.5f);
+
+		// a run with boost held, steering pointers and the BEAM button
+		const string tutorialKey = "infernoDriveFirstRunTutorialV7";
+		bool hadTutorial = PlayerPrefs.HasKey(tutorialKey); int tutorialValue = PlayerPrefs.GetInt(tutorialKey, 0);
+		PlayerPrefs.SetInt(tutorialKey, 1);
+		((UnityEngine.UI.Button)Field(game, "primaryOverlayButton")).onClick.Invoke();   // PLAY
+		yield return Seconds(1f);
+		Assert.IsTrue((bool)Field(game, "running"), "PLAY starts the run");
+		SetField(game, "touchBoostHeld", true);
+		var left = (System.Collections.Generic.HashSet<int>)Field(game, "touchSteerLeftPointers");
+		left.Add(1);
+		yield return Seconds(3f);
+		float x = (float)Field(game, "playerX");
+		Debug.Log("[SmokeTests] boost+left for 3 s: speed " + Field(game, "speed") + " playerX " + x);
+		Assert.Less(x, -1f, "steering pointer moves the car left");
+		left.Clear();
+		var right = (System.Collections.Generic.HashSet<int>)Field(game, "touchSteerRightPointers");
+		right.Add(2);
+		yield return Seconds(2f);
+		right.Clear();
+		Assert.IsTrue(Press("BEAM Button"), "BEAM button " + Names("BEAM"));
+		yield return Seconds(0.5f);
+		Debug.Log("[SmokeTests] high beam: window " + Field(game, "highBeamActiveWindowRemaining") + " cooldown " + Field(game, "highBeamCooldownRemaining"));
+		Assert.Greater((float)Field(game, "highBeamActiveWindowRemaining"), 0f, "the BEAM press opens the 5 s high-beam window (the 10 s cooldown follows it)");
+		yield return Shot("35-run-boost-beam");
+		SetField(game, "touchBoostHeld", false);
+		Assert.IsTrue(Click("Pause HUD Button") || Press("Pause HUD Button"), "pause button " + Names("Pause"));
+		yield return Seconds(0.5f);
+		Assert.IsTrue((bool)Field(game, "paused"), "pause button pauses");
+		Assert.IsTrue(Click("Pause Sound Toggle"), "pause sound toggle"); yield return Seconds(0.2f); Click("Pause Sound Toggle");
+		Assert.IsTrue(Click("Pause Continue"), "CONTINUE DRIVING"); yield return Seconds(0.5f);
+		Assert.IsFalse((bool)Field(game, "paused"), "continue resumes");
+		Call(game, "ShowMainMenu"); yield return Seconds(0.5f);
+		if (hadTutorial) PlayerPrefs.SetInt(tutorialKey, tutorialValue); else PlayerPrefs.DeleteKey(tutorialKey);
+	}
 }

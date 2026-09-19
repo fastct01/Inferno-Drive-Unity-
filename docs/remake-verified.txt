@@ -57,8 +57,15 @@ Driving (06-run.png, 07-pause.png)
       and are collected (+1 CRYSTAL, run counter), puddles spawn and the SPIN OUT! note shows, traffic
       brake/indicator lamps (TrafficLampUnlit), the collision explosion and wreck path run without
       errors at 60 fps in the editor.
-  [ ] Wrecking balls (first at 900-1300 m), SPEED UP stages (1000 m), ramps and high beams need a run
-      that survives past 1 km — a steering script for the test is the next step.
+  [x] Controls (ControlsAndScreensThroughTheirButtons, 30-35*.png): map › to RAIN RUN shows "U N L O C K
+      150", ‹ back; GemCounter opens the shop; dock GARAGE/HOME/PROFILE tabs; garage card 1 selected ->
+      "Need 74 more to purchase" (26 crystals) and the purchase button keeps that text; STYLE sheet with
+      TIRES/FLAGS/TRAILS rows, ‹ › paging, chip pick, X; VIBRATION switch toggles vibrationOn; PLAY starts
+      the run; touchBoostHeld + a left steering pointer reach 37.9 m/s and playerX -3.85 (PlayerMinX);
+      BEAM opens the 5 s high-beam window; Pause HUD Button pauses, Pause Sound Toggle, Pause Continue
+      resumes.
+  [ ] Wrecking balls (first at 900-1300 m) and SPEED UP stages (1000 m) need a run that survives past
+      1 km — a lane-avoiding steering script for the test is the next step.
 
 Game over (08-game-over.png)
   [x] YOU LOST / BETTER LUCK NEXT TIME / DISTANCE 0.12 KM / BEST RECORD 0.13 KM / OPEN CASE / TRY AGAIN /
