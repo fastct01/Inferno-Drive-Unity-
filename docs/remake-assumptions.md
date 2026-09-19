@@ -35,3 +35,35 @@ Set to `2` (Both) so the translated code receives input from both APIs like the 
 `Update` reads `bool adaptive = false;` — the shipped C++ was patched (`apply_lobby_patches.py`) to replace
 `__this->___adaptiveQuality` with a constant `false`, disabling adaptive resolution toggling. The original
 read is kept as an `// original:` comment.
+
+## Third-party SDK sources in the recovered project are stubs
+`Assets/Scripts/{Supabase*, Websocket.Client, revenuecat.purchases-unity, Unity.LevelPlay, CFXRRuntime,
+DynamicWeatherSystem.Runtime}` are decompiled skeletons (method bodies `return null;`). The shipped build
+links these exact versions (from global-metadata assembly definitions):
+Supabase 1.1.1, Supabase.Gotrue 6.0.3, Supabase.Postgrest 4.0.3, Supabase.Realtime 7.0.2,
+Supabase.Storage 2.0.2, Supabase.Functions 2.0.0, Supabase.Core 1.0.0, Websocket.Client 5.1.1,
+MimeMapping 3.0.0, Newtonsoft.Json 13.0 (com.unity.nuget.newtonsoft-json 3.2.2),
+plus revenuecat.purchases-unity and Unity.LevelPlay (versions not recorded in metadata).
+The game code is translated against the public API of these stubs; the real packages are to be installed
+in place of the stub folders (stage 5/6) — the stubs must not be "implemented" by hand.
+
+## IL2CPP interface slot numbers
+`InterfaceFuncInvokerN::Invoke(slot, IFoo_il2cpp_TypeInfo_var, ...)` slots were decoded with
+`scratchpad/meta.py type <Interface>` against the shipped `global-metadata.dat` (v39 layout with
+compressed index widths), not against the recovered stub sources, whose member order can differ.
+
+## Third-party SDK sources in the recovered project are stubs
+`Assets/Scripts/{Supabase*, Websocket.Client, revenuecat.purchases-unity, Unity.LevelPlay, CFXRRuntime,
+DynamicWeatherSystem.Runtime}` are decompiled skeletons (method bodies `return null;`). The shipped build
+links these exact versions (from global-metadata assembly definitions):
+Supabase 1.1.1, Supabase.Gotrue 6.0.3, Supabase.Postgrest 4.0.3, Supabase.Realtime 7.0.2,
+Supabase.Storage 2.0.2, Supabase.Functions 2.0.0, Supabase.Core 1.0.0, Websocket.Client 5.1.1,
+MimeMapping 3.0.0, Newtonsoft.Json 13.0 (com.unity.nuget.newtonsoft-json 3.2.2),
+plus revenuecat.purchases-unity and Unity.LevelPlay (versions not recorded in metadata).
+The game code is translated against the public API of these stubs; the real packages are to be installed
+in place of the stub folders (stage 5/6) - the stubs must not be "implemented" by hand.
+
+## IL2CPP interface slot numbers
+`InterfaceFuncInvokerN::Invoke(slot, IFoo_il2cpp_TypeInfo_var, ...)` slots were decoded with
+`scratchpad/meta.py type <Interface>` against the shipped `global-metadata.dat` (v39 layout with
+compressed index widths), not against the recovered stub sources, whose member order can differ.

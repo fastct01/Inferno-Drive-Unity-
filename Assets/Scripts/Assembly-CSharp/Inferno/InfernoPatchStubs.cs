@@ -78,8 +78,15 @@ public sealed partial class ShadowRunPrototype
 		public static float ListenerVolume(ShadowRunPrototype game) { return game.gameSoundEnabled ? 1f : 0f; }
 	}
 
+	// extern "C" bridge of InfernoGarage.inc (InfernoGarage_IsUnlocked / InfernoGarage_SetUnlocked), used by
+	// SupabaseGameManager. IsUnlocked: -1 = not an InfernoGarage vehicle, else 0/1. SetUnlocked: true = handled.
+	public static int InfernoGarageIsUnlocked(string vehicleId) { return InfernoGarage.IsUnlocked(vehicleId); }
+	public static bool InfernoGarageSetUnlocked(string vehicleId, bool unlocked) { return InfernoGarage.SetUnlocked(vehicleId, unlocked); }
+
 	private static partial class InfernoGarage
 	{
+		public static int IsUnlocked(string vehicleId) { return -1; }
+		public static bool SetUnlocked(string vehicleId, bool unlocked) { return false; }
 		public static Sprite Picture(ShadowRunPrototype game, string resource) { return null; }
 		public static VehicleDefinition MakeDefinition(ShadowRunPrototype game, string vehicleId) { return null; }
 		public static void Decorate(ShadowRunPrototype game, VehicleDefinition definition, GameObject instance) { }
