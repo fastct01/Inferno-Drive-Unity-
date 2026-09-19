@@ -29,16 +29,6 @@ public sealed partial class ShadowRunPrototype
 		public static void Dispose(ShadowRunPrototype game) { }
 	}
 
-	private static partial class InfernoDriving
-	{
-		public static void Tick(ShadowRunPrototype game, float dt) { }
-		public static void Reset(ShadowRunPrototype game) { }
-		public static void Hide(ShadowRunPrototype game) { }
-		public static void Dispose(ShadowRunPrototype game) { }
-		public static void StylePauseButton(ShadowRunPrototype game) { }
-		public static int NextPaintStyle() { return 0; }
-	}
-
 	// extern "C" bridge of InfernoGarage.inc (InfernoGarage_IsUnlocked / InfernoGarage_SetUnlocked), used by
 	// SupabaseGameManager. IsUnlocked: -1 = not an InfernoGarage vehicle, else 0/1. SetUnlocked: true = handled.
 	public static int InfernoGarageIsUnlocked(string vehicleId) { return InfernoGarage.IsUnlocked(vehicleId); }
