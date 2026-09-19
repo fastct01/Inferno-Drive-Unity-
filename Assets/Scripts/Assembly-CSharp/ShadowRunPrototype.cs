@@ -11,7 +11,7 @@ using UnityEngine.Events;
 using UnityEngine.InputSystem;
 using UnityEngine.UI;
 
-public sealed class ShadowRunPrototype : MonoBehaviour
+public sealed partial class ShadowRunPrototype : MonoBehaviour
 {
 	private enum DailyGoalKind
 	{
@@ -341,8 +341,8 @@ public sealed class ShadowRunPrototype : MonoBehaviour
 
 		public BoxSpec(Vector3 center, Vector3 size)
 		{
-			Center = default;
-			Size = default;
+			Center = center;
+			Size = size;
 		}
 	}
 
@@ -676,7 +676,7 @@ public sealed class ShadowRunPrototype : MonoBehaviour
 
 	private bool dailyGoalProgressLoaded;
 
-	private int dailyGoalProgressDateKey;
+	private int dailyGoalProgressDateKey = -1;
 
 	private float dailyGoalDistanceMeters;
 
@@ -700,7 +700,7 @@ public sealed class ShadowRunPrototype : MonoBehaviour
 
 	private const float FirstRunTutorialStageTimeout = 25f;
 
-	private readonly HashSet<int> brakeButtonPointers;
+	private readonly HashSet<int> brakeButtonPointers = new HashSet<int>();
 
 	private Button brakeHudButton;
 
@@ -758,7 +758,7 @@ public sealed class ShadowRunPrototype : MonoBehaviour
 
 	private float firstRunTutorialHandAlpha;
 
-	private readonly Image[] firstRunTutorialProgressDots;
+	private readonly Image[] firstRunTutorialProgressDots = new Image[5];
 
 	private bool firstRunTutorialActive;
 
@@ -782,9 +782,9 @@ public sealed class ShadowRunPrototype : MonoBehaviour
 
 	private float firstRunTutorialTapIgnoreUntil;
 
-	private float firstRunTutorialLastTapTime;
+	private float firstRunTutorialLastTapTime = -10f;
 
-	private int firstRunTutorialLastTapFrame;
+	private int firstRunTutorialLastTapFrame = -1;
 
 	private bool firstRunTutorialRussian;
 
@@ -872,7 +872,7 @@ public sealed class ShadowRunPrototype : MonoBehaviour
 
 	private const string Cloud360TextureResource = "clouds_panorama_8k";
 
-	private static readonly bool UseSeparateCloud360Layer;
+	private static readonly bool UseSeparateCloud360Layer = false;
 
 	private const string PulsarNightSkyboxResource = "Pulsar Neutron Star/Materials/SkyBox (NebulaPurple)";
 
@@ -898,33 +898,33 @@ public sealed class ShadowRunPrototype : MonoBehaviour
 
 	private const float Sky360RainDesaturation = 0.72f;
 
-	private static readonly bool UseFastSkyRuntimeSkybox;
+	private static readonly bool UseFastSkyRuntimeSkybox = true;
 
-	private static readonly Vector2 Sky360TextureUvOffset;
+	private static readonly Vector2 Sky360TextureUvOffset = Vector2.zero;
 
 	private const float Sky360ReferenceVerticalFov = 54.5f;
 
-	private static readonly Vector2 Cloud360TextureTiling;
+	private static readonly Vector2 Cloud360TextureTiling = Vector2.one;
 
-	private static readonly Vector3 Sky360CylinderWorldPosition;
+	private static readonly Vector3 Sky360CylinderWorldPosition = new Vector3(-0.1f, 9.8f, -47.7f);
 
-	private static readonly Vector3 Sky360CylinderScale;
+	private static readonly Vector3 Sky360CylinderScale = new Vector3(96f, 150.796448f, 96f);
 
-	private static readonly Vector3 Cloud360CylinderScale;
+	private static readonly Vector3 Cloud360CylinderScale = new Vector3(94f, 12.744f, 94f);
 
 	private const float Sky360CylinderBaseYaw = 177.74f;
 
 	private const float Sky360CylinderRoll = 0f;
 
-	private static readonly Vector3 RainStormSunLocalPosition;
+	private static readonly Vector3 RainStormSunLocalPosition = new Vector3(8.79f, 61.75f, 153.8f);
 
 	private const float RainStormSunReferenceFov = 65f;
 
-	private static readonly Vector3 RainStormSunHaloScale;
+	private static readonly Vector3 RainStormSunHaloScale = new Vector3(17.4f, 17.4f, 1f);
 
-	private static readonly Vector3 RainStormSunGlowScale;
+	private static readonly Vector3 RainStormSunGlowScale = new Vector3(10.8f, 10.8f, 1f);
 
-	private static readonly Vector3 RainStormSunCoreScale;
+	private static readonly Vector3 RainStormSunCoreScale = new Vector3(7.91f, 7.91f, 1f);
 
 	private WeatherManager weatherManager;
 
@@ -950,7 +950,7 @@ public sealed class ShadowRunPrototype : MonoBehaviour
 
 	private int weatherPresetIndex;
 
-	private int previousWeatherPresetIndex;
+	private int previousWeatherPresetIndex = -1;
 
 	private float weatherAutoTimer;
 
@@ -1012,15 +1012,15 @@ public sealed class ShadowRunPrototype : MonoBehaviour
 
 	private float sky360TransitionToDesaturation;
 
-	private float sky360AppliedDesaturation;
+	private float sky360AppliedDesaturation = -1f;
 
 	private GameObject fallenSkyFallingStars;
 
 	private bool fallenSkyFallingStarsActive;
 
-	private readonly Dictionary<string, string> fastSkyPropertyCache;
+	private readonly Dictionary<string, string> fastSkyPropertyCache = new Dictionary<string, string>(32);
 
-	private readonly float[] weatherSelectionWeights;
+	private readonly float[] weatherSelectionWeights = new float[6];
 
 	private ReflectionProbe roadReflectionProbe;
 
@@ -1172,33 +1172,33 @@ public sealed class ShadowRunPrototype : MonoBehaviour
 
 	private const string ExhaustFireResource = "JMO Assets/Cartoon FX Remaster/CFXR Prefabs/Fire/CFXR Fire Breath";
 
-	private static readonly int BaseMapProperty;
+	private static readonly int BaseMapProperty = Shader.PropertyToID("_BaseMap");
 
-	private static readonly int MainTexProperty;
+	private static readonly int MainTexProperty = Shader.PropertyToID("_MainTex");
 
-	private static readonly int BaseColorProperty;
+	private static readonly int BaseColorProperty = Shader.PropertyToID("_BaseColor");
 
-	private static readonly int ColorProperty;
+	private static readonly int ColorProperty = Shader.PropertyToID("_Color");
 
-	private static readonly int EmissionMapProperty;
+	private static readonly int EmissionMapProperty = Shader.PropertyToID("_EmissionMap");
 
-	private static readonly int EmissionColorProperty;
+	private static readonly int EmissionColorProperty = Shader.PropertyToID("_EmissionColor");
 
-	private static readonly int BumpMapProperty;
+	private static readonly int BumpMapProperty = Shader.PropertyToID("_BumpMap");
 
-	private static readonly int BumpScaleProperty;
+	private static readonly int BumpScaleProperty = Shader.PropertyToID("_BumpScale");
 
-	private static readonly int OcclusionMapProperty;
+	private static readonly int OcclusionMapProperty = Shader.PropertyToID("_OcclusionMap");
 
-	private static readonly int OcclusionStrengthProperty;
+	private static readonly int OcclusionStrengthProperty = Shader.PropertyToID("_OcclusionStrength");
 
-	private static readonly Vector2 RoadTextureTiling;
+	private static readonly Vector2 RoadTextureTiling = new Vector2(1.35f, 170f);
 
 	private const float RoadTextureLength = 1900f;
 
-	private static readonly string[] CityBuildingResources;
+	private static readonly string[] CityBuildingResources = new string[16] { "здание 1", "здание 2", "здание 3", "здание 4", "здание 5", "здание 6", "здание 7", "здание 8", "здание 9", "здание 10", "здание 11", "здание 12", "здание 13", "здание 14", "здание 15", "здание 16" };
 
-	private static readonly float[] CityBuildingHeightPattern;
+	private static readonly float[] CityBuildingHeightPattern = new float[8] { 64.4f, 75.6f, 58.8f, 81.2f, 68.6f, 61.6f, 78.4f, 71.4f };
 
 	private const float LowQualityRenderScale = 0.72f;
 
@@ -1214,17 +1214,17 @@ public sealed class ShadowRunPrototype : MonoBehaviour
 
 	private const float MenuTabTweenDuration = 0.13f;
 
-	private readonly List<Transform> cityObjects;
+	private readonly List<Transform> cityObjects = new List<Transform>();
 
-	private readonly Dictionary<Material, Material> cityUnlitMaterials;
+	private readonly Dictionary<Material, Material> cityUnlitMaterials = new Dictionary<Material, Material>();
 
-	private readonly List<TrafficLightSignal> trafficLights;
+	private readonly List<TrafficLightSignal> trafficLights = new List<TrafficLightSignal>();
 
-	private readonly List<Pickup> pickups;
+	private readonly List<Pickup> pickups = new List<Pickup>();
 
-	private readonly List<GameObject> trafficPool;
+	private readonly List<GameObject> trafficPool = new List<GameObject>();
 
-	private readonly List<TrafficWreck> trafficWreckPool;
+	private readonly List<TrafficWreck> trafficWreckPool = new List<TrafficWreck>(2);
 
 	private Material roadMat;
 
@@ -1302,17 +1302,17 @@ public sealed class ShadowRunPrototype : MonoBehaviour
 
 	private Transform carVisual;
 
-	private readonly Transform[] playerWheelMeshes;
+	private readonly Transform[] playerWheelMeshes = new Transform[2];
 
-	private readonly Quaternion[] playerWheelMeshBaseRotations;
+	private readonly Quaternion[] playerWheelMeshBaseRotations = new Quaternion[2];
 
 	private float playerWheelSpin;
 
-	private float playerWheelSpinDegreesPerMeter;
+	private float playerWheelSpinDegreesPerMeter = 120f;
 
-	private readonly List<Renderer> playerBrakeLightRenderers;
+	private readonly List<Renderer> playerBrakeLightRenderers = new List<Renderer>(4);
 
-	private readonly List<int> playerBrakeLightMaterialIndices;
+	private readonly List<int> playerBrakeLightMaterialIndices = new List<int>(4);
 
 	private MaterialPropertyBlock playerBrakeLightBlock;
 
@@ -1364,15 +1364,15 @@ public sealed class ShadowRunPrototype : MonoBehaviour
 
 	private Text dailyGoalsTimerText;
 
-	private readonly Text[] dailyGoalTitleTexts;
+	private readonly Text[] dailyGoalTitleTexts = new Text[3];
 
-	private readonly Text[] dailyGoalProgressTexts;
+	private readonly Text[] dailyGoalProgressTexts = new Text[3];
 
-	private readonly Image[] dailyGoalCollectImages;
+	private readonly Image[] dailyGoalCollectImages = new Image[3];
 
-	private readonly Image[] dailyGoalClaimedImages;
+	private readonly Image[] dailyGoalClaimedImages = new Image[3];
 
-	private int dailyGoalsDateKey;
+	private int dailyGoalsDateKey = -1;
 
 	private float nextDailyGoalsTimerUpdate;
 
@@ -1578,7 +1578,7 @@ public sealed class ShadowRunPrototype : MonoBehaviour
 
 	private GameObject gemShopRoot;
 
-	private readonly Dictionary<int, Text> gemShopPriceTexts;
+	private readonly Dictionary<int, Text> gemShopPriceTexts = new Dictionary<int, Text>();
 
 	private GameObject caseOverlayRoot;
 
@@ -1680,7 +1680,7 @@ public sealed class ShadowRunPrototype : MonoBehaviour
 
 	private float caseOpenAnimationElapsed;
 
-	private float caseOpenAnimationDuration;
+	private float caseOpenAnimationDuration = 4f;
 
 	private float caseSpinElapsed;
 
@@ -1692,7 +1692,7 @@ public sealed class ShadowRunPrototype : MonoBehaviour
 
 	private float caseSpinTickPulse;
 
-	private int caseSpinLastTickIndex;
+	private int caseSpinLastTickIndex = -1;
 
 	private AudioSource caseSequenceAudioSource;
 
@@ -1704,33 +1704,33 @@ public sealed class ShadowRunPrototype : MonoBehaviour
 
 	private Text gemAmountText;
 
-	private int menuGemCount;
+	private int menuGemCount = 25;
 
-	private float menuBackgroundAspect;
+	private float menuBackgroundAspect = 0.5625f;
 
 	private float menuTabStartX;
 
 	private float menuTabEndX;
 
-	private float menuTabTweenElapsed;
+	private float menuTabTweenElapsed = 0.13f;
 
-	private int menuTargetTab;
+	private int menuTargetTab = 1;
 
-	private int menuActiveTab;
+	private int menuActiveTab = 1;
 
-	private Vector2 lastSafePos;
+	private Vector2 lastSafePos = new Vector2(-1f, -1f);
 
-	private Vector2 lastSafeSize;
+	private Vector2 lastSafeSize = new Vector2(-1f, -1f);
 
-	private readonly List<MenuCloudLayer> menuCloudLayers;
+	private readonly List<MenuCloudLayer> menuCloudLayers = new List<MenuCloudLayer>();
 
-	private readonly List<RectTransform> menuParallax;
+	private readonly List<RectTransform> menuParallax = new List<RectTransform>();
 
-	private readonly List<Image> lifeDots;
+	private readonly List<Image> lifeDots = new List<Image>();
 
 	private Material lostLifeIconMaterial;
 
-	private readonly List<Transform> skyClouds;
+	private readonly List<Transform> skyClouds = new List<Transform>();
 
 	private Transform skyBackdrop;
 
@@ -1772,11 +1772,11 @@ public sealed class ShadowRunPrototype : MonoBehaviour
 
 	private float lightningFlashTime;
 
-	private float lastSkyBackdropAspect;
+	private float lastSkyBackdropAspect = -1f;
 
-	private float lastSkyBackdropFov;
+	private float lastSkyBackdropFov = -1f;
 
-	private float lastSkyBackdropDistance;
+	private float lastSkyBackdropDistance = -1f;
 
 	private Text musicValueText;
 
@@ -1822,7 +1822,7 @@ public sealed class ShadowRunPrototype : MonoBehaviour
 
 	private GameObject garagePreviewVehicleRoot;
 
-	private float garagePreviewYaw;
+	private float garagePreviewYaw = 130f;
 
 	private bool garagePreviewDragging;
 
@@ -1876,9 +1876,9 @@ public sealed class ShadowRunPrototype : MonoBehaviour
 
 	private float garagePendingVehicleApplyDelay;
 
-	private float garageVehicleCardWidth;
+	private float garageVehicleCardWidth = 1f;
 
-	private float garageVehicleCardStep;
+	private float garageVehicleCardStep = 1f;
 
 	private float garageVehicleSidePadding;
 
@@ -1926,15 +1926,15 @@ public sealed class ShadowRunPrototype : MonoBehaviour
 
 	private float playerJumpPitchVelocity;
 
-	private float speed;
+	private float speed = 18f;
 
-	private int lastSpeedometerKmh;
+	private int lastSpeedometerKmh = -1;
 
-	private float lastSpeedFillAmount;
+	private float lastSpeedFillAmount = -1f;
 
-	private float lastRushFillAmount;
+	private float lastRushFillAmount = -1f;
 
-	private float lastSpeedometerNeedleAngle;
+	private float lastSpeedometerNeedleAngle = 999f;
 
 	private float brakePressure;
 
@@ -1960,11 +1960,11 @@ public sealed class ShadowRunPrototype : MonoBehaviour
 
 	private float tractionLoss;
 
-	private int lifeHalfUnits;
+	private int lifeHalfUnits = 6;
 
 	private float invuln;
 
-	private float rush;
+	private float rush = 42f;
 
 	private float distance;
 
@@ -1976,11 +1976,11 @@ public sealed class ShadowRunPrototype : MonoBehaviour
 
 	private int best;
 
-	private int musicVolume;
+	private int musicVolume = 70;
 
-	private int sfxVolume;
+	private int sfxVolume = 60;
 
-	private bool gameSoundEnabled;
+	private bool gameSoundEnabled = true;
 
 	private bool externalAudioPlaying;
 
@@ -1988,15 +1988,15 @@ public sealed class ShadowRunPrototype : MonoBehaviour
 
 	private float nextHudTextRefresh;
 
-	private int graphicsIndex;
+	private int graphicsIndex = 1;
 
-	private int frameRateIndex;
+	private int frameRateIndex = 1;
 
 	private int languageIndex;
 
-	private bool vibrationOn;
+	private bool vibrationOn = true;
 
-	private bool darkModeOn;
+	private bool darkModeOn = true;
 
 	private bool tutorialHints;
 
@@ -2004,11 +2004,11 @@ public sealed class ShadowRunPrototype : MonoBehaviour
 
 	private bool touchBoostHeld;
 
-	private readonly HashSet<int> touchSteerLeftPointers;
+	private readonly HashSet<int> touchSteerLeftPointers = new HashSet<int>();
 
-	private readonly HashSet<int> touchSteerRightPointers;
+	private readonly HashSet<int> touchSteerRightPointers = new HashSet<int>();
 
-	private readonly HashSet<int> touchBoostPointers;
+	private readonly HashSet<int> touchBoostPointers = new HashSet<int>();
 
 	private LayerMask highBeamTrafficMask;
 
@@ -2024,7 +2024,7 @@ public sealed class ShadowRunPrototype : MonoBehaviour
 
 	private bool highBeamFlashReactionSent;
 
-	private bool highBeamCourtesyNext;
+	private bool highBeamCourtesyNext = true;
 
 	private Button highBeamHudButton;
 
@@ -2040,13 +2040,13 @@ public sealed class ShadowRunPrototype : MonoBehaviour
 
 	private float smokeLastSpeed;
 
-	private float spawnTimer;
+	private float spawnTimer = 1.2f;
 
-	private int lastTrafficPattern;
+	private int lastTrafficPattern = -1;
 
 	private float playerStoppedTrafficTimer;
 
-	private readonly List<RampObstacle> rampPool;
+	private readonly List<RampObstacle> rampPool = new List<RampObstacle>(2);
 
 	private Material rampUnlitMat;
 
@@ -2058,19 +2058,19 @@ public sealed class ShadowRunPrototype : MonoBehaviour
 
 	private bool rampMissingLogged;
 
-	private float eventTimer;
+	private float eventTimer = 1.2f;
 
 	private bool running;
 
 	private bool paused;
 
-	private int appliedTargetFrameRate;
+	private int appliedTargetFrameRate = -1;
 
 	private bool showingGameOver;
 
 	private bool santaActive;
 
-	private bool demoSanta;
+	private bool demoSanta = true;
 
 	private Transform santa;
 
@@ -2086,13 +2086,13 @@ public sealed class ShadowRunPrototype : MonoBehaviour
 
 	private Shader cachedShader;
 
-	private readonly List<Transform> santaAnimParts;
+	private readonly List<Transform> santaAnimParts = new List<Transform>();
 
-	private readonly float[] lanes;
+	private readonly float[] lanes = new float[3] { -3.1f, 0f, 3.1f };
 
-	private readonly List<GameObject> trafficPrefabs;
+	private readonly List<GameObject> trafficPrefabs = new List<GameObject>();
 
-	private readonly List<GameObject> buildingPrefabs;
+	private readonly List<GameObject> buildingPrefabs = new List<GameObject>();
 
 	private GameObject trafficLightPrefab;
 
@@ -2146,25 +2146,25 @@ public sealed class ShadowRunPrototype : MonoBehaviour
 
 	private Vector3 cameraVelocity;
 
-	private Vector3 cameraLookTarget;
+	private Vector3 cameraLookTarget = new Vector3(0f, 0.58f, -30f);
 
 	private Vector3 cameraLookVelocity;
 
 	private float cameraFovVelocity;
 
-	private int lastHudScore;
+	private int lastHudScore = -1;
 
-	private int lastHudBest;
+	private int lastHudBest = -1;
 
-	private int lastHudLifeHalfUnits;
+	private int lastHudLifeHalfUnits = -1;
 
-	private int lastOverlayScore;
+	private int lastOverlayScore = -1;
 
-	private int lastOverlayBest;
+	private int lastOverlayBest = -1;
 
-	private int lastOverlayCombo;
+	private int lastOverlayCombo = -1;
 
-	private float playerVehicleYawOffset;
+	private float playerVehicleYawOffset = 180f;
 
 	private float cachedShakeX;
 
@@ -2181,10 +2181,6 @@ public sealed class ShadowRunPrototype : MonoBehaviour
 	}
 
 	private void ApplyCloudProfile()
-	{
-	}
-
-	private void OnDestroy()
 	{
 	}
 
@@ -2254,10 +2250,6 @@ public sealed class ShadowRunPrototype : MonoBehaviour
 	}
 
 	private void ClaimVisibleDailyGoal(int index, GameObject collectButton)
-	{
-	}
-
-	private void OnApplicationQuit()
 	{
 	}
 
@@ -2362,56 +2354,6 @@ public sealed class ShadowRunPrototype : MonoBehaviour
 		return false;
 	}
 
-	private void ResetRun()
-	{
-	}
-
-	private void StartRun()
-	{
-	}
-
-	private void ResumeRun()
-	{
-	}
-
-	private void PauseRun()
-	{
-	}
-
-	private void ShowMainMenu()
-	{
-	}
-
-	private void SetGameplayCameraRendering(bool visible)
-	{
-	}
-
-	private bool MenuPanelOpen()
-	{
-		return false;
-	}
-
-	private void ShowGarageNote()
-	{
-	}
-
-	private void ShowStatsNote()
-	{
-	}
-
-	private void ShowSettingsNote()
-	{
-	}
-
-	private void GameOver()
-	{
-	}
-
-	private string FormatGameOverDistance(float meters)
-	{
-		return null;
-	}
-
 	private void UpdateHud()
 	{
 	}
@@ -2421,10 +2363,6 @@ public sealed class ShadowRunPrototype : MonoBehaviour
 	}
 
 	private void UpdatePlayer(float dt)
-	{
-	}
-
-	private void UpdateWorld(float dt)
 	{
 	}
 
@@ -2516,24 +2454,6 @@ public sealed class ShadowRunPrototype : MonoBehaviour
 	private int FindRampSafeTrafficLane(int preferredLane, float z)
 	{
 		return 0;
-	}
-
-	private void ResetTrafficLights()
-	{
-	}
-
-	private void UpdateTrafficLights(float move)
-	{
-	}
-
-	private void ApplyTrafficLightState(ref TrafficLightSignal signal)
-	{
-	}
-
-	private bool TryGetStopSignal(float z, int lane, out float stopZ)
-	{
-		stopZ = default;
-		return false;
 	}
 
 	private void UpdateSpawns(float dt)
@@ -2824,10 +2744,6 @@ public sealed class ShadowRunPrototype : MonoBehaviour
 		return false;
 	}
 
-	private void Reward(float amount)
-	{
-	}
-
 	private void EnsureVehicleSmoke()
 	{
 	}
@@ -2878,16 +2794,6 @@ public sealed class ShadowRunPrototype : MonoBehaviour
 
 	private void UpdateCamera(float dt)
 	{
-	}
-
-	private bool KeyHeld(KeyCode oldKey, string key)
-	{
-		return false;
-	}
-
-	private bool KeyDown(KeyCode oldKey, string key)
-	{
-		return false;
 	}
 
 	private void MakeGarageScreen(Transform parent)
@@ -3129,14 +3035,6 @@ public sealed class ShadowRunPrototype : MonoBehaviour
 	{
 	}
 
-	private void OnApplicationFocus(bool hasFocus)
-	{
-	}
-
-	private void OnApplicationPause(bool pauseStatus)
-	{
-	}
-
 	private float ReadTouchSteering()
 	{
 		return 0f;
@@ -3149,40 +3047,6 @@ public sealed class ShadowRunPrototype : MonoBehaviour
 
 	private void ResetGameplayTouches()
 	{
-	}
-
-	private GameObject Quad(string name, Vector3 pos, Vector3 scale, Material mat)
-	{
-		return null;
-	}
-
-	private GameObject AddCube(Transform parent, string name, Vector3 localPos, Vector3 scale, Material mat)
-	{
-		return null;
-	}
-
-	private GameObject AddPlane(Transform parent, string name, Vector3 localPos, Vector2 size, Material mat)
-	{
-		return null;
-	}
-
-	private void PreparePrimitive(GameObject go, Material mat)
-	{
-	}
-
-	private GameObject Ellipse(string name, Transform parent, Vector3 localPos, Vector2 size, Material mat)
-	{
-		return null;
-	}
-
-	private LineRenderer AddLine(Transform parent, string name, Vector3[] points, float width, Material mat)
-	{
-		return null;
-	}
-
-	private GameObject Cone(string name, int sides)
-	{
-		return null;
 	}
 
 	[PreserveSig]
@@ -4422,14 +4286,6 @@ public sealed class ShadowRunPrototype : MonoBehaviour
 		return false;
 	}
 
-	private void DisableLegacySkyBackdrop()
-	{
-	}
-
-	private void DestroyRuntimeSkyObject(ref Transform runtimeObject, string objectName)
-	{
-	}
-
 	private void EnsureSky360Cylinder()
 	{
 	}
@@ -4615,224 +4471,6 @@ public sealed class ShadowRunPrototype : MonoBehaviour
 	{
 	}
 
-	private void MakeMaterials()
-	{
-	}
-
-	private void ApplyRoadTexture()
-	{
-	}
-
-	private void ConfigureRoadTexture(Texture2D texture, bool colorTexture)
-	{
-	}
-
-	private void DisableRoadTexture()
-	{
-	}
-
-	private void UpdateRoadTexture(float move)
-	{
-	}
-
-	private Material Mat(Color color, Color? emission = null)
-	{
-		return null;
-	}
-
-	private void ApplyBuildingSurfaceFinish(Material mat)
-	{
-	}
-
-	private void ApplyBuildingEmission(Material mat)
-	{
-	}
-
-	private void ApplyBuildingSurfaceFinish(GameObject building)
-	{
-	}
-
-	private Material GetCityUnlitMaterial(Material source, Shader unlitShader)
-	{
-		return null;
-	}
-
-	private void ConvertBuildingMaterialToUnlit(Material material, Shader unlitShader)
-	{
-	}
-
-	private Texture FindImportedBuildingBaseTexture(Material material, out Vector2 scale, out Vector2 offset)
-	{
-		scale = default;
-		offset = default;
-		return null;
-	}
-
-	private Color FindImportedBuildingBaseColor(Material material)
-	{
-		return default;
-	}
-
-	private Material MatUnlit(Color color)
-	{
-		return null;
-	}
-
-	private Material MatTransparent(Color color, Color? emission = null)
-	{
-		return null;
-	}
-
-	private Material MatTransparentUnlit(Color color, Texture texture, bool additive)
-	{
-		return null;
-	}
-
-	private Material MakeSmokeParticleMaterial()
-	{
-		return null;
-	}
-
-	private void MakeCamera()
-	{
-	}
-
-	private void MakeLights()
-	{
-	}
-
-	private void DisableRuntimePostProcessing()
-	{
-	}
-
-	private void ApplyVisualQuality()
-	{
-	}
-
-	private void SetMaterialColor(Material mat, Color color)
-	{
-	}
-
-	private void MakeRoad()
-	{
-	}
-
-	private void SyncSelectiveOverlayCamera()
-	{
-	}
-
-	private void ConfigureRoadReflectionRenderer(GameObject roadSurface)
-	{
-	}
-
-	private void CreateRoadReflectionProbe()
-	{
-	}
-
-	private void RefreshRoadReflectionProbe()
-	{
-	}
-
-	private void MakeNeonFences()
-	{
-	}
-
-	private void AddNeonFenceSegment(int side, float z)
-	{
-	}
-
-	private void AddBoxMesh(Transform parent, string name, List<BoxSpec> boxes, Material mat)
-	{
-	}
-
-	private void AddBoxGeometry(List<Vector3> vertices, List<int> triangles, Vector3 center, Vector3 size)
-	{
-	}
-
-	private void AddQuad(List<int> triangles, int start, int a, int b, int c, int d)
-	{
-	}
-
-	private void MakeCity()
-	{
-	}
-
-	private int PickCityBuildingIndex(int row, int side, int count)
-	{
-		return 0;
-	}
-
-	private void MakeStreetLamps()
-	{
-	}
-
-	private void AddStreetLamp(GameObject lampPrefab, int side, float z)
-	{
-	}
-
-	private void ApplyStreetLampRedEmission(GameObject model)
-	{
-	}
-
-	private void ApplyStreetLampSideAdjustments(Transform model, int side)
-	{
-	}
-
-	private void FitStreetLampModel(Transform model, Transform localRoot)
-	{
-	}
-
-	private List<GameObject> LoadCityBuildingPrefabs()
-	{
-		return null;
-	}
-
-	private void AddBuilding(GameObject buildingPrefab, int side, float z, int seed)
-	{
-	}
-
-	private float GetIndividualBuildingScale(GameObject buildingPrefab)
-	{
-		return 0f;
-	}
-
-	private void CenterAndRegroundImportedModel(Transform model, Transform localRoot)
-	{
-	}
-
-	private void RegroundImportedModel(Transform model, Transform localRoot)
-	{
-	}
-
-	private void AddTop(Transform root, float type, float width, float height, float depth)
-	{
-	}
-
-	private void AddWindows(Transform root, int side, float width, float height, float depth, int seed)
-	{
-	}
-
-	private void MakeSkyClouds()
-	{
-	}
-
-	private void EnsureCitySilhouetteBackdrop()
-	{
-	}
-
-	private Texture2D MakeRedSkyBackdropTexture(int width, int height)
-	{
-		return null;
-	}
-
-	private void UpdateSkyClouds(float dt)
-	{
-	}
-
-	private void UpdateSkyBackdropScale(Transform backdrop, Texture texture, bool force)
-	{
-	}
-
 	private void MakeCar()
 	{
 	}
@@ -4890,36 +4528,6 @@ public sealed class ShadowRunPrototype : MonoBehaviour
 	}
 
 	private void ConfigureHighBeamPrefab(GameObject instance)
-	{
-	}
-
-	private void MakeEvents()
-	{
-	}
-
-	private void DisableNonGameplayCameras()
-	{
-	}
-
-	private void DisableImportedModelCamerasAndLights(GameObject root)
-	{
-	}
-
-	private void MakeTrafficLights()
-	{
-	}
-
-	private TrafficLightSignal CreateTrafficLightSignal(float z, int side, int seed)
-	{
-		return default;
-	}
-
-	private Renderer AddSignalLamp(Transform root, string name, Vector3 localPos, Material mat)
-	{
-		return null;
-	}
-
-	private void NormalizeTrafficLightModel(GameObject model, float targetWidth, float targetHeight)
 	{
 	}
 
@@ -5051,63 +4659,11 @@ public sealed class ShadowRunPrototype : MonoBehaviour
 	{
 	}
 
-	private void PrepareImportedStaticModel(GameObject model)
-	{
-	}
-
 	private void PrepareTrafficVehicleModel(GameObject model)
 	{
 	}
 
 	private void FitImportedVehicleModel(Transform model, Transform localRoot, float targetWidth, float targetLength, float targetHeight, string[] rendererNameKeywords = null)
-	{
-	}
-
-	private void FitImportedBuildingModel(Transform model, Transform localRoot, float targetWidth, float targetDepth, float targetHeight)
-	{
-	}
-
-	private bool TryGetActiveRendererBounds(Transform root, out Bounds bounds, string[] rendererNameKeywords = null)
-	{
-		bounds = default;
-		return false;
-	}
-
-	private bool RendererMatchesBoundsKeywords(Renderer renderer, string[] keywords)
-	{
-		return false;
-	}
-
-	private bool RendererTextContains(string text, string keyword)
-	{
-		return false;
-	}
-
-	private static void AutoStart()
-	{
-	}
-
-	private void Awake()
-	{
-	}
-
-	private void LockPortraitOrientation()
-	{
-	}
-
-	private void Update()
-	{
-	}
-
-	private void LateUpdate()
-	{
-	}
-
-	private void UpdateTargetFrameRateForState()
-	{
-	}
-
-	private void ConfigurePerformance()
 	{
 	}
 
