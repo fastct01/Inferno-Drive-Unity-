@@ -23,3 +23,15 @@ Where a patch (`InfernoDrivingRules`, `InfernoDriving`, …) overwrote a value t
 computes (e.g. `UpdatePlayer`'s original cruise `Lerp(29, 40, distance/2600)` and the linear
 `MoveTowards` acceleration), the remake keeps the shipped (patched) behaviour and records the original
 expression in a `// original:` comment instead of executing it.
+
+## Active input handling set to "Both"
+The recovered `ProjectSettings.asset` had `activeInputHandler: 0` (legacy Input Manager only), but the
+shipped IL2CPP build links both `UnityEngine.InputLegacyModule` (used by `GarageDebugger`,
+`PerformanceProfiler`, `SimpleCameraController` via `Input.GetKey*`) and `Unity.InputSystem` (used by
+`ShadowRunPrototype.KeyHeld/KeyDown`, touch reading, the tutorial's `Touchscreen.current` / `Mouse.current`).
+Set to `2` (Both) so the translated code receives input from both APIs like the shipped build.
+
+## AdvancedCameraController adaptive quality
+`Update` reads `bool adaptive = false;` — the shipped C++ was patched (`apply_lobby_patches.py`) to replace
+`__this->___adaptiveQuality` with a constant `false`, disabling adaptive resolution toggling. The original
+read is kept as an `// original:` comment.
