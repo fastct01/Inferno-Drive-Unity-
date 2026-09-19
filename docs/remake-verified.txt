@@ -44,13 +44,18 @@ Driving (06-run.png, 07-pause.png)
       pause button, BEAM button; the car accelerates (speed > 10 m/s, distance > 50 m in 6 s).
   [x] PauseRun: PAUSED / THE CITY IS STILL MOVING / CONTINUE DRIVING / BACK TO MENU / sound toggle;
       ResumeRun continues.
-  [~] Sky: magenta — FastSky / Pulsar Neutron Star shaders are Asset Store packages still present only
-      as compiled Metal blobs (docs/third-party-imports.md). Weather presets do not transition
-      (Dynamic Weather System stub).
-  [~] Explosions / _WOW_ / _POW_ / falling stars: CFXR prefabs play their particle systems but the
-      CFXR_Effect scripts are stubs and the CFXR shaders compiled-only.
-  [ ] Ramps, high beams, hazards (puddles, wrecking balls), road crystals, speed stages — spawn by
-      distance; not yet reached in the 6 s smoke run (a longer scripted run is the next step).
+  [~] Sky: the FastSky / Pulsar Neutron Star shaders are placeholders (gradient / cubemap) until the
+      Asset Store packages are imported (docs/third-party-imports.md); weather presets do not
+      transition (Dynamic Weather System stub), so every map looks like the night preset.
+  [~] Explosions / _WOW_ / _POW_ / falling stars: CFXR prefabs play their particle systems with the
+      placeholder CFXR shaders; the CFXR_Effect scripts are stubs (no camera shake / auto-destroy).
+  [x] Long run without input (LongRunReachesTheDistanceSystems, 20-run-*.png, 21-run-end.png): traffic
+      contact takes half hearts until game over (~0.5-0.8 km), road crystals spawn (first at 350-650 m)
+      and are collected (+1 CRYSTAL, run counter), puddles spawn and the SPIN OUT! note shows, traffic
+      brake/indicator lamps (TrafficLampUnlit), the collision explosion and wreck path run without
+      errors at 60 fps in the editor.
+  [ ] Wrecking balls (first at 900-1300 m), SPEED UP stages (1000 m), ramps and high beams need a run
+      that survives past 1 km — a steering script for the test is the next step.
 
 Game over (08-game-over.png)
   [x] YOU LOST / BETTER LUCK NEXT TIME / DISTANCE 0.12 KM / BEST RECORD 0.13 KM / OPEN CASE / TRY AGAIN /
