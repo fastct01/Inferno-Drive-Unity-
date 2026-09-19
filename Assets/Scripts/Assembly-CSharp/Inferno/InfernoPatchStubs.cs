@@ -82,6 +82,6 @@ public sealed partial class ShadowRunPrototype
 		public static string CasePicture(string vehicleId) { return null; }
 		public static string CaseName(string vehicleId) { return null; }
 		public static void AppendLockedCaseVehicles(ShadowRunPrototype game, System.Collections.Generic.List<string> list) { }
-		public static void AppendCards(ShadowRunPrototype game, System.Collections.Generic.List<GarageVehicleCardData> cards) { }
+		public static GarageVehicleCardData[] AppendCards(ShadowRunPrototype game, GarageVehicleCardData[] cards) { return cards; }
 	}
 }
