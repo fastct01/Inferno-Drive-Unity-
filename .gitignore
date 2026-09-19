@@ -22,3 +22,4 @@
 .vs/
 .idea/
 crashlytics-build.properties
+/Builds/

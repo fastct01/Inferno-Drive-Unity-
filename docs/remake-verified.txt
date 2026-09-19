@@ -72,3 +72,19 @@ Tutorial (10-tutorial.png)
 Rules (EditMode, tools/remake/test.sh)
   [x] 20 tests: driving rules (check_driving_rules.cpp port), goal rewards, map prices, paint cycle,
       prize roll, garage editions, style prices.
+
+Exports (tools/remake/build.sh)
+  [x] iOS: Builds/iOS Xcode project — "Inferno Drive" 0.1.0 (1), com.baalattackgroup.infernodrive, iOS 15.0,
+      IL2CPP, portrait only, URL scheme shadowrun, ShadowRunNativeAuth.mm in Libraries/Plugins/iOS, pods
+      IronSourceSDK 9.5.0.0 + IronSourceUnityAdsAdapter 5.9.0.0 (UnityAds 4.19.0) resolved by EDM4U exactly
+      as the shipped Podfile.lock; PurchasesHybridCommon 18.8.0 comes in through Swift Package Manager
+      (the shipped project used the pod). Signing/team is set in Xcode as in the run skill.
+  [ ] Android: see below.
+
+Known gaps against the shipped build
+  - Dynamic Weather System, Cartoon FX Remaster, FastSky, Pulsar Neutron Star and MonoLimboStudio are Asset
+    Store packages: scripts are stubs / shaders are placeholders until imported (docs/third-party-imports.md).
+  - Side-by-side screenshots of the shipped build need Screen Recording permission for the terminal (the
+    app runs on this Mac through Xcode — tools in car точно финал/.claude/skills/run-inferno-drive — but
+    `screencapture` returns "could not create image from display" here); its console log was compared
+    instead: the same game log lines appear ([Supabase] Клиент инициализирован., [GARAGE] Camera configured…).
