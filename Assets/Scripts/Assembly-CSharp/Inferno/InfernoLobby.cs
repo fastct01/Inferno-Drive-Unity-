@@ -323,7 +323,7 @@ public sealed partial class ShadowRunPrototype
 		}
 
 		private static Sprite s_gem;
-		private static readonly int[] s_lastLoaded = new int[2];
+		public static readonly int[] s_lastLoaded = new int[2];   // width/height of the last LoadTexture (read by InfernoGarage.Picture)
 
 		// ShopArtScope: RAII counter in InfernoLobby.inc (s_shopArtDepth); C# port exposes explicit Begin/End.
 		public static void BeginShopArtScope() { shopArtDepth++; }
