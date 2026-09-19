@@ -11,7 +11,7 @@ public sealed partial class ShadowRunPrototype
 {
 	private static partial class InfernoHazards
 	{
-		private const float PlayerZ = 5.0f;              // the car never moves along z; the road scrolls (+z toward the camera)
+		public const float PlayerZ = 5.0f;              // the car never moves along z; the road scrolls (+z toward the camera)
 		private const float CarHalfWidth = 1.05f, CarHalfLength = 2.4f, CarHeight = 1.6f;
 		private const float Pi = 3.14159265f;
 
@@ -21,9 +21,9 @@ public sealed partial class ShadowRunPrototype
 		private static uint s_noteColor = InfernoLobby.Blossom;
 
 		// ---- procedural textures ----------------------------------------------------------
-		private delegate void PixelShader(ref Color32 px, float u, float v);
+		public delegate void PixelShader(ref Color32 px, float u, float v);
 
-		private static Texture2D MakeTexture(int w, int h, PixelShader pixel)
+		public static Texture2D MakeTexture(int w, int h, PixelShader pixel)
 		{
 			Texture2D texture = new Texture2D(w, h, TextureFormat.RGBA32, true);   // mip chain (U_NewTexture2DMips)
 			Color32[] colors = new Color32[w * h];
@@ -42,7 +42,7 @@ public sealed partial class ShadowRunPrototype
 			return t * t * (3f - 2f * t);
 		}
 
-		private static void Set(ref Color32 px, int r, int g, int b, int a)
+		public static void Set(ref Color32 px, int r, int g, int b, int a)
 		{
 			px.r = (byte)Mathf.Max(0, Mathf.Min(255, r)); px.g = (byte)Mathf.Max(0, Mathf.Min(255, g));
 			px.b = (byte)Mathf.Max(0, Mathf.Min(255, b)); px.a = (byte)Mathf.Max(0, Mathf.Min(255, a));
@@ -215,7 +215,7 @@ public sealed partial class ShadowRunPrototype
 		}
 
 		// Quaternion helpers (x, y, z, w).
-		private static Quaternion Mul(Quaternion a, Quaternion b)
+		public static Quaternion Mul(Quaternion a, Quaternion b)
 		{
 			return new Quaternion(a.w * b.x + a.x * b.w + a.y * b.z - a.z * b.y,
 				a.w * b.y - a.x * b.z + a.y * b.w + a.z * b.x,

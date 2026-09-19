@@ -52,18 +52,21 @@ in place of the stub folders (stage 5/6) — the stubs must not be "implemented"
 `scratchpad/meta.py type <Interface>` against the shipped `global-metadata.dat` (v39 layout with
 compressed index widths), not against the recovered stub sources, whose member order can differ.
 
-## Third-party SDK sources in the recovered project are stubs
-`Assets/Scripts/{Supabase*, Websocket.Client, revenuecat.purchases-unity, Unity.LevelPlay, CFXRRuntime,
-DynamicWeatherSystem.Runtime}` are decompiled skeletons (method bodies `return null;`). The shipped build
-links these exact versions (from global-metadata assembly definitions):
-Supabase 1.1.1, Supabase.Gotrue 6.0.3, Supabase.Postgrest 4.0.3, Supabase.Realtime 7.0.2,
-Supabase.Storage 2.0.2, Supabase.Functions 2.0.0, Supabase.Core 1.0.0, Websocket.Client 5.1.1,
-MimeMapping 3.0.0, Newtonsoft.Json 13.0 (com.unity.nuget.newtonsoft-json 3.2.2),
-plus revenuecat.purchases-unity and Unity.LevelPlay (versions not recorded in metadata).
-The game code is translated against the public API of these stubs; the real packages are to be installed
-in place of the stub folders (stage 5/6) - the stubs must not be "implemented" by hand.
-
-## IL2CPP interface slot numbers
-`InterfaceFuncInvokerN::Invoke(slot, IFoo_il2cpp_TypeInfo_var, ...)` slots were decoded with
-`scratchpad/meta.py type <Interface>` against the shipped `global-metadata.dat` (v39 layout with
-compressed index widths), not against the recovered stub sources, whose member order can differ.
+## Hand-written patch namespaces (`Inferno*.inc`) → nested static partial classes
+The C++ patch namespaces `InfernoLobby/Settings/Driving/Hazards/Garage/Style` are ported one-to-one into
+`Assets/Scripts/Assembly-CSharp/Inferno/*.cs` as `private static partial class` members of `ShadowRunPrototype`
+(so they reach the game's private fields the way the C++ reached `___field` members directly). Mechanical
+differences, all behaviour-neutral:
+- `Init()` calls (`il2cpp_codegen_initialize_runtime_metadata`) have no C# equivalent and are dropped.
+- Closed-instance delegate trampolines (`Hook<Fn>` / `Trampoline<Fn>` building a `MethodInfo` by hand,
+  `ChipClick<C,S>` / `PageClick<C,D>` templates) become `onClick.AddListener(() => Fn(game))` lambdas.
+- `Keep(field, value)` (assignment + write barrier) is a plain assignment.
+- `std::fmod` → C# `%` on floats; `-std::expm1(-x)` → `1f - Mathf.Exp(-x)`.
+- `InfernoGarage::Utf8` narrowed resource paths to ASCII (`?` for non-ASCII) for its fixed `char[160]`
+  cache keys; the C# `Picture` cache keys on the same narrowed string and keeps the 48-slot limit.
+- `Data/Raw/InfernoLobby/*.png` (PNG files in the iOS app bundle, decoded natively) are shipped as
+  `Assets/Resources/InfernoLobby/**.bytes` and decoded with `Texture2D.LoadImage` (`InfernoLobby.LoadTexture`).
+- The `extern "C" InfernoGarage_IsUnlocked/SetUnlocked` bridge (cross-TU call from the profile code) is
+  `ShadowRunPrototype.InfernoGarageIsUnlocked/SetUnlocked` in `Inferno/InfernoGarageBridge.cs`.
+- Unity "alive" checks (`Object_op_Inequality(x, null)`) map to the overloaded `!= null`; where the C++ first
+  tested the raw pointer, C# uses `ReferenceEquals` for that test (InfernoStyle.Wave).

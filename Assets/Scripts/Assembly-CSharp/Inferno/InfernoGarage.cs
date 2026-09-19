@@ -156,7 +156,7 @@ public sealed partial class ShadowRunPrototype
 		// ---- strings ----------------------------------------------------------------
 		// Case-insensitive equality with an ASCII literal; a trailing " (Instance)" on the
 		// managed string (an instantiated material) is ignored.
-		private static bool SameName(string s, string ascii)
+		public static bool SameName(string s, string ascii)
 		{
 			if (s == null || ascii == null) return false;
 			int n = s.Length;
@@ -175,7 +175,7 @@ public sealed partial class ShadowRunPrototype
 			return true;
 		}
 
-		private static char Lower(int c)
+		public static char Lower(int c)
 		{
 			return (c >= 'A' && c <= 'Z') ? (char)(c + 32) : (char)c;
 		}
