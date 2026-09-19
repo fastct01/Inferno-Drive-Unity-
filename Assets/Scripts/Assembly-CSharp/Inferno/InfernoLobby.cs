@@ -10,7 +10,7 @@ using UnityEngine.UI;
 // by Texture2D.LoadImage on the same files stored as Assets/Resources/InfernoLobby/*.bytes.
 public sealed partial class ShadowRunPrototype
 {
-	private static partial class InfernoLobby
+	internal static partial class InfernoLobby
 	{
 		// Original game theme: black with violet neon. Values are the ones the untouched
 		// garage / profile / case screens of this export use.
@@ -20,8 +20,8 @@ public sealed partial class ShadowRunPrototype
 		public const uint Lavender = 0x948CD1, Lilac = 0xAD8ADB, Blossom = 0xD199F5, Pearl = 0xE0D6F0;
 		public const float ContentWidth = 960f, ContentHeight = 1440f;
 		public const int MapCount = 6;
-		private static readonly string[] MapNames = { "DAYLIGHT CITY", "NEON NIGHT", "RAIN RUN", "STORM CHASE", "FALLEN SKY", "PLANET HORIZON" };
-		private static readonly string[] MapDescriptions = { "Golden streets. Open throttle.", "Electric skyline. Endless asphalt.", "Rain-lit roads. Stay sharp.", "Lightning overhead. Keep your line.", "A sky full of falling stars.", "A different world above the road." };
+		public static readonly string[] MapNames = { "DAYLIGHT CITY", "NEON NIGHT", "RAIN RUN", "STORM CHASE", "FALLEN SKY", "PLANET HORIZON" };
+		public static readonly string[] MapDescriptions = { "Golden streets. Open throttle.", "Electric skyline. Endless asphalt.", "Rain-lit roads. Stay sharp.", "Lightning overhead. Keep your line.", "A sky full of falling stars.", "A different world above the road." };
 		private static readonly uint[] MapColors = { Blossom, Violet, Lavender, Electric, Magenta, Orchid };
 		// Screenshots shipped in Data/Raw/InfernoLobby (bundle-relative). null keeps the hero art.
 		// Every map is the same city (the presets only change the weather/lighting), so DAYLIGHT

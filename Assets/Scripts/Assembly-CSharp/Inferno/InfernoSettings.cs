@@ -9,7 +9,7 @@ using UnityEngine.UI;
 // ListenerVolume).
 public sealed partial class ShadowRunPrototype
 {
-	private static partial class InfernoSettings
+	internal static partial class InfernoSettings
 	{
 		private const int Master = 0, Music = 1, Effects = 2, SliderCount = 3;
 		private const float PanelWidth = 920f, RowStep = 78f, FirstRow = -100f, TrackWidth = 450f;

@@ -6,7 +6,7 @@ using UnityEngine;
 // the C++ header (its `static Recovery state` singleton).
 public sealed partial class ShadowRunPrototype
 {
-	private static class InfernoDrivingRules
+	internal static class InfernoDrivingRules
 	{
 		public const float MaxSpeed = 49f;
 		public const float CrystalGapMin = 550f;
@@ -60,6 +60,10 @@ public sealed partial class ShadowRunPrototype
 
 		private static float recoveryTarget;
 		private static float recoveryLeft;
+
+		// RecoveryState() of the C++ header, read-only (the EditMode tests inspect it).
+		public static float RecoveryTarget => recoveryTarget;
+		public static float RecoveryLeft => recoveryLeft;
 
 		public static void ResetRecovery()
 		{

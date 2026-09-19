@@ -11,3 +11,5 @@ Paths to the shipped build are hard-coded at the top of each script.
 - `stubs.py list|strip <files>|progress` — lists remaining empty stubs in `ShadowRunPrototype.cs`, removes stubs that a partial file now implements, regenerates `docs/remake-progress.md`.
 - `find_rva.py` — locates `<PrivateImplementationDetails>` RVA arrays by hash.
 - `compile.sh [log]` — batch-mode compile check (`Unity -batchmode -nographics -quit`), prints `error CS` lines.
+- `test.sh [EditMode|PlayMode]` — batchmode test run with a pass/fail summary (`Assets/Editor/Tests` = EditMode rule tests ported from `tools/check_driving_rules.cpp` plus lobby / garage / style / roll rules).
+- `relink_stub_guids.py <StubFolder> <ImportedFolder>` — after importing an Asset Store package (CFXR, Dynamic Weather System), moves the ripped script GUIDs onto the real scripts so prefab references survive; see `docs/third-party-imports.md`.

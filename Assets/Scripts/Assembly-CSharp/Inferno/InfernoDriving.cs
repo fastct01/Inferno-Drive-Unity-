@@ -8,7 +8,7 @@ using UnityEngine.UI;
 // static state (s_*) is kept as static fields of this nested class.
 public sealed partial class ShadowRunPrototype
 {
-	private static partial class InfernoDriving
+	internal static partial class InfernoDriving
 	{
 		public struct Crystal
 		{

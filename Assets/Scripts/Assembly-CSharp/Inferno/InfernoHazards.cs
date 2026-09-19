@@ -9,7 +9,7 @@ using UnityEngine.UI;
 // "Road hazards".
 public sealed partial class ShadowRunPrototype
 {
-	private static partial class InfernoHazards
+	internal static partial class InfernoHazards
 	{
 		public const float PlayerZ = 5.0f;              // the car never moves along z; the road scrolls (+z toward the camera)
 		private const float CarHalfWidth = 1.05f, CarHalfLength = 2.4f, CarHeight = 1.6f;

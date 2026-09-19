@@ -34,6 +34,7 @@
     "com.unity.services.core": "1.18.0",
     "com.unity.nuget.newtonsoft-json": "3.2.2",
     "com.unity.visualeffectgraph": "17.6.0",
-    "com.unity.services.levelplay": "9.5.0"
+    "com.unity.services.levelplay": "9.5.0",
+    "com.unity.test-framework": "1.4.6"
   }
 }

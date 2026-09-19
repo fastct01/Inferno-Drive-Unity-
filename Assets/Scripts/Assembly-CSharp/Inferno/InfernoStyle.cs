@@ -11,7 +11,7 @@ using UnityEngine.UI;
 // "Customisation".
 public sealed partial class ShadowRunPrototype
 {
-	private static partial class InfernoStyle
+	internal static partial class InfernoStyle
 	{
 		// ---- catalogue ------------------------------------------------------------------------
 		private const int Tires = 0, Flags = 1, Trails = 2, CategoryCount = 3;
