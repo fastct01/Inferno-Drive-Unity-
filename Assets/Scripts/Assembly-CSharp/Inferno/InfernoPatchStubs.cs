@@ -15,6 +15,10 @@ public sealed partial class ShadowRunPrototype
 		public static void Backdrop(ShadowRunPrototype game, Transform parent) { }
 		public static void Build(ShadowRunPrototype game, Transform parent) { }
 		public static void Gems(ShadowRunPrototype game, Transform parent) { }
+		// ShopArtScope: RAII counter in InfernoLobby.inc (s_shopArtDepth); C# port exposes explicit Begin/End.
+		public static void BeginShopArtScope() { shopArtDepth++; }
+		public static void EndShopArtScope() { shopArtDepth--; }
+		private static int shopArtDepth;
 		public static void Tabs(ShadowRunPrototype game, Transform parent) { }
 		public static void PositionPages(ShadowRunPrototype game) { }
 		public static void Layout(ShadowRunPrototype game) { }
