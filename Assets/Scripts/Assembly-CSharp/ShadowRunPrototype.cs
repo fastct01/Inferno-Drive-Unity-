@@ -383,21 +383,6 @@ public sealed partial class ShadowRunPrototype : MonoBehaviour
 		}
 	}
 
-	private sealed class _003C_003Ec__DisplayClass340_0
-	{
-		public HashSet<int> activePointers;
-
-		public Action changed;
-
-		internal void _003CMakeGameplayTouchZone_003Eb__0(BaseEventData data)
-		{
-		}
-
-		internal void _003CMakeGameplayTouchZone_003Eg__ReleasePointer_007C1(BaseEventData data)
-		{
-		}
-	}
-
 	private sealed class _003C_003Ec__DisplayClass367_0
 	{
 		public ShadowRunPrototype _003C_003E4__this;
@@ -439,17 +424,6 @@ public sealed partial class ShadowRunPrototype : MonoBehaviour
 		public Button collectButton;
 
 		internal void _003CMakeGoalRow_003Eb__0()
-		{
-		}
-	}
-
-	private sealed class _003C_003Ec__DisplayClass445_0
-	{
-		public ShadowRunPrototype _003C_003E4__this;
-
-		public int tabIndex;
-
-		internal void _003CMakeMenuTabButton_003Eb__0()
 		{
 		}
 	}
@@ -510,136 +484,6 @@ public sealed partial class ShadowRunPrototype : MonoBehaviour
 		public ShadowRunPrototype _003C_003E4__this;
 
 		private string _003CvehicleId_003E5__2;
-
-		private TaskAwaiter<bool> _003C_003Eu__1;
-
-		private void MoveNext()
-		{
-		}
-
-		void IAsyncStateMachine.MoveNext()
-		{
-			//ILSpy generated this explicit interface implementation from .override directive in MoveNext
-			this.MoveNext();
-		}
-
-		private void SetStateMachine(IAsyncStateMachine stateMachine)
-		{
-		}
-
-		void IAsyncStateMachine.SetStateMachine(IAsyncStateMachine stateMachine)
-		{
-			//ILSpy generated this explicit interface implementation from .override directive in SetStateMachine
-			this.SetStateMachine(stateMachine);
-		}
-	}
-
-	[StructLayout((LayoutKind)3)]
-	private struct _003CRunProfileAuthAsync_003Ed__488 : IAsyncStateMachine
-	{
-		public int _003C_003E1__state;
-
-		public AsyncTaskMethodBuilder _003C_003Et__builder;
-
-		public ShadowRunPrototype _003C_003E4__this;
-
-		private TaskAwaiter<bool> _003C_003Eu__1;
-
-		private void MoveNext()
-		{
-		}
-
-		void IAsyncStateMachine.MoveNext()
-		{
-			//ILSpy generated this explicit interface implementation from .override directive in MoveNext
-			this.MoveNext();
-		}
-
-		private void SetStateMachine(IAsyncStateMachine stateMachine)
-		{
-		}
-
-		void IAsyncStateMachine.SetStateMachine(IAsyncStateMachine stateMachine)
-		{
-			//ILSpy generated this explicit interface implementation from .override directive in SetStateMachine
-			this.SetStateMachine(stateMachine);
-		}
-	}
-
-	[StructLayout((LayoutKind)3)]
-	private struct _003CRunProfileDeleteAsync_003Ed__495 : IAsyncStateMachine
-	{
-		public int _003C_003E1__state;
-
-		public AsyncTaskMethodBuilder _003C_003Et__builder;
-
-		public ShadowRunPrototype _003C_003E4__this;
-
-		private TaskAwaiter<bool> _003C_003Eu__1;
-
-		private void MoveNext()
-		{
-		}
-
-		void IAsyncStateMachine.MoveNext()
-		{
-			//ILSpy generated this explicit interface implementation from .override directive in MoveNext
-			this.MoveNext();
-		}
-
-		private void SetStateMachine(IAsyncStateMachine stateMachine)
-		{
-		}
-
-		void IAsyncStateMachine.SetStateMachine(IAsyncStateMachine stateMachine)
-		{
-			//ILSpy generated this explicit interface implementation from .override directive in SetStateMachine
-			this.SetStateMachine(stateMachine);
-		}
-	}
-
-	[StructLayout((LayoutKind)3)]
-	private struct _003CRunProfileOAuthAsync_003Ed__489 : IAsyncStateMachine
-	{
-		public int _003C_003E1__state;
-
-		public AsyncTaskMethodBuilder _003C_003Et__builder;
-
-		public ShadowRunPrototype _003C_003E4__this;
-
-		public bool apple;
-
-		private TaskAwaiter<bool> _003C_003Eu__1;
-
-		private void MoveNext()
-		{
-		}
-
-		void IAsyncStateMachine.MoveNext()
-		{
-			//ILSpy generated this explicit interface implementation from .override directive in MoveNext
-			this.MoveNext();
-		}
-
-		private void SetStateMachine(IAsyncStateMachine stateMachine)
-		{
-		}
-
-		void IAsyncStateMachine.SetStateMachine(IAsyncStateMachine stateMachine)
-		{
-			//ILSpy generated this explicit interface implementation from .override directive in SetStateMachine
-			this.SetStateMachine(stateMachine);
-		}
-	}
-
-	[StructLayout((LayoutKind)3)]
-	private struct _003CRunProfileSignOutAsync_003Ed__494 : IAsyncStateMachine
-	{
-		public int _003C_003E1__state;
-
-		public AsyncTaskMethodBuilder _003C_003Et__builder;
-
-		public ShadowRunPrototype _003C_003E4__this;
 
 		private TaskAwaiter<bool> _003C_003Eu__1;
 
@@ -2484,10 +2328,6 @@ public sealed partial class ShadowRunPrototype : MonoBehaviour
 	{
 	}
 
-	private void ApplyGarageOwnershipFromProfile()
-	{
-	}
-
 	private void SetGarageVehicleButtonVisual(Button button, Text label, bool selected)
 	{
 	}
@@ -2806,87 +2646,8 @@ public sealed partial class ShadowRunPrototype : MonoBehaviour
 	{
 	}
 
-	private Sprite LoadTightMenuArtSprite(string resource)
-	{
-		return null;
-	}
-
 	private void UpdateDailyGoalsTimer(bool force = false)
 	{
-	}
-
-	private void MakeMenuTabBar(Transform parent)
-	{
-	}
-
-	private void MakeMenuTabButton(string label, string iconResource, float x, float iconSize, int tabIndex, out Text labelText, out Image icon, out CanvasGroup glow)
-	{
-		labelText = null;
-		icon = null;
-		glow = null;
-	}
-
-	private Image MakeTabIcon(Transform parent, string name, string resource, Vector2 size, Vector2 pos)
-	{
-		return null;
-	}
-
-	private Material GetMenuTabIconTintMaterial()
-	{
-		return null;
-	}
-
-	private RawImage MakeTabRawIcon(Transform parent, string name, Texture texture, Vector2 size, Vector2 pos)
-	{
-		return null;
-	}
-
-	private CanvasGroup MakeTabIconGlow(Transform parent, string name, Vector2 size, Vector2 pos)
-	{
-		return null;
-	}
-
-	private void UpdateMenuTabBar(float tabPosition)
-	{
-	}
-
-	private void SetReferenceTabVisual(Text label, Image icon, CanvasGroup glow, float weight)
-	{
-	}
-
-	private void SelectMenuTab(int tab, bool instant)
-	{
-	}
-
-	private void BeginMenuTabTransition(bool instant)
-	{
-	}
-
-	private void PositionMenuTabs(bool instant)
-	{
-	}
-
-	private RectTransform MakeMenuPageHeader(Transform parent, string titleText, string subtitleText, out Text subtitle)
-	{
-		subtitle = null;
-		return null;
-	}
-
-	private void LayoutMenuPageHeaders()
-	{
-	}
-
-	private static void LayoutMenuPageHeader(RectTransform root, float left, float top, float width)
-	{
-	}
-
-	private void SetMenuPagePosition(GameObject page, float index, float width)
-	{
-	}
-
-	private float GetMenuViewportWidth()
-	{
-		return 0f;
 	}
 
 	private void LayoutHomeMenu()
@@ -2897,159 +2658,9 @@ public sealed partial class ShadowRunPrototype : MonoBehaviour
 	{
 	}
 
-	private void MakeSettingsScreen(Transform parent)
-	{
-	}
-
-	private Image MakeProfilePanel(Transform parent, string name, Vector2 pos, Vector2 size, Color fill, Color borderColor, bool useGeneratedOutline = true)
-	{
-		return null;
-	}
-
-	private Button MakeProfileActionButton(Transform parent, string label, Vector2 pos, Vector2 size, bool primary, bool danger, out Text labelText, bool neonContour = false, bool addNeonGlow = true)
-	{
-		labelText = null;
-		return null;
-	}
-
-	private Button MakeProfileArtworkAuthButton(Transform parent, string name, string resource, Vector2 pos, Vector2 size)
-	{
-		return null;
-	}
-
-	private InputField MakeProfileInput(Transform parent, string name, string placeholderValue, Vector2 pos, bool password)
-	{
-		return null;
-	}
-
-	private void BuildProfileAuthForm()
-	{
-	}
-
-	private void BuildSignedInProfileActions()
-	{
-	}
-
-	private void LayoutProfileScreen()
-	{
-	}
-
-	private void RefreshProfileUi()
-	{
-	}
-
-	private void ShowProfileAuthForm(bool register)
-	{
-	}
-
-	private void HideProfileAuthForm()
-	{
-	}
-
-	private Task RunProfileAuthAsync()
-	{
-		return null;
-	}
-
-	private Task RunProfileOAuthAsync(bool apple)
-	{
-		return null;
-	}
-
-	private void RequestProfileSignOutConfirmation()
-	{
-	}
-
-	private void RequestProfileDeleteConfirmation()
-	{
-	}
-
-	public void OnNativeProfileSignOutConfirmed(string message)
-	{
-	}
-
-	public void OnNativeProfileDeleteConfirmed(string message)
-	{
-	}
-
-	private Task RunProfileSignOutAsync()
-	{
-		return null;
-	}
-
-	private Task RunProfileDeleteAsync()
-	{
-		return null;
-	}
-
-	private void SetProfileActionsInteractable(bool value)
-	{
-	}
-
-	private void SetProfileAuthenticationStatus(string message)
-	{
-	}
-
-	private Text MakeSettingsSlider(string label, float y, int value, UnityAction action)
-	{
-		return null;
-	}
-
-	private Text MakeSettingsStepper(string label, float y, UnityAction left, UnityAction right)
-	{
-		return null;
-	}
-
-	private Text MakeSettingsToggle(string label, float y, UnityAction action, out Image dot)
-	{
-		dot = null;
-		return null;
-	}
-
-	private void MakeSettingsLabel(string label, float y)
-	{
-	}
-
-	private Button MakeSettingsAction(string label, Vector2 pos, TextAnchor anchor)
-	{
-		return null;
-	}
-
-	private void MakeSettingsArrow(Vector2 pos, string label, UnityAction action)
-	{
-	}
-
-	private void MakeSettingsClickArea(float y, UnityAction action)
-	{
-	}
-
-	private void ShowSettingsScreen()
-	{
-	}
-
-	private void HideSettingsScreen()
-	{
-	}
-
-	private void UpdateSettingsUi()
-	{
-	}
-
-	private void UpdateToggle(Text text, Image dot, bool value)
-	{
-	}
-
 	private Button MakeCaseActionButton(Transform parent, string label, Vector2 pos, Vector2 size, TextAnchor anchor, bool filled)
 	{
 		return null;
-	}
-
-	private void UpdateMenuAnimation(float dt)
-	{
-	}
-
-	private void UpdateHomeDriveShine()
-	{
 	}
 
 	private void RebuildGaragePreviewVehicle()
@@ -3089,22 +2700,6 @@ public sealed partial class ShadowRunPrototype : MonoBehaviour
 	}
 
 	private void _003CAddCasePreviewDragEvents_003Eb__401_0(BaseEventData data)
-	{
-	}
-
-	private void _003CMakeSettingsScreen_003Eb__477_0()
-	{
-	}
-
-	private void _003CMakeSettingsScreen_003Eb__477_1()
-	{
-	}
-
-	private void _003CBuildProfileAuthForm_003Eb__482_0()
-	{
-	}
-
-	private void _003CBuildProfileAuthForm_003Eb__482_1()
 	{
 	}
 
