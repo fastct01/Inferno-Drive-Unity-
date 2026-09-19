@@ -74,6 +74,8 @@ public class SmokeTests
 	// listener exists, and reloading SampleScene mid-test wedges it the same way — the "no audio
 	// listeners" warning is the price. The first-launch authorization screen is closed the way a
 	// completed sign-in would (its private Close) — no guest account is created on the backend.
+	private static bool rebooted;
+
 	private static IEnumerator Boot()
 	{
 		LogAssert.ignoreFailingMessages = true;
@@ -82,6 +84,23 @@ public class SmokeTests
 		yield return null;
 #endif
 		yield return null;
+		// AutoStart built the game before the test run began (outside code coverage): the first test
+		// tears that instance down (OnDestroy → the patch Dispose paths) and builds it again the way
+		// AutoStart does, so Awake / MakeUI / MakeRoad / MakeCity / BuildWeatherPresets are recorded.
+		if (!rebooted && Game() != null)
+		{
+			// the game never tears its world down, so everything it built (canvas, cameras, road, city,
+			// event system) is a root object of the active scene; the services live in DontDestroyOnLoad
+			foreach (var root in UnityEngine.SceneManagement.SceneManager.GetActiveScene().GetRootGameObjects())
+			{
+				string n = root.name.ToLowerInvariant();
+				if (n.Contains("test") || n.Contains("runner") || n.Contains("coverage")) continue;   // the test framework's own objects
+				UnityEngine.Object.Destroy(root);
+			}
+			yield return null;
+			yield return null;
+		}
+		rebooted = true;
 		if (Game() == null) new GameObject("Shadow Run Prototype").AddComponent(GameType);
 		yield return Seconds(2f);
 		Type authType = Type.GetType("ShadowRun.Services.FirstLaunchAuthScreen, Assembly-CSharp");

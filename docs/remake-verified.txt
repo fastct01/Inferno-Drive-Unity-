@@ -90,6 +90,15 @@ Tutorial (10-tutorial.png)
       FINGER", page dots, DOUBLE TAP ANYWHERE TO SKIP, hand cursor; gameplay scale 0.22 holds the car
       (FirstRunTutorialGameplayScale).
 
+Coverage
+  491 of 657 ShadowRunPrototype methods execute during the four play-mode tests (docs/remake-progress.md,
+  tools/remake/coverage_status.py). The 166 that do not are: the pre-redesign lobby/settings builders the
+  InfernoLobby/InfernoSettings patches replaced (MakeHomeHeroCard, MakeSettingsSlider/Stepper/Toggle,
+  MakeGoalRow, MakeWeatherPill…), weather transitions and sky helpers that need the Dynamic Weather
+  System / FastSky / Pulsar packages, pointer-drag handlers (garage/case preview and card drags), the
+  traffic-light / stopped-pass-lane AI (TrafficLightCount 0), high-beam yield lanes, app lifecycle
+  (OnApplicationPause/Focus/Quit) and the native sign-in/delete callbacks.
+
 Rules (EditMode, tools/remake/test.sh)
   [x] 20 tests: driving rules (check_driving_rules.cpp port), goal rewards, map prices, paint cycle,
       prize roll, garage editions, style prices.
