@@ -87,9 +87,23 @@ public static class InfernoBuild
 		if (report.summary.result != UnityEditor.Build.Reporting.BuildResult.Succeeded) EditorApplication.Exit(1);
 	}
 
+	// EDM4U (RevenueCat / LevelPlay dependency XMLs) patches mainTemplate.gradle only when its resolver
+	// runs; in batch mode that is an explicit call (GvhProjectSettings.xml enables template patching so
+	// Unity's own Gradle + JDK fetch the artifacts instead of EDM4U's bundled Gradle 5.1.1).
+	private static void ResolveAndroidDependencies()
+	{
+		Type resolver = AppDomain.CurrentDomain.GetAssemblies().Select(a => a.GetType("GooglePlayServices.PlayServicesResolver")).FirstOrDefault(t => t != null);
+		if (resolver == null) { Debug.LogWarning("[InfernoBuild] EDM4U resolver not found"); return; }
+		var method = resolver.GetMethod("MenuForceResolve", System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic);
+		if (method == null) { Debug.LogWarning("[InfernoBuild] PlayServicesResolver.MenuForceResolve not found"); return; }
+		method.Invoke(null, null);
+		Debug.Log("[InfernoBuild] Android dependencies resolved");
+	}
+
 	public static void BuildAndroid()
 	{
 		ConfigurePlayerSettings();
+		ResolveAndroidDependencies();
 		string output = Path.GetFullPath("Builds/Android/InfernoDrive.apk");
 		Directory.CreateDirectory(Path.GetDirectoryName(output));
 		var report = BuildPipeline.BuildPlayer(new BuildPlayerOptions

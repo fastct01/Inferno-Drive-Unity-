@@ -119,3 +119,11 @@ Cartoon FX Remaster (`Cartoon FX/Remaster/*`, 193 materials), FastSky (`GapperGa
 Star (`Shader Graphs/SkyBox_SH|SunCore|HaloPulse`), MonoLimboStudio (`Shader Graphs/VolumLight[ Triplanir]`).
 The shipped build never contained `ShadowRun/Sky360NoFog`, `ShadowRun/Sky360CloudLayer` or
 `UI/IconAlphaTint`: the code's `Shader.Find` fallbacks (URP/Unlit, no tint material) are what shipped.
+
+## Android export (the shipped build was iOS-only)
+`UnityEngine.iOS.Device.deferSystemGesturesMode` (LockPortraitOrientation) is compiled only for iOS. EDM4U's
+own Gradle 5.1.1 cannot run on the editor's JDK 17 (Groovy `Java7` NoClassDefFoundError), so the Android
+resolver is switched to template patching (`ProjectSettings/GvhProjectSettings.xml`, Unity's Gradle templates
+copied to `Assets/Plugins/Android/`) and `InfernoBuild.BuildAndroid` forces `PlayServicesResolver.MenuForceResolve`
+before `BuildPlayer`. The UnityAds Android adapter version (5.11.0 / unity-ads 4.19.0) is LevelPlay 9.5.0's
+pairing of the shipped iOS pod 5.9.0.0.

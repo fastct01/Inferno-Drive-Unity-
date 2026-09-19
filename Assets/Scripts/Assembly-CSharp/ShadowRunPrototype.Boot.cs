@@ -2,7 +2,9 @@ using System;
 using System.Globalization;
 using UnityEngine;
 using UnityEngine.InputSystem;
+#if UNITY_IOS
 using UnityEngine.iOS;
+#endif
 using UnityEngine.Rendering.Universal;
 using UnityEngine.UI;
 using ShadowRun.Services;
@@ -61,7 +63,9 @@ public sealed partial class ShadowRunPrototype
 		Screen.autorotateToLandscapeLeft = false;
 		Screen.autorotateToLandscapeRight = false;
 		Screen.orientation = ScreenOrientation.Portrait;
-		Device.deferSystemGesturesMode = SystemGestureDeferMode.LeftEdge | SystemGestureDeferMode.RightEdge;
+#if UNITY_IOS
+		Device.deferSystemGesturesMode = SystemGestureDeferMode.LeftEdge | SystemGestureDeferMode.RightEdge;   // UnityEngine.iOS only exists for the iOS player (the shipped build was iOS-only)
+#endif
 	}
 
 	private void Update()
