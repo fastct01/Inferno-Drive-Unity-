@@ -216,7 +216,7 @@ public sealed partial class ShadowRunPrototype
 			return s_glassFrame;
 		}
 
-		private static Sprite NeonFrameSprite(ShadowRunPrototype game)
+		public static Sprite NeonFrameSprite(ShadowRunPrototype game)
 		{
 			if (s_neonFrame == null) s_neonFrame = SlicedSprite(FramePixel);
 			return s_neonFrame;
@@ -688,7 +688,7 @@ public sealed partial class ShadowRunPrototype
 			button.onClick.AddListener(() => Click(game, index));
 		}
 
-		private static Button ButtonOn(Image image)
+		public static Button ButtonOn(Image image)
 		{
 			image.raycastTarget = true;
 			Button button = image.gameObject.AddComponent<Button>();

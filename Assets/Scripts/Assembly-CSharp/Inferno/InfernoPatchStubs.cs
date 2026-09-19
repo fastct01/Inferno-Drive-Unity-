@@ -39,17 +39,6 @@ public sealed partial class ShadowRunPrototype
 		public static int NextPaintStyle() { return 0; }
 	}
 
-	private static partial class InfernoSettings
-	{
-		public static void Tick(ShadowRunPrototype game) { }
-		public static void Build(ShadowRunPrototype game) { }
-		public static void Refresh(ShadowRunPrototype game) { }
-		public static void Relayout(ShadowRunPrototype game) { }
-		public static void StyleAccount(ShadowRunPrototype game, Image panel) { }
-		public static void CenterHeader(RectTransform root) { }
-		public static float ListenerVolume(ShadowRunPrototype game) { return game.gameSoundEnabled ? 1f : 0f; }
-	}
-
 	// extern "C" bridge of InfernoGarage.inc (InfernoGarage_IsUnlocked / InfernoGarage_SetUnlocked), used by
 	// SupabaseGameManager. IsUnlocked: -1 = not an InfernoGarage vehicle, else 0/1. SetUnlocked: true = handled.
 	public static int InfernoGarageIsUnlocked(string vehicleId) { return InfernoGarage.IsUnlocked(vehicleId); }
