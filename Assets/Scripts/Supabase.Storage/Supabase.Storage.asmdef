@@ -1,7 +1,0 @@
-{
-  "name": "Supabase.Storage",
-  "references": [
-    "Supabase.Core"
-  ],
-  "allowUnsafeCode": true
-}

@@ -70,3 +70,13 @@ differences, all behaviour-neutral:
   `ShadowRunPrototype.InfernoGarageIsUnlocked/SetUnlocked` in `Inferno/InfernoGarageBridge.cs`.
 - Unity "alive" checks (`Object_op_Inequality(x, null)`) map to the overloaded `!= null`; where the C++ first
   tested the raw pointer, C# uses `ReferenceEquals` for that test (InfernoStyle.Wave).
+
+## Third-party packages installed vs. still stubbed
+Stage 5 installed the exact shipped versions of the Supabase stack (NuGet DLLs in `Assets/Plugins/Supabase`),
+RevenueCat purchases-unity 9.1.0 (GitHub release) and Unity LevelPlay 9.5.0 (UPM) — versions read from the
+metadata assembly table, `Podfile.lock` and `PurchasesUnityHelper.m`; see `docs/third-party-imports.md`.
+Cartoon FX Remaster and Dynamic Weather System are Asset Store packages that cannot be downloaded here, so
+their decompiled skeletons remain (with the ripped script GUIDs) until they are imported by hand; the doc
+gives the relink procedure (`tools/remake/relink_stub_guids.py`). The Android UnityAds adapter version
+(5.11.0 / unity-ads 4.19.0) is the LevelPlay 9.5.0 pairing of the shipped iOS pod 5.9.0.0 — the shipped
+build was iOS-only, so no Android adapter version is recorded anywhere.
