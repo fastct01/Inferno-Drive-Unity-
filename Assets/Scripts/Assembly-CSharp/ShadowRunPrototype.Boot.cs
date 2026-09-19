@@ -353,7 +353,7 @@ public sealed partial class ShadowRunPrototype
 		ResetDailyGoalRunState();
 		playerX = 0f;
 		velocityX = 0f;
-		speed = 0f; /* [InfernoLobby patch] */
+		speed = 0f; /* [InfernoLobby patch] original: 15f */
 		steerInput = 0f;
 		brakePressure = 0f;
 		brakeRecoveryActive = false;

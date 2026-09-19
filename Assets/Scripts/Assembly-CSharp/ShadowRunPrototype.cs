@@ -2272,11 +2272,6 @@ public sealed partial class ShadowRunPrototype : MonoBehaviour
 		return 0f;
 	}
 
-	private bool IsHudActionPoint(Vector2 screenPoint)
-	{
-		return false;
-	}
-
 	private void MakeGarageScreen(Transform parent)
 	{
 	}
@@ -2495,90 +2490,6 @@ public sealed partial class ShadowRunPrototype : MonoBehaviour
 
 	private void SetGarageVehicleButtonVisual(Button button, Text label, bool selected)
 	{
-	}
-
-	private void MakeUI()
-	{
-	}
-
-	private void MakeGameplayTouchControls(Transform parent)
-	{
-	}
-
-	private void MakeGameplayTouchZone(Transform parent, string name, Vector2 anchorMin, Vector2 anchorMax, HashSet<int> activePointers, Action changed)
-	{
-	}
-
-	private void MakeSpeedometer(Transform parent)
-	{
-	}
-
-	private Sprite CreateSpeedometerNeedleSprite()
-	{
-		return null;
-	}
-
-	private Image MakeBar(Transform parent, Vector2 pos, Color color)
-	{
-		return null;
-	}
-
-	private void MakeHudPauseButton(Transform parent)
-	{
-	}
-
-	private void MakeHudBrakeButton(Transform parent)
-	{
-	}
-
-	private void ReleaseBrakePointer(BaseEventData data)
-	{
-	}
-
-	private void MakeHudHighBeamButton(Transform parent)
-	{
-	}
-
-	private Button MakeHudActionButton(Transform parent, string label, Vector2 pos, Vector2 size, Color accent)
-	{
-		return null;
-	}
-
-	private void MakeHudActionIcon(Transform parent, string label, Vector2 size, Color accent)
-	{
-	}
-
-	private void MakeOverlay(Transform parent)
-	{
-	}
-
-	private void MakeGameOverScreen(Transform parent)
-	{
-	}
-
-	private void MakePauseActions(Transform parent)
-	{
-	}
-
-	private Button MakePauseArtButton(Transform parent, string objectName, string resource, Vector2 position, Vector2 size)
-	{
-		return null;
-	}
-
-	private Button MakeSoundToggleButton(Transform parent, string objectName, TextAnchor anchor, Vector2 position, Vector2 size, out Image icon)
-	{
-		icon = null;
-		return null;
-	}
-
-	private Text MakeGameOverValue(Transform parent, Vector2 position)
-	{
-		return null;
-	}
-
-	private Button MakeGameOverArtButton(Transform parent, string objectName, string resource, Vector2 position, Vector2 size)
-	{
-		return null;
 	}
 
 	private void MakeHomeMenu(Transform parent)
@@ -2895,17 +2806,7 @@ public sealed partial class ShadowRunPrototype : MonoBehaviour
 	{
 	}
 
-	private Image MakeReferenceArtImage(Transform parent, string objectName, string resource, Vector2 pos, Vector2 size, TextAnchor anchor)
-	{
-		return null;
-	}
-
 	private Sprite LoadTightMenuArtSprite(string resource)
-	{
-		return null;
-	}
-
-	private Button MakeReferenceArtButton(Transform parent, string objectName, string resource, Vector2 pos, Vector2 size, TextAnchor anchor)
 	{
 		return null;
 	}
@@ -2986,75 +2887,6 @@ public sealed partial class ShadowRunPrototype : MonoBehaviour
 	private float GetMenuViewportWidth()
 	{
 		return 0f;
-	}
-
-	private Image MakeGlassPanel(Transform parent, string name, Vector2 pos, Vector2 size, TextAnchor anchor, Color fill, Color stroke)
-	{
-		return null;
-	}
-
-	private Image MakeThinGlassPanel(Transform parent, string name, Vector2 pos, Vector2 size, TextAnchor anchor)
-	{
-		return null;
-	}
-
-	private Image MakeThinGlassPanel(Transform parent, string name, Vector2 pos, Vector2 size, TextAnchor anchor, Color fill)
-	{
-		return null;
-	}
-
-	private Image MakeThinGlassPanel(Transform parent, string name, Vector2 pos, Vector2 size, TextAnchor anchor, Color fill, Color borderColor)
-	{
-		return null;
-	}
-
-	private Image MakeThinGlassPanel(Transform parent, string name, Vector2 pos, Vector2 size, TextAnchor anchor, Color fill, Color borderColor, float borderThickness)
-	{
-		return null;
-	}
-
-	private Button MakeIconButton(Transform parent, string name, Vector2 pos, Vector2 size, TextAnchor anchor, string iconLabel, int iconSize)
-	{
-		return null;
-	}
-
-	private RawImage MakeResourceRawImage(Transform parent, string name, string resource, Vector2 pos, Vector2 size, TextAnchor anchor)
-	{
-		return null;
-	}
-
-	private Image MakeResourceImage(Transform parent, string name, string resource, Vector2 pos, Vector2 size, TextAnchor anchor, bool preserveAspect)
-	{
-		return null;
-	}
-
-	private Button MakeImageButton(Transform parent, string label, string resource, Vector2 pos, Vector2 size, TextAnchor anchor)
-	{
-		return null;
-	}
-
-	private void ApplyRawCover(RawImage image, float targetAspect)
-	{
-	}
-
-	private void FitRawImageAspect(RawImage image, Vector2 maxSize)
-	{
-	}
-
-	private void FitImageAspect(Image image, Vector2 maxSize)
-	{
-	}
-
-	private void ApplyObjectFitCover(RectTransform img, RectTransform viewport, Sprite sprite)
-	{
-	}
-
-	private void MakeProgressBar(Transform parent, Vector2 pos, Vector2 size, float progress, Color fillColor)
-	{
-	}
-
-	private void MakeFigmaProgressBar(Transform parent, Vector2 pos, Vector2 size, float progress)
-	{
 	}
 
 	private void LayoutHomeMenu()
@@ -3207,165 +3039,9 @@ public sealed partial class ShadowRunPrototype : MonoBehaviour
 	{
 	}
 
-	private void MakeMenuBackdrop(Transform parent)
-	{
-	}
-
-	private Sprite LoadResourceSprite(string path)
-	{
-		return null;
-	}
-
-	private Image MakeUiBlock(Transform parent, string name, Vector2 pos, Vector2 size, TextAnchor anchor, Color color)
-	{
-		return null;
-	}
-
-	private Button MakeButton(Transform parent, string label, Vector2 pos, Vector2 size, TextAnchor anchor, Color bg, Color fg)
-	{
-		return null;
-	}
-
 	private Button MakeCaseActionButton(Transform parent, string label, Vector2 pos, Vector2 size, TextAnchor anchor, bool filled)
 	{
 		return null;
-	}
-
-	private Button MakeGlassButton(Transform parent, string label, Vector2 pos, Vector2 size, bool primary)
-	{
-		return null;
-	}
-
-	private Texture2D LoadMenuButtonTexture(string label)
-	{
-		return null;
-	}
-
-	private void AddButtonIcon(Transform parent, string label, Vector2 size, bool primary, Color red)
-	{
-	}
-
-	private void MakeSpacedWord(Transform parent, string word, Vector2 pos, int size, float spacing, Color color, bool glow)
-	{
-	}
-
-	private string AddButtonSpacing(string value)
-	{
-		return null;
-	}
-
-	private Sprite MakeFrostSprite(int width, int height, int seed)
-	{
-		return null;
-	}
-
-	private Sprite MakeCloudSprite(int width, int height, int seed)
-	{
-		return null;
-	}
-
-	private Sprite MakeAdvancedCloudSprite(int width, int height, int seed)
-	{
-		return null;
-	}
-
-	private Sprite MakeCircleSprite(int size)
-	{
-		return null;
-	}
-
-	private Sprite MakeRadialGlowSprite(int size)
-	{
-		return null;
-	}
-
-	private Sprite MakeRoundedRectSprite(int width, int height, int radius, float strength)
-	{
-		return null;
-	}
-
-	private Sprite MakeCaseActionButtonSprite(int width, int height, float radius, bool primary)
-	{
-		return null;
-	}
-
-	private Sprite MakeGemCounterSprite(int width, int height, float radius)
-	{
-		return null;
-	}
-
-	private Sprite MakeGradientBarSprite(int width, int height, Color left, Color right)
-	{
-		return null;
-	}
-
-	private Sprite MakeCaseRarityStripSprite(int width, int height)
-	{
-		return null;
-	}
-
-	private Sprite MakeCaseRouletteRailSprite(int width, int height)
-	{
-		return null;
-	}
-
-	private Sprite MakeHorizontalFadeSprite(int width, int height, bool leftToRight)
-	{
-		return null;
-	}
-
-	private Sprite MakeCaseScanlineSprite(int width, int height)
-	{
-		return null;
-	}
-
-	private Sprite MakeVerticalLineSprite(int width, int height, Color top, Color bottom)
-	{
-		return null;
-	}
-
-	private Sprite MakeTriangleSprite(int width, int height, bool down)
-	{
-		return null;
-	}
-
-	private Sprite MakeVerticalFadeSprite(int width, int height)
-	{
-		return null;
-	}
-
-	private Sprite MakeReferenceTabFrameSprite(int width, int height, float radius)
-	{
-		return null;
-	}
-
-	private Sprite MakeReferenceActiveTabSprite(int width, int height, float radius)
-	{
-		return null;
-	}
-
-	private float RoundedBoxDistance(Vector2 point, Vector2 halfSize, float radius)
-	{
-		return 0f;
-	}
-
-	private void ApplyAnchor(RectTransform rect, TextAnchor anchor)
-	{
-	}
-
-	private Text MakeText(Transform parent, string content, int size, TextAnchor anchor, Vector2 pos)
-	{
-		return null;
-	}
-
-	private Font GetUiFont(string content)
-	{
-		return null;
-	}
-
-	private bool UsesMenuFontGlyphs(string content)
-	{
-		return false;
 	}
 
 	private void UpdateMenuAnimation(float dt)
@@ -3373,10 +3049,6 @@ public sealed partial class ShadowRunPrototype : MonoBehaviour
 	}
 
 	private void UpdateHomeDriveShine()
-	{
-	}
-
-	private void ApplySafeArea()
 	{
 	}
 
@@ -3405,18 +3077,6 @@ public sealed partial class ShadowRunPrototype : MonoBehaviour
 	}
 
 	private void _003CAddGaragePreviewDragEvents_003Eb__269_3(BaseEventData _)
-	{
-	}
-
-	private void _003CMakeGameplayTouchControls_003Eb__339_0()
-	{
-	}
-
-	private void _003CMakeHudBrakeButton_003Eb__345_0(BaseEventData data)
-	{
-	}
-
-	private void _003CMakeHudHighBeamButton_003Eb__347_0(BaseEventData _)
 	{
 	}
 
