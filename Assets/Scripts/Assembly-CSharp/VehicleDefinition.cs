@@ -44,11 +44,11 @@ public sealed class VehicleDefinition
 
 	public bool HideOversizedPlaneRenderers;
 
-	public float ExhaustXExtentFactor;
+	public float ExhaustXExtentFactor = 0.46f;
 
-	public float ExhaustYHeightFactor;
+	public float ExhaustYHeightFactor = 0.055f;
 
-	public float ExhaustRearOffset;
+	public float ExhaustRearOffset = 0.15f;
 
 	public string ExhaustReferenceName;
 
@@ -62,7 +62,7 @@ public sealed class VehicleDefinition
 
 	public float ExhaustPlayerZ;
 
-	public float ExhaustScaleMultiplier;
+	public float ExhaustScaleMultiplier = 1f;
 
 	public bool CompactExhaustEffect;
 
@@ -82,11 +82,11 @@ public sealed class VehicleDefinition
 
 	public bool UsesWheelSmoke;
 
-	public float ArcadeAcceleration;
+	public float ArcadeAcceleration = 1f;
 
-	public float ArcadeSteering;
+	public float ArcadeSteering = 1f;
 
-	public float ArcadeGrip;
+	public float ArcadeGrip = 1f;
 
-	public float ArcadeDrift;
+	public float ArcadeDrift = 1f;
 }

@@ -205,7 +205,7 @@ public sealed partial class ShadowRunPrototype : MonoBehaviour
 	{
 		public GameObject Root;
 
-		public readonly List<TrafficWreckPiece> Pieces;
+		public readonly List<TrafficWreckPiece> Pieces = new List<TrafficWreckPiece>(7);
 
 		public MaterialPropertyBlock PaintBlock;
 
@@ -224,7 +224,7 @@ public sealed partial class ShadowRunPrototype : MonoBehaviour
 
 		public Transform DebrisRoot;
 
-		public readonly List<RampDebrisPiece> Debris;
+		public readonly List<RampDebrisPiece> Debris = new List<RampDebrisPiece>(8);
 
 		public int Lane;
 
@@ -309,12 +309,18 @@ public sealed partial class ShadowRunPrototype : MonoBehaviour
 
 		public static CasePrize Diamond(int amount)
 		{
-			return default;
+			CasePrize prize = default(CasePrize);
+			prize.Kind = CasePrizeKind.Diamonds;
+			prize.Diamonds = amount;
+			return prize;
 		}
 
 		public static CasePrize Vehicle(string vehicleId)
 		{
-			return default;
+			CasePrize prize = default(CasePrize);
+			prize.Kind = CasePrizeKind.Vehicle;
+			prize.VehicleId = vehicleId;
+			return prize;
 		}
 	}
 
@@ -2174,7 +2180,6 @@ public sealed partial class ShadowRunPrototype : MonoBehaviour
 
 	private float FirstRunTutorialGameplayScale => 0f;
 
-	private VehicleDefinition ActiveVehicle => null;
 
 	private void InitializeCloudProfile()
 	{
@@ -2339,11 +2344,6 @@ public sealed partial class ShadowRunPrototype : MonoBehaviour
 	{
 	}
 
-	private bool IsGameplayAccelerationHeld()
-	{
-		return false;
-	}
-
 	private float ReadFirstRunTutorialAccelerationDrag()
 	{
 		return 0f;
@@ -2352,18 +2352,6 @@ public sealed partial class ShadowRunPrototype : MonoBehaviour
 	private bool IsHudActionPoint(Vector2 screenPoint)
 	{
 		return false;
-	}
-
-	private void UpdateHud()
-	{
-	}
-
-	private void UpdateSpeedometerHud(bool refreshText)
-	{
-	}
-
-	private void UpdatePlayer(float dt)
-	{
 	}
 
 	private void PrewarmRampPool()
@@ -2420,10 +2408,6 @@ public sealed partial class ShadowRunPrototype : MonoBehaviour
 	{
 	}
 
-	private void UpdatePlayerAirborne(float dt)
-	{
-	}
-
 	private void BreakRampFromSide(RampObstacle ramp, float dx)
 	{
 	}
@@ -2454,10 +2438,6 @@ public sealed partial class ShadowRunPrototype : MonoBehaviour
 	private int FindRampSafeTrafficLane(int preferredLane, float z)
 	{
 		return 0;
-	}
-
-	private void UpdateSpawns(float dt)
-	{
 	}
 
 	private bool IsTrafficLandingCrush(float dx, float dz)
@@ -2587,161 +2567,9 @@ public sealed partial class ShadowRunPrototype : MonoBehaviour
 	{
 	}
 
-	private void SpawnTrafficCar()
-	{
-	}
-
-	private int SpawnTrafficPattern()
-	{
-		return 0;
-	}
-
-	private int PickLateRunTrafficPattern()
-	{
-		return 0;
-	}
-
-	private void SpawnTrafficPatternCar(ref int available, ref int spawned, int lane, float z, float pressure, float forcedSpeed = -1f)
-	{
-	}
-
-	private void SeedInitialTraffic()
-	{
-	}
-
-	private void SpawnTrafficCarAt(int lane, float z, float pressure, TrafficDriverStyle? forcedStyle = null, float forcedSpeed = -1f)
-	{
-	}
-
-	private void ApplyTrafficDriverAppearance(GameObject trafficCar, TrafficDriverStyle style)
-	{
-	}
-
-	private TrafficDriverStyle ChooseTrafficDriverStyle(float pressure)
-	{
-		return default;
-	}
-
-	private void GetTrafficDriverProfile(TrafficDriverStyle style, out float aggression, out float patience, out float reaction, out float speedBias, out float laneChangeBias, out float bravery, out float awareness, out float courtesy, out float riskTolerance, out float safeGap)
-	{
-		aggression = default;
-		patience = default;
-		reaction = default;
-		speedBias = default;
-		laneChangeBias = default;
-		bravery = default;
-		awareness = default;
-		courtesy = default;
-		riskTolerance = default;
-		safeGap = default;
-	}
-
-	private int ChooseTrafficLane()
-	{
-		return 0;
-	}
-
-	private void UpdateTrafficAi(ref Pickup item, float dt)
-	{
-	}
-
-	private void QueueTrafficLaneChange(ref Pickup item, int targetLane, float currentX)
-	{
-	}
-
-	private void SetTrafficTurnSignalToward(ref Pickup item, float targetX, float currentX)
-	{
-	}
-
-	private void RespawnTrafficBehind(ref Pickup item, float pressure, bool passStoppedPlayer = false)
-	{
-	}
-
-	private int ChooseStoppedTrafficPassLane()
-	{
-		return 0;
-	}
-
-	private void TryTriggerTrafficChainReaction(ref Pickup front, int lane, Vector3 frontPos, float dt)
-	{
-	}
-
-	private int BestTrafficLaneForSituation(Pickup item, int current, float z, Transform self, bool avoidPlayer, float currentLeadGap)
-	{
-		return 0;
-	}
-
 	private int FindSafeHighBeamYieldLane(Pickup item, int current)
 	{
 		return 0;
-	}
-
-	private bool IsHighBeamYieldLaneSafe(int lane, float z, Transform self, Pickup driver)
-	{
-		return false;
-	}
-
-	private void ResolveTrafficVehicleSeparation(ref Pickup item, ref Vector3 pos)
-	{
-	}
-
-	private float PickTrafficSpawnZ(float minZ, float maxZ)
-	{
-		return 0f;
-	}
-
-	private float ScoreTrafficLane(Pickup item, int lane, int current, float z, Transform self, bool avoidPlayer, float currentLeadGap)
-	{
-		return 0f;
-	}
-
-	private bool TryGetLeadTraffic(int lane, float z, Transform self, out float gap, out float leadSpeed)
-	{
-		gap = default;
-		leadSpeed = default;
-		return false;
-	}
-
-	private bool TryGetRearTraffic(int lane, float z, Transform self, out float gap, out float rearSpeed)
-	{
-		gap = default;
-		rearSpeed = default;
-		return false;
-	}
-
-	private int ClosestLane(float x)
-	{
-		return 0;
-	}
-
-	private bool IsTrafficOccupyingLane(Pickup other, int lane)
-	{
-		return false;
-	}
-
-	private bool IsTrafficLaneSafe(int lane, float z, Transform self)
-	{
-		return false;
-	}
-
-	private bool IsTrafficLaneSafe(int lane, float z, Transform self, Pickup driver)
-	{
-		return false;
-	}
-
-	private bool IsTrafficLaneSafe(int lane, float z, Transform self, float risk)
-	{
-		return false;
-	}
-
-	private bool IsTrafficOnlyLaneSafe(int lane, float z, Transform self, float risk)
-	{
-		return false;
-	}
-
-	private bool IsPlayerLaneReserved(int lane, float z, float risk)
-	{
-		return false;
 	}
 
 	private void EnsureVehicleSmoke()
@@ -2769,30 +2597,6 @@ public sealed partial class ShadowRunPrototype : MonoBehaviour
 	}
 
 	private void ClearPlayerExhaustFire()
-	{
-	}
-
-	private void UpdateEvents(float dt)
-	{
-	}
-
-	private void UpdateSceneLighting()
-	{
-	}
-
-	private void AnimateSanta()
-	{
-	}
-
-	private void TriggerSanta()
-	{
-	}
-
-	private void ResetCameraImmediate()
-	{
-	}
-
-	private void UpdateCamera(float dt)
 	{
 	}
 
@@ -2984,10 +2788,6 @@ public sealed partial class ShadowRunPrototype : MonoBehaviour
 	{
 	}
 
-	private void SetLayerRecursively(GameObject go, int layer)
-	{
-	}
-
 	private void UpdateGaragePreview(float dt)
 	{
 	}
@@ -3019,44 +2819,6 @@ public sealed partial class ShadowRunPrototype : MonoBehaviour
 	private void SetGarageVehicleButtonVisual(Button button, Text label, bool selected)
 	{
 	}
-
-	[PreserveSig]
-	private static extern void ShadowRun_PlayImpactHaptic(int strength);
-
-	private void UpdateBrakeHaptic(bool braking)
-	{
-	}
-
-	private void PlayCollisionHaptic(bool sideImpact)
-	{
-	}
-
-	private void PlayImpactHaptic(int strength)
-	{
-	}
-
-	private float ReadTouchSteering()
-	{
-		return 0f;
-	}
-
-	private float ReadAccelerationDragSteering()
-	{
-		return 0f;
-	}
-
-	private void ResetGameplayTouches()
-	{
-	}
-
-	[PreserveSig]
-	private static extern void ShadowRun_ShowAccountConfirmation(int action, string unityGameObjectName);
-
-	[PreserveSig]
-	private static extern void ShadowRun_ConfigureGameAudioSession();
-
-	[PreserveSig]
-	private static extern int ShadowRun_IsOtherAudioPlaying();
 
 	private void MakeUI()
 	{
@@ -3988,16 +3750,6 @@ public sealed partial class ShadowRunPrototype : MonoBehaviour
 	{
 	}
 
-	private VehicleDefinition CreateVehicleDefinition(string vehicleId)
-	{
-		return null;
-	}
-
-	private VehicleDefinition CreateDefaultSportCarDefinition()
-	{
-		return null;
-	}
-
 	private void InitializeVehicleEngineAudio()
 	{
 	}
@@ -4024,71 +3776,6 @@ public sealed partial class ShadowRunPrototype : MonoBehaviour
 	}
 
 	private void SilenceVehicleEngineAudio(bool stopStartup)
-	{
-	}
-
-	private VehicleDefinition CreateFlyingCarDefinition()
-	{
-		return null;
-	}
-
-	private VehicleDefinition CreateInfalModelDefinition()
-	{
-		return null;
-	}
-
-	private VehicleDefinition CreateCar3Definition()
-	{
-		return null;
-	}
-
-	private GameObject LoadActiveVehiclePrefab()
-	{
-		return null;
-	}
-
-	private GameObject CreateConfiguredVehicleModel(Transform parent, string modelName)
-	{
-		return null;
-	}
-
-	private GameObject CreateConfiguredVehicleModel(Transform parent, string modelName, VehicleDefinition definition)
-	{
-		return null;
-	}
-
-	private bool VehicleNodeNameMatches(string nodeName, string[] configuredNames)
-	{
-		return false;
-	}
-
-	private bool SetActiveVehicleDefinition(VehicleDefinition definition)
-	{
-		return false;
-	}
-
-	private void SelectVehicle(string vehicleId)
-	{
-	}
-
-	private bool RebuildPlayerVehicleModel()
-	{
-		return false;
-	}
-
-	private void SetPlayerHoverSuppressedForJump(bool suppressed)
-	{
-	}
-
-	private void ConfigureVehicleHover(GameObject model, bool garagePreview)
-	{
-	}
-
-	private void ConfigureVehicleHover(GameObject model, bool garagePreview, VehicleDefinition definition)
-	{
-	}
-
-	private void RefreshVehicleEffectAnchors()
 	{
 	}
 
@@ -4468,202 +4155,6 @@ public sealed partial class ShadowRunPrototype : MonoBehaviour
 	}
 
 	private void ReapplyDynamicWeatherImmediate()
-	{
-	}
-
-	private void MakeCar()
-	{
-	}
-
-	private void MakeHighBeamLight()
-	{
-	}
-
-	private Transform CreateHeadlightEmitter(string name, float x)
-	{
-		return null;
-	}
-
-	private float CurrentHighBeamOriginHeight()
-	{
-		return 0f;
-	}
-
-	private float CurrentHighBeamFrontInset()
-	{
-		return 0f;
-	}
-
-	private float CurrentHighBeamEmitterWidth()
-	{
-		return 0f;
-	}
-
-	private float CurrentHighBeamEmitterHeightOffset()
-	{
-		return 0f;
-	}
-
-	private float CurrentHighBeamLeftShaftLocalZ()
-	{
-		return 0f;
-	}
-
-	private float CurrentHighBeamRightShaftLocalZ()
-	{
-		return 0f;
-	}
-
-	private void MakeHighBeamVisual()
-	{
-	}
-
-	private GameObject CreateHighBeamPrefabInstance(Transform parent, string name, float shaftLocalZ)
-	{
-		return null;
-	}
-
-	private void SetHighBeamShaftLocalZ(GameObject instance, float localZ)
-	{
-	}
-
-	private void ConfigureHighBeamPrefab(GameObject instance)
-	{
-	}
-
-	private void PrewarmTrafficPool()
-	{
-	}
-
-	private GameObject LoadTrafficVehiclePrefab()
-	{
-		return null;
-	}
-
-	private Quaternion VehicleModelBaseRotation()
-	{
-		return default;
-	}
-
-	private Quaternion PlayerVehicleModelBaseRotation()
-	{
-		return default;
-	}
-
-	private Quaternion PlayerVehicleVisualRotation(float yawOffset, float rollOffset)
-	{
-		return default;
-	}
-
-	private float CurrentPlayerVehicleRoadYOffset()
-	{
-		return 0f;
-	}
-
-	private GameObject GetTrafficCarFromPool()
-	{
-		return null;
-	}
-
-	private void ReleaseTrafficCar(GameObject car)
-	{
-	}
-
-	private void PrewarmTrafficWreckPool()
-	{
-	}
-
-	private void AddTrafficWreckBodyPiece(TrafficWreck wreck, string name, Vector3 localPosition, Vector3 scale)
-	{
-	}
-
-	private void AddTrafficWreckWheel(TrafficWreck wreck, string name, Vector3 localPosition)
-	{
-	}
-
-	private void ReleaseTrafficWreck(TrafficWreck wreck)
-	{
-	}
-
-	private void PrepareImportedVehicleModel(GameObject model)
-	{
-	}
-
-	private void HideImportedVehicleRenderArtifacts(GameObject model)
-	{
-	}
-
-	private bool IsImportedVehicleGroundShadow(Renderer renderer, Transform modelRoot)
-	{
-		return false;
-	}
-
-	private bool ShouldHideImportedVehicleRenderer(Renderer renderer)
-	{
-		return false;
-	}
-
-	private bool IsNamedImportedVehiclePlaneArtifact(Renderer renderer)
-	{
-		return false;
-	}
-
-	private bool IsPlaneArtifactName(string objectName)
-	{
-		return false;
-	}
-
-	private void CachePlayerWheelMeshes(Transform model)
-	{
-	}
-
-	private void ClearPlayerWheelMeshCache()
-	{
-	}
-
-	private void CachePlayerWheelBaseRotations()
-	{
-	}
-
-	private void CachePlayerWheelSpinRate()
-	{
-	}
-
-	private void AttachDiscToNearestWheel(Transform disc)
-	{
-	}
-
-	private void SetPlayerWheelSpin(float degrees)
-	{
-	}
-
-	private void CachePlayerBrakeLights(Transform model)
-	{
-	}
-
-	private Material GetOrCreateP900BrakeLightMaterial()
-	{
-		return null;
-	}
-
-	private void ClearP900BrakeLightMaterial()
-	{
-	}
-
-	private bool IsPlayerBrakeLightName(string name)
-	{
-		return false;
-	}
-
-	private void SetPlayerBrakeLights(bool on)
-	{
-	}
-
-	private void PrepareTrafficVehicleModel(GameObject model)
-	{
-	}
-
-	private void FitImportedVehicleModel(Transform model, Transform localRoot, float targetWidth, float targetLength, float targetHeight, string[] rendererNameKeywords = null)
 	{
 	}
 
