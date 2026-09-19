@@ -1,0 +1,301 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!48 &4800000
+Shader:
+  serializedVersion: 4
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: Hidden/Universal Render Pipeline/StencilDeferred
+  m_ParsedForm:
+    m_PropInfo:
+      m_Props:
+      - m_Name: _StencilRef
+        m_Description: StencilRef
+        m_Attributes: []
+        m_Type: 2
+        m_Flags: 0
+        m_DefValue[0]: 0
+        m_DefValue[1]: 0
+        m_DefValue[2]: 0
+        m_DefValue[3]: 0
+        m_DefTexture:
+          m_DefaultName:
+          m_TexDim: 1
+      - m_Name: _StencilReadMask
+        m_Description: StencilReadMask
+        m_Attributes: []
+        m_Type: 2
+        m_Flags: 0
+        m_DefValue[0]: 0
+        m_DefValue[1]: 0
+        m_DefValue[2]: 0
+        m_DefValue[3]: 0
+        m_DefTexture:
+          m_DefaultName:
+          m_TexDim: 1
+      - m_Name: _StencilWriteMask
+        m_Description: StencilWriteMask
+        m_Attributes: []
+        m_Type: 2
+        m_Flags: 0
+        m_DefValue[0]: 0
+        m_DefValue[1]: 0
+        m_DefValue[2]: 0
+        m_DefValue[3]: 0
+        m_DefTexture:
+          m_DefaultName:
+          m_TexDim: 1
+      - m_Name: _LitPunctualStencilRef
+        m_Description: LitPunctualStencilWriteMask
+        m_Attributes: []
+        m_Type: 2
+        m_Flags: 0
+        m_DefValue[0]: 0
+        m_DefValue[1]: 0
+        m_DefValue[2]: 0
+        m_DefValue[3]: 0
+        m_DefTexture:
+          m_DefaultName:
+          m_TexDim: 1
+      - m_Name: _LitPunctualStencilReadMask
+        m_Description: LitPunctualStencilReadMask
+        m_Attributes: []
+        m_Type: 2
+        m_Flags: 0
+        m_DefValue[0]: 0
+        m_DefValue[1]: 0
+        m_DefValue[2]: 0
+        m_DefValue[3]: 0
+        m_DefTexture:
+          m_DefaultName:
+          m_TexDim: 1
+      - m_Name: _LitPunctualStencilWriteMask
+        m_Description: LitPunctualStencilWriteMask
+        m_Attributes: []
+        m_Type: 2
+        m_Flags: 0
+        m_DefValue[0]: 0
+        m_DefValue[1]: 0
+        m_DefValue[2]: 0
+        m_DefValue[3]: 0
+        m_DefTexture:
+          m_DefaultName:
+          m_TexDim: 1
+      - m_Name: _SimpleLitPunctualStencilRef
+        m_Description: SimpleLitPunctualStencilWriteMask
+        m_Attributes: []
+        m_Type: 2
+        m_Flags: 0
+        m_DefValue[0]: 0
+        m_DefValue[1]: 0
+        m_DefValue[2]: 0
+        m_DefValue[3]: 0
+        m_DefTexture:
+          m_DefaultName:
+          m_TexDim: 1
+      - m_Name: _SimpleLitPunctualStencilReadMask
+        m_Description: SimpleLitPunctualStencilReadMask
+        m_Attributes: []
+        m_Type: 2
+        m_Flags: 0
+        m_DefValue[0]: 0
+        m_DefValue[1]: 0
+        m_DefValue[2]: 0
+        m_DefValue[3]: 0
+        m_DefTexture:
+          m_DefaultName:
+          m_TexDim: 1
+      - m_Name: _SimpleLitPunctualStencilWriteMask
+        m_Description: SimpleLitPunctualStencilWriteMask
+        m_Attributes: []
+        m_Type: 2
+        m_Flags: 0
+        m_DefValue[0]: 0
+        m_DefValue[1]: 0
+        m_DefValue[2]: 0
+        m_DefValue[3]: 0
+        m_DefTexture:
+          m_DefaultName:
+          m_TexDim: 1
+      - m_Name: _LitDirStencilRef
+        m_Description: LitDirStencilRef
+        m_Attributes: []
+        m_Type: 2
+        m_Flags: 0
+        m_DefValue[0]: 0
+        m_DefValue[1]: 0
+        m_DefValue[2]: 0
+        m_DefValue[3]: 0
+        m_DefTexture:
+          m_DefaultName:
+          m_TexDim: 1
+      - m_Name: _LitDirStencilReadMask
+        m_Description: LitDirStencilReadMask
+        m_Attributes: []
+        m_Type: 2
+        m_Flags: 0
+        m_DefValue[0]: 0
+        m_DefValue[1]: 0
+        m_DefValue[2]: 0
+        m_DefValue[3]: 0
+        m_DefTexture:
+          m_DefaultName:
+          m_TexDim: 1
+      - m_Name: _LitDirStencilWriteMask
+        m_Description: LitDirStencilWriteMask
+        m_Attributes: []
+        m_Type: 2
+        m_Flags: 0
+        m_DefValue[0]: 0
+        m_DefValue[1]: 0
+        m_DefValue[2]: 0
+        m_DefValue[3]: 0
+        m_DefTexture:
+          m_DefaultName:
+          m_TexDim: 1
+      - m_Name: _SimpleLitDirStencilRef
+        m_Description: SimpleLitDirStencilRef
+        m_Attributes: []
+        m_Type: 2
+        m_Flags: 0
+        m_DefValue[0]: 0
+        m_DefValue[1]: 0
+        m_DefValue[2]: 0
+        m_DefValue[3]: 0
+        m_DefTexture:
+          m_DefaultName:
+          m_TexDim: 1
+      - m_Name: _SimpleLitDirStencilReadMask
+        m_Description: SimpleLitDirStencilReadMask
+        m_Attributes: []
+        m_Type: 2
+        m_Flags: 0
+        m_DefValue[0]: 0
+        m_DefValue[1]: 0
+        m_DefValue[2]: 0
+        m_DefValue[3]: 0
+        m_DefTexture:
+          m_DefaultName:
+          m_TexDim: 1
+      - m_Name: _SimpleLitDirStencilWriteMask
+        m_Description: SimpleLitDirStencilWriteMask
+        m_Attributes: []
+        m_Type: 2
+        m_Flags: 0
+        m_DefValue[0]: 0
+        m_DefValue[1]: 0
+        m_DefValue[2]: 0
+        m_DefValue[3]: 0
+        m_DefTexture:
+          m_DefaultName:
+          m_TexDim: 1
+      - m_Name: _ClearStencilRef
+        m_Description: ClearStencilRef
+        m_Attributes: []
+        m_Type: 2
+        m_Flags: 0
+        m_DefValue[0]: 0
+        m_DefValue[1]: 0
+        m_DefValue[2]: 0
+        m_DefValue[3]: 0
+        m_DefTexture:
+          m_DefaultName:
+          m_TexDim: 1
+      - m_Name: _ClearStencilReadMask
+        m_Description: ClearStencilReadMask
+        m_Attributes: []
+        m_Type: 2
+        m_Flags: 0
+        m_DefValue[0]: 0
+        m_DefValue[1]: 0
+        m_DefValue[2]: 0
+        m_DefValue[3]: 0
+        m_DefTexture:
+          m_DefaultName:
+          m_TexDim: 1
+      - m_Name: _ClearStencilWriteMask
+        m_Description: ClearStencilWriteMask
+        m_Attributes: []
+        m_Type: 2
+        m_Flags: 0
+        m_DefValue[0]: 0
+        m_DefValue[1]: 0
+        m_DefValue[2]: 0
+        m_DefValue[3]: 0
+        m_DefTexture:
+          m_DefaultName:
+          m_TexDim: 1
+    m_SubShaders:
+    - m_Passes: []
+      m_Tags:
+        tags:
+          RenderPipeline: UniversalPipeline
+          RenderType: Opaque
+      m_LOD: 0
+      m_PackageRequirements:
+        m_Requirements: []
+        m_StatusMessage:
+        m_CombinedStatus: 0
+    m_KeywordNames:
+    - STEREO_INSTANCING_ON
+    - UNITY_SINGLE_PASS_STEREO
+    - STEREO_MULTIVIEW_ON
+    - STEREO_CUBEMAP_RENDER_ON
+    - _SPOT
+    - _FOVEATED_RENDERING_NON_UNIFORM_RASTER
+    - _POINT
+    - _LIGHT_LAYERS
+    - _ADDITIONAL_LIGHT_SHADOWS
+    - _SHADOWS_SOFT
+    - _SHADOWS_SOFT_LOW
+    - _SHADOWS_SOFT_MEDIUM
+    - _SHADOWS_SOFT_HIGH
+    - LIGHTMAP_SHADOW_MIXING
+    - SHADOWS_SHADOWMASK
+    - _GBUFFER_NORMALS_OCT
+    - _DEFERRED_MIXED_LIGHTING
+    - _SCREEN_SPACE_OCCLUSION
+    - _RENDER_PASS_ENABLED
+    - _LIGHT_COOKIES
+    - _MAIN_LIGHT_SHADOWS
+    - _MAIN_LIGHT_SHADOWS_CASCADE
+    - _MAIN_LIGHT_SHADOWS_SCREEN
+    - _DEFERRED_MAIN_LIGHT
+    - _DEFERRED_FIRST_LIGHT
+    - FOG_LINEAR
+    - FOG_EXP
+    - FOG_EXP2
+    - DOTS_INSTANCING_ON
+    m_KeywordFlags: 0000000000020000000000000000000000000000000000000000000000
+    m_Name: Hidden/Universal Render Pipeline/StencilDeferred
+    m_CustomEditorName:
+    m_FallbackName: Hidden/Universal Render Pipeline/FallbackError
+    m_Dependencies: []
+    m_CustomEditorForRenderPipelines: []
+    m_DisableNoSubshadersMessage: 0
+  platforms: 0e000000
+  offsets:
+  - 00000000
+  compressedLengths:
+  - 05000000
+  decompressedLengths:
+  - 04000000
+  compressedBlob: 4000000000
+  stageCounts: 01000000
+  m_Dependencies:
+  - {fileID: 4800000, guid: 5daae1578c27fdc4c9e22381734b783d, type: 2}
+  - {fileID: 4800000, guid: f7b3ba72db843844598017a9b08793f1, type: 2}
+  m_NonModifiableTextures: {}
+  m_ShaderIsBaked: 1
+  m_DefaultTextures: {}
+  errors: []
+  m_CompileInfo:
+    m_Snippets: {}
+    m_MeshComponentsFromSnippets: 0
+    m_HasSurfaceShaders: 0
+    m_HasFixedFunctionShaders: 0
+  m_CompileSmokeTestAfterImport: 0
+  m_AssetGUID: e9155b26e1bc55942a41e518703fe304
+  m_AssetLocalIdentifierInFile: 4800000

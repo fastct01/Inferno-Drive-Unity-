@@ -1,0 +1,7 @@
+{
+  "name": "Supabase.Functions",
+  "references": [
+    "Supabase.Core"
+  ],
+  "allowUnsafeCode": true
+}

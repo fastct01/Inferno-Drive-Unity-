@@ -1,0 +1,290 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c5d556e56e6f7b611e76c099e076b641, type: 3}
+  m_Name: cfxr ParticleFont AmazGoDaBold
+  m_EditorClassIdentifier:
+  CharSequence: '!"#$%&''()*+-/0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^`{|}~,._'
+  letterCase: 1
+  CharSprites:
+  - {fileID: 21300000, guid: cf7f36e4fbbaae046bb5e6bff4b5914f, type: 2}
+  - {fileID: 21300000, guid: 091c768be85e1244f8d36d2e7818fd87, type: 2}
+  - {fileID: 21300000, guid: 90417c1ef9746ca4cb57fb6595af90c6, type: 2}
+  - {fileID: 21300000, guid: 22c021e32c6e833449c8d9a938bb12d7, type: 2}
+  - {fileID: 21300000, guid: 71dc9476fd848d14b94d425299ac61be, type: 2}
+  - {fileID: 21300000, guid: 88acd9b1150f7e0408fd7e2fbeefb3d8, type: 2}
+  - {fileID: 21300000, guid: 808c86f04169ca646ad827942ad7b964, type: 2}
+  - {fileID: 21300000, guid: 601bb499a7146ad4aaf029be5bd6bc04, type: 2}
+  - {fileID: 21300000, guid: 341595088071c814fa3ca917cd3ca987, type: 2}
+  - {fileID: 21300000, guid: 463a72083443f53469981ac8a3b290d0, type: 2}
+  - {fileID: 21300000, guid: 6f3cf921d75ce654993227a5e848c6c1, type: 2}
+  - {fileID: 21300000, guid: cd745f4eb7369384391072d74f73bfcb, type: 2}
+  - {fileID: 21300000, guid: 21f9032bc2cc06e42b8c3c9c1b3b976e, type: 2}
+  - {fileID: 21300000, guid: fa53d24b4a48b4649974ae6225bd8c5c, type: 2}
+  - {fileID: 21300000, guid: 33ae666ff7ea6fc419b4f098e99f344a, type: 2}
+  - {fileID: 21300000, guid: c37250e3619f1224fa53fad8cf7cee5a, type: 2}
+  - {fileID: 21300000, guid: de47a13373b67f949884d7e85fdae522, type: 2}
+  - {fileID: 21300000, guid: 0316a32a5eb429d4fb660518ca273a03, type: 2}
+  - {fileID: 21300000, guid: 42359113977bb1040860e10eac7d728b, type: 2}
+  - {fileID: 21300000, guid: ebd64bdbe626af046a79b9e7697871e5, type: 2}
+  - {fileID: 21300000, guid: 90d6c0c923795cc4393a6cc2ed2c7b43, type: 2}
+  - {fileID: 21300000, guid: 12038775190c4ba48b20ec8b125969f9, type: 2}
+  - {fileID: 21300000, guid: ae7d457967f3a824fa0460137b6ec43f, type: 2}
+  - {fileID: 21300000, guid: c4074a5b28116b246a3c9419b3ba80c8, type: 2}
+  - {fileID: 21300000, guid: 2c277ff2d5a0b2d4ca28264f84288e86, type: 2}
+  - {fileID: 21300000, guid: 4d57aadb6aab7e441b74756880276f71, type: 2}
+  - {fileID: 21300000, guid: 23ddbf81100d8e64ca33100708a1165d, type: 2}
+  - {fileID: 21300000, guid: 74f796a0dabab0147a200ecee9e19fea, type: 2}
+  - {fileID: 21300000, guid: 2ce1a6da0fc59b347b99b9073f8d9cfd, type: 2}
+  - {fileID: 21300000, guid: 48152d3b6c97ce34ebfc5a4d95777ed8, type: 2}
+  - {fileID: 21300000, guid: f7546eb1c2f84134a95b86072ba4edc7, type: 2}
+  - {fileID: 21300000, guid: 955ffacf33e731c439919b8091984f23, type: 2}
+  - {fileID: 21300000, guid: 7d15d14d7e1cf5c4f989f6ff127497c2, type: 2}
+  - {fileID: 21300000, guid: 50af44cbfa1bd46438248d46d7100ce1, type: 2}
+  - {fileID: 21300000, guid: 9bc6d1f2b8ff78f4ab50fc2c92ad20ae, type: 2}
+  - {fileID: 21300000, guid: c3ab08fddfe3a3a46b1012e103cdb55a, type: 2}
+  - {fileID: 21300000, guid: 165c25b7766c29f4cb6f5b02a2c8151b, type: 2}
+  - {fileID: 21300000, guid: 3b5d83a24734aef46a0966a8301417f2, type: 2}
+  - {fileID: 21300000, guid: 8574b3cc6d9e6d64a84d9aa293a4e403, type: 2}
+  - {fileID: 21300000, guid: 45d1a7de04083ce49bbd3d3772f9652d, type: 2}
+  - {fileID: 21300000, guid: 998a2fa97e681a44196e60f336975cd6, type: 2}
+  - {fileID: 21300000, guid: 80110509ff15f4a4fa43f346a3c3e518, type: 2}
+  - {fileID: 21300000, guid: f66df6b933fe2684fbda2b344c489f59, type: 2}
+  - {fileID: 21300000, guid: ddf5434e3f8e1a141a22789b00032ea8, type: 2}
+  - {fileID: 21300000, guid: dc539ddfe55c8d44bb53f381c1f4672c, type: 2}
+  - {fileID: 21300000, guid: 3728675aaa984004ea43c8a00b1a4d0b, type: 2}
+  - {fileID: 21300000, guid: e6bab8d45ca211f45a340dd7d611cb55, type: 2}
+  - {fileID: 21300000, guid: 54236d0a59a78e84da32da8f15fe0067, type: 2}
+  - {fileID: 21300000, guid: b265b5e6507745142b2f67eedd9f925a, type: 2}
+  - {fileID: 21300000, guid: 3daae7db24986fa408f752c087f826ec, type: 2}
+  - {fileID: 21300000, guid: ed25bdfd3bb253f44ac442c68e638a51, type: 2}
+  - {fileID: 21300000, guid: 37737078448dc0d4da59c48a4416ac39, type: 2}
+  - {fileID: 21300000, guid: 0a5af7b2fa77d914d875527624de0907, type: 2}
+  - {fileID: 21300000, guid: 686945450bc0349418e4351ebeed183a, type: 2}
+  - {fileID: 21300000, guid: 1669422f81b5c35428ab0622f3220884, type: 2}
+  - {fileID: 21300000, guid: 4b3110ee1bae773469b883b81e9c950d, type: 2}
+  - {fileID: 21300000, guid: c03a9787d28788a4ea9cd49edf01617b, type: 2}
+  - {fileID: 21300000, guid: 22cec7a5bf138624b934d1de908c5185, type: 2}
+  - {fileID: 21300000, guid: 687e55146b6cecb48aeeec42f4dd3d65, type: 2}
+  - {fileID: 21300000, guid: 7a00771e308d286428dc8b3fc2abc936, type: 2}
+  - {fileID: 21300000, guid: dae0ddec1fca7c74fb7dce594c42ee1e, type: 2}
+  - {fileID: 21300000, guid: 7b704b23ad9f48847976c75e555bc251, type: 2}
+  - {fileID: 21300000, guid: 98e4b0104494df14aaf18bfcb5553405, type: 2}
+  - {fileID: 21300000, guid: dc8f4a0ac86afa24d8aa49e2a8ef1d9e, type: 2}
+  - {fileID: 21300000, guid: 778d761920b036d41af566fb92b175cd, type: 2}
+  - {fileID: 21300000, guid: b23e616d460d93c4392b11d6f397d12b, type: 2}
+  - {fileID: 21300000, guid: 5a058392012343a4b9f5688e7d3913bc, type: 2}
+  - {fileID: 21300000, guid: 81345a90d1c9336429c3ba3e18f83eb8, type: 2}
+  CharKerningOffsets:
+  - name: '!'
+    pre: -22
+    post: -12
+  - name: '"'
+    pre: 0
+    post: 0
+  - name: '#'
+    pre: 0
+    post: 0
+  - name: $
+    pre: 0
+    post: 0
+  - name: '%'
+    pre: 0
+    post: 0
+  - name: '&'
+    pre: 0
+    post: 0
+  - name: ''''
+    pre: 0
+    post: 0
+  - name: (
+    pre: 0
+    post: 0
+  - name: )
+    pre: 0
+    post: 0
+  - name: '*'
+    pre: 0
+    post: 0
+  - name: +
+    pre: 0
+    post: 0
+  - name: '-'
+    pre: -14
+    post: 0
+  - name: /
+    pre: 0
+    post: 0
+  - name: 0
+    pre: 0
+    post: -4
+  - name: 1
+    pre: -14
+    post: 0
+  - name: 2
+    pre: -5
+    post: 0
+  - name: 3
+    pre: 0
+    post: 5
+  - name: 4
+    pre: -5
+    post: 0
+  - name: 5
+    pre: 0
+    post: 0
+  - name: 6
+    pre: 0
+    post: 0
+  - name: 7
+    pre: 0
+    post: -8
+  - name: 8
+    pre: -4
+    post: 0
+  - name: 9
+    pre: 0
+    post: 0
+  - name: ':'
+    pre: 0
+    post: 0
+  - name: ;
+    pre: 0
+    post: 0
+  - name: '<'
+    pre: 0
+    post: 0
+  - name: =
+    pre: 0
+    post: 0
+  - name: '>'
+    pre: 0
+    post: 0
+  - name: '?'
+    pre: -6
+    post: 0
+  - name: '@'
+    pre: 12
+    post: -10
+  - name: A
+    pre: -2
+    post: 0
+  - name: B
+    pre: 0
+    post: 5
+  - name: C
+    pre: 0
+    post: -2
+  - name: D
+    pre: 0
+    post: 0
+  - name: E
+    pre: 0
+    post: -8
+  - name: F
+    pre: -6
+    post: -10
+  - name: G
+    pre: 0
+    post: 0
+  - name: H
+    pre: -2
+    post: -4
+  - name: I
+    pre: -20
+    post: -6
+  - name: J
+    pre: 0
+    post: 0
+  - name: K
+    pre: 0
+    post: -8
+  - name: L
+    pre: -8
+    post: 8
+  - name: M
+    pre: 0
+    post: 8
+  - name: N
+    pre: 0
+    post: 0
+  - name: O
+    pre: 0
+    post: 0
+  - name: P
+    pre: 0
+    post: 0
+  - name: Q
+    pre: 0
+    post: 0
+  - name: R
+    pre: 0
+    post: 0
+  - name: S
+    pre: 0
+    post: 0
+  - name: T
+    pre: 0
+    post: -10
+  - name: U
+    pre: 0
+    post: 4
+  - name: V
+    pre: 0
+    post: 0
+  - name: W
+    pre: 16
+    post: -10
+  - name: X
+    pre: 0
+    post: 0
+  - name: Y
+    pre: -2
+    post: -4
+  - name: Z
+    pre: 0
+    post: 0
+  - name: '['
+    pre: 0
+    post: 0
+  - name: \
+    pre: 0
+    post: 0
+  - name: ']'
+    pre: 0
+    post: 0
+  - name: ^
+    pre: 0
+    post: 0
+  - name: '`'
+    pre: 0
+    post: 0
+  - name: '{'
+    pre: 0
+    post: 0
+  - name: |
+    pre: 0
+    post: 0
+  - name: '}'
+    pre: 0
+    post: 0
+  - name: ~
+    pre: 0
+    post: 0
+  - name: ','
+    pre: 0
+    post: 0
+  - name: .
+    pre: -35
+    post: 10
+  - name: _
+    pre: 0
+    post: 0

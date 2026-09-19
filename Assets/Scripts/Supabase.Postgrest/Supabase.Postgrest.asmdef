@@ -1,0 +1,8 @@
+{
+  "name": "Supabase.Postgrest",
+  "references": [
+    "Newtonsoft.Json",
+    "Supabase.Core"
+  ],
+  "allowUnsafeCode": true
+}

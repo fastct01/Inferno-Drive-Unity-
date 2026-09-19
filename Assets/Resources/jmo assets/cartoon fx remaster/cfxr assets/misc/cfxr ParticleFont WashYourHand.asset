@@ -1,0 +1,290 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c5d556e56e6f7b611e76c099e076b641, type: 3}
+  m_Name: cfxr ParticleFont WashYourHand
+  m_EditorClassIdentifier:
+  CharSequence: '!"#$%&''()*+/0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^`{|}-~,._'
+  letterCase: 1
+  CharSprites:
+  - {fileID: 21300000, guid: 9dd43fec78808f944a6af04b3fd79d39, type: 2}
+  - {fileID: 21300000, guid: 1276b416a85912849a2776aeb23c49ff, type: 2}
+  - {fileID: 21300000, guid: d6d63e55635486649ae72b866d7b279f, type: 2}
+  - {fileID: 21300000, guid: 9681129b4b58ce544a94c15b2896a13c, type: 2}
+  - {fileID: 21300000, guid: 44a207454456ac140b3e4724fe793c43, type: 2}
+  - {fileID: 21300000, guid: d3bb3b54f994bc841ada3462826591b9, type: 2}
+  - {fileID: 21300000, guid: 95316f3b528822341bf1ebdd9573f7c6, type: 2}
+  - {fileID: 21300000, guid: 29df34904a5c18f44be4dd54bb26b84e, type: 2}
+  - {fileID: 21300000, guid: a6c85fe727ca04d4481bd75d65c86009, type: 2}
+  - {fileID: 21300000, guid: ae1810ee4d8fef74aafc796349a4a253, type: 2}
+  - {fileID: 21300000, guid: 44bdb6c88e422f64b8dbff244475aa3f, type: 2}
+  - {fileID: 21300000, guid: 52115856aa1d0a5448066d280faa4f63, type: 2}
+  - {fileID: 21300000, guid: 43bd963f145112346a8139d9ea3d5c07, type: 2}
+  - {fileID: 21300000, guid: 807b2717658441c4fb4fb1e03fa67d5f, type: 2}
+  - {fileID: 21300000, guid: 7d92e71366007574ead817a61d82eefb, type: 2}
+  - {fileID: 21300000, guid: 8db2f13c0d0a54d41a71ba966251822a, type: 2}
+  - {fileID: 21300000, guid: f002084fa867a7e42a77c9645e93f225, type: 2}
+  - {fileID: 21300000, guid: c245ffe2eeadb674cbb81bf06c0fc68b, type: 2}
+  - {fileID: 21300000, guid: af634dc434a8ef942bdcf65c64bdebfe, type: 2}
+  - {fileID: 21300000, guid: 4d8648309caace245ad3428f0eb30e94, type: 2}
+  - {fileID: 21300000, guid: a75aa64af9198b14192677795da2152b, type: 2}
+  - {fileID: 21300000, guid: 76ce37d1841ed134c90f2410f95f784c, type: 2}
+  - {fileID: 21300000, guid: 8dfec038fe39be54a83fd325f9dfd127, type: 2}
+  - {fileID: 21300000, guid: 6d9ae3860e161244cb6b83bdb1605865, type: 2}
+  - {fileID: 21300000, guid: 874612c9babafda408bdce108ca2bb38, type: 2}
+  - {fileID: 21300000, guid: 8f0ad744592e36743a8f8c76a4f993ac, type: 2}
+  - {fileID: 21300000, guid: e92738ad707d93f438898b1296dc88d7, type: 2}
+  - {fileID: 21300000, guid: 75865d0b2978c794385007dea02f3d6d, type: 2}
+  - {fileID: 21300000, guid: 07d5a11f1313b63409dc475e2c01bec2, type: 2}
+  - {fileID: 21300000, guid: c6aa543083be2354e80bfda332fa6180, type: 2}
+  - {fileID: 21300000, guid: 44db5f2322771dc448e61a8c8d0f87f2, type: 2}
+  - {fileID: 21300000, guid: b0cf8e4277c0f0c48b15900e9c322c22, type: 2}
+  - {fileID: 21300000, guid: a03eb4d77173a134ebfb09e139716f9e, type: 2}
+  - {fileID: 21300000, guid: f59a00a0371229b46a8b4271fa112bef, type: 2}
+  - {fileID: 21300000, guid: 9f3065d2040c39947989119a7ed36a79, type: 2}
+  - {fileID: 21300000, guid: fa7ce6e6bca19a84c845595c5baf57b0, type: 2}
+  - {fileID: 21300000, guid: 8c6f6819e263eeb49ad1f0b9eb7b7314, type: 2}
+  - {fileID: 21300000, guid: db068e247bc2cdf4aba85feb93aeff68, type: 2}
+  - {fileID: 21300000, guid: f45272bb98344744cb36d3f3f7f9e72a, type: 2}
+  - {fileID: 21300000, guid: 851c9d1ef8b57b6499b50911952f097c, type: 2}
+  - {fileID: 21300000, guid: faede989eb3fa104e875e25552971fe2, type: 2}
+  - {fileID: 21300000, guid: 1a839ce7c23b8764a9fd532a481f4a29, type: 2}
+  - {fileID: 21300000, guid: 3ef65a8fb2136c344a3caf2086759b58, type: 2}
+  - {fileID: 21300000, guid: b67247a5d22f57c42b9581fd0ee3992d, type: 2}
+  - {fileID: 21300000, guid: 2b75069c74461af44a6c6d5fad70b77d, type: 2}
+  - {fileID: 21300000, guid: 37ed0e4ec7b2ac34eacc01f5cd02692f, type: 2}
+  - {fileID: 21300000, guid: c79788f931fb536488214beded808174, type: 2}
+  - {fileID: 21300000, guid: 93696b6cbf124ab41aa976ec382465f2, type: 2}
+  - {fileID: 21300000, guid: ac4fc8ff932e75943b12e169c1848032, type: 2}
+  - {fileID: 21300000, guid: 33fa94f22794924429b778a97c628992, type: 2}
+  - {fileID: 21300000, guid: ab84e2afafb55f345a1f1d4e10c5a5d5, type: 2}
+  - {fileID: 21300000, guid: db677d472b6010e4bad65bd97a88e13c, type: 2}
+  - {fileID: 21300000, guid: 8037ab5923ba6de44999bc2804e30e8e, type: 2}
+  - {fileID: 21300000, guid: ee953ee6e0817eb4cb0fbffcf08ac9c4, type: 2}
+  - {fileID: 21300000, guid: be6722682d5b6444a8224856e61118f4, type: 2}
+  - {fileID: 21300000, guid: a110b169d36ede3448379376e8cecc65, type: 2}
+  - {fileID: 21300000, guid: 97ab7ddad49d42d439ec0652448a2194, type: 2}
+  - {fileID: 21300000, guid: 33ff8d52a2a948f4ca06a3f6b7051caa, type: 2}
+  - {fileID: 21300000, guid: 0b4556e86058b044e933f31bb9b4fee3, type: 2}
+  - {fileID: 21300000, guid: 1a05c73e8799ac6429574867e2097bf6, type: 2}
+  - {fileID: 21300000, guid: 253ba64d317221349a9309a00bfb9538, type: 2}
+  - {fileID: 21300000, guid: e7e1eb421a4c5ab4eabe2a1dbd2742f1, type: 2}
+  - {fileID: 21300000, guid: 3795b1b4639fcf44ab05aed15b131862, type: 2}
+  - {fileID: 21300000, guid: ad9afce5670727b44be6d58114a984a5, type: 2}
+  - {fileID: 21300000, guid: 25a5cb22fb1fcc84d9c5b5e420f41d86, type: 2}
+  - {fileID: 21300000, guid: 9471f09eb917d7d4b869026c14ef9804, type: 2}
+  - {fileID: 21300000, guid: 574be0e510314614b8ce005017914fc6, type: 2}
+  - {fileID: 21300000, guid: 66107978f76e7ee4c9a4a00508630584, type: 2}
+  CharKerningOffsets:
+  - name: '!'
+    pre: 0
+    post: 0
+  - name: '"'
+    pre: 0
+    post: 0
+  - name: '#'
+    pre: 0
+    post: 0
+  - name: $
+    pre: 0
+    post: 0
+  - name: '%'
+    pre: 0
+    post: 0
+  - name: '&'
+    pre: 0
+    post: 0
+  - name: ''''
+    pre: -15
+    post: 0
+  - name: (
+    pre: 0
+    post: 0
+  - name: )
+    pre: 0
+    post: 0
+  - name: '*'
+    pre: 0
+    post: 15
+  - name: +
+    pre: 0
+    post: 0
+  - name: /
+    pre: 0
+    post: 0
+  - name: 0
+    pre: 0
+    post: 0
+  - name: 1
+    pre: 0
+    post: 0
+  - name: 2
+    pre: 0
+    post: 0
+  - name: 3
+    pre: 0
+    post: 0
+  - name: 4
+    pre: 0
+    post: 0
+  - name: 5
+    pre: 0
+    post: 0
+  - name: 6
+    pre: 0
+    post: 0
+  - name: 7
+    pre: 0
+    post: 0
+  - name: 8
+    pre: 0
+    post: 0
+  - name: 9
+    pre: 0
+    post: 0
+  - name: ':'
+    pre: 0
+    post: 0
+  - name: ;
+    pre: 0
+    post: 0
+  - name: '<'
+    pre: 0
+    post: 0
+  - name: =
+    pre: 0
+    post: 0
+  - name: '>'
+    pre: 0
+    post: 0
+  - name: '?'
+    pre: 0
+    post: 0
+  - name: '@'
+    pre: 0
+    post: 0
+  - name: A
+    pre: 0
+    post: 0
+  - name: B
+    pre: 0
+    post: 0
+  - name: C
+    pre: 0
+    post: 0
+  - name: D
+    pre: 0
+    post: 0
+  - name: E
+    pre: 0
+    post: 0
+  - name: F
+    pre: 0
+    post: 0
+  - name: G
+    pre: 0
+    post: 0
+  - name: H
+    pre: 0
+    post: 0
+  - name: I
+    pre: -15
+    post: 10
+  - name: J
+    pre: 0
+    post: 0
+  - name: K
+    pre: 0
+    post: 0
+  - name: L
+    pre: 0
+    post: 0
+  - name: M
+    pre: 20
+    post: 0
+  - name: N
+    pre: 0
+    post: 0
+  - name: O
+    pre: 0
+    post: 10
+  - name: P
+    pre: 0
+    post: 0
+  - name: Q
+    pre: 0
+    post: 0
+  - name: R
+    pre: 0
+    post: 0
+  - name: S
+    pre: 0
+    post: 0
+  - name: T
+    pre: 0
+    post: 0
+  - name: U
+    pre: 0
+    post: 0
+  - name: V
+    pre: 0
+    post: 0
+  - name: W
+    pre: 20
+    post: -10
+  - name: X
+    pre: 0
+    post: 0
+  - name: Y
+    pre: 0
+    post: 0
+  - name: Z
+    pre: 0
+    post: 0
+  - name: '['
+    pre: 0
+    post: 0
+  - name: \
+    pre: 0
+    post: 0
+  - name: ']'
+    pre: 0
+    post: 0
+  - name: ^
+    pre: 0
+    post: 0
+  - name: '`'
+    pre: 0
+    post: 0
+  - name: '{'
+    pre: 0
+    post: 0
+  - name: |
+    pre: 0
+    post: 0
+  - name: '}'
+    pre: 0
+    post: 0
+  - name: '-'
+    pre: 0
+    post: 0
+  - name: ~
+    pre: 10
+    post: 15
+  - name: ','
+    pre: -10
+    post: -10
+  - name: .
+    pre: -10
+    post: -10
+  - name: _
+    pre: 0
+    post: 0

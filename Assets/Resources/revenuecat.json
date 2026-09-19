@@ -1,0 +1,18 @@
+{
+  "apple_public_sdk_key": "appl_AOlZNvvDnpXCHlHawaqWnGPoyNR",
+  "google_public_sdk_key": "",
+  "products": [
+    {
+      "product_id": "game_currency_30",
+      "crystals": 30
+    },
+    {
+      "product_id": "game_currency_70",
+      "crystals": 70
+    },
+    {
+      "product_id": "game_currency_100",
+      "crystals": 100
+    }
+  ]
+}

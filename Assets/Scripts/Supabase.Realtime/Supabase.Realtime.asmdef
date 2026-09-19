@@ -1,0 +1,10 @@
+{
+  "name": "Supabase.Realtime",
+  "references": [
+    "Newtonsoft.Json",
+    "Websocket.Client",
+    "Supabase.Postgrest",
+    "Supabase.Core"
+  ],
+  "allowUnsafeCode": true
+}

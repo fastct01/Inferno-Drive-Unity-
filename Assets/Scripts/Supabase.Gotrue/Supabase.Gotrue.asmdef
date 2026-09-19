@@ -1,0 +1,7 @@
+{
+  "name": "Supabase.Gotrue",
+  "references": [
+    "Supabase.Core"
+  ],
+  "allowUnsafeCode": true
+}
