@@ -13,6 +13,29 @@ using UnityEngine.TestTools;
 // side-by-side parity checklist (docs/remake-verified.txt).
 public class SmokeTests
 {
+	// The editor cannot serve the built-in extra sprite the first-launch screen asks for
+	// (Resources.GetBuiltinResource<Sprite>("UI/Skin/UISprite.psd") is an editor-only asset database lookup
+	// in 6000.x); the shipped code does exactly this, so the assert is expected. Everything else that is an
+	// error or exception still fails the test.
+	private static readonly System.Collections.Generic.List<string> unexpected = new System.Collections.Generic.List<string>();
+	private static void OnLog(string condition, string stackTrace, LogType type)
+	{
+		if (type != LogType.Error && type != LogType.Exception && type != LogType.Assert) return;
+		if (condition.Contains("UISprite.psd")) return;
+		unexpected.Add(type + ": " + condition);
+	}
+
+	[SetUp]
+	public void Watch() { unexpected.Clear(); LogAssert.ignoreFailingMessages = true; Application.logMessageReceived += OnLog; }
+
+	[TearDown]
+	public void Unwatch()
+	{
+		Application.logMessageReceived -= OnLog;
+		LogAssert.ignoreFailingMessages = false;
+		if (unexpected.Count > 0) Assert.Fail(unexpected.Count + " unexpected error log(s):\n" + string.Join("\n", unexpected.GetRange(0, Math.Min(10, unexpected.Count))));
+	}
+
 	private static readonly BindingFlags Any = BindingFlags.Instance | BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Public;
 	private static readonly Type GameType = Type.GetType("ShadowRunPrototype, Assembly-CSharp");
 	private static readonly string ShotDir = Environment.GetEnvironmentVariable("INFERNO_SHOTS") ?? "/tmp/inferno-shots";
@@ -134,6 +157,7 @@ public class SmokeTests
 	public IEnumerator BootsLobbyPagesRunAndGameOver()
 	{
 		Assert.IsNotNull(GameType, "Assembly-CSharp.ShadowRunPrototype");
+		LogAssert.ignoreFailingMessages = true;   // OnLog decides what fails (see Watch)
 #if UNITY_EDITOR
 		SetPortraitGameView();
 		yield return null;
@@ -172,6 +196,22 @@ public class SmokeTests
 		Call(game, "ShowCaseOverlay");
 		yield return Seconds(1f);
 		yield return Shot("04-case-overlay");
+		// The rewarded ad cannot load in the editor: start the opening directly (what the ad reward does):
+		// lid animation, 9 s roulette, prize panel.
+		int crystalsBefore = (int)Type.GetType("ShadowRun.Services.SupabaseGameManager, Assembly-CSharp").GetProperty("Crystals").GetValue(null);
+		// applying the reward without an authenticated profile (QueueCaseReward) may re-open the auth
+		// screen, whose rounded frames log the editor-only UISprite assert (filtered by OnLog)
+		Call(game, "StartCaseOpening");
+		yield return Seconds(2.5f);
+		yield return Shot("04b-case-lid");
+		yield return Seconds(4f);
+		yield return Shot("04c-case-roulette");
+		float caseWait = Time.realtimeSinceStartup;
+		while (Time.realtimeSinceStartup - caseWait < 20f && (bool)Field(game, "caseSpinActive")) yield return null;
+		Assert.IsFalse((bool)Field(game, "caseSpinActive"), "the roulette stops");
+		yield return Seconds(2f);
+		yield return Shot("04d-case-result");
+		Debug.Log("[SmokeTests] case prize applied: " + Field(game, "caseRewardApplied") + ", crystals " + crystalsBefore + " -> " + Type.GetType("ShadowRun.Services.SupabaseGameManager, Assembly-CSharp").GetProperty("Crystals").GetValue(null));
 		Call(game, "HideCaseOverlay");   // the X button; ShowMainMenu leaves the overlay up, as shipped
 		yield return Seconds(0.5f);
 
@@ -231,6 +271,7 @@ public class SmokeTests
 	[UnityTest]
 	public IEnumerator LongRunReachesTheDistanceSystems()
 	{
+		LogAssert.ignoreFailingMessages = true;
 #if UNITY_EDITOR
 		SetPortraitGameView();
 		yield return null;

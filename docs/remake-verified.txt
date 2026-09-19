@@ -32,7 +32,10 @@ Profile (03-profile.png)
 Case opening (04-case-overlay.png)
   [x] CASE OPENING sheet: N SERIES CASE, CRYSTAL DROPS 2 · 3 · 5 · 10, VEHICLE JACKPOT 6% CHANCE, 3D case,
       WATCH AD + OPEN CASE (LevelPlay rewarded path; the ad SDK is real but no ad loads in the editor).
-  [ ] Roulette spin, prize panel, SPIN AGAIN — needs an ad or a rewarded-ready override; not yet driven.
+  [x] StartCaseOpening driven directly (what the ad reward does): lid animation (04b-case-lid.png), 9 s
+      roulette with the 250x310 prize cards, rarity strips and selector (04c-case-roulette.png), prize
+      applied (crystals 25 -> 26); as shipped, QueueCaseReward without an authenticated profile re-opens
+      the first-launch authorization screen instead of the result panel.
 
 Gem shop (05-gem-shop.png)
   [x] DIAMOND SHOP artwork, three packs 30 / 70 / 100 with USD $0.99 / $1.99 / $2.49 (RevenueCat is
