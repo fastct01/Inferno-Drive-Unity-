@@ -8,34 +8,6 @@ using UnityEngine.UI;
 // Until then every hook is a no-op returning the "feature absent" value.
 public sealed partial class ShadowRunPrototype
 {
-	private static partial class InfernoLobby
-	{
-		public static bool HandleLockedMap(ShadowRunPrototype game) { return false; }
-		public static void BeginRun(ShadowRunPrototype game) { }
-		public static void Backdrop(ShadowRunPrototype game, Transform parent) { }
-		public static void Build(ShadowRunPrototype game, Transform parent) { }
-		public static void Gems(ShadowRunPrototype game, Transform parent) { }
-		// ShopArtScope: RAII counter in InfernoLobby.inc (s_shopArtDepth); C# port exposes explicit Begin/End.
-		public static void BeginShopArtScope() { shopArtDepth++; }
-		public static void EndShopArtScope() { shopArtDepth--; }
-		private static int shopArtDepth;
-		public static void Tabs(ShadowRunPrototype game, Transform parent) { }
-		public static void PositionPages(ShadowRunPrototype game) { }
-		public static void Layout(ShadowRunPrototype game) { }
-		public static void Show(ShadowRunPrototype game) { }
-		public static void RefreshGoalRewards(ShadowRunPrototype game) { }
-		// Crystals paid for a claimed daily goal, by goal kind (0 distance, 1 runs, 2 boosts, 3 drift,
-		// 4 cars passed, 5 cases opened). The original paid a single crystal.
-		private static readonly int[] GoalRewards = { 15, 10, 10, 15, 10, 20 };
-		public static int GoalReward(int kind) { return kind >= 0 && kind < 6 ? GoalRewards[kind] : 10; }
-		public static void CaseVisibility(ShadowRunPrototype game, bool visible) { }
-		public static void BuildGameOver(ShadowRunPrototype game, Transform parent) { }
-		public static bool IsHeartResource(string name) { return false; }
-		public static bool IsDiamondResource(string name) { return false; }
-		public static Sprite HeartSprite() { return null; }
-		public static Sprite GemSprite(ShadowRunPrototype game) { return null; }
-	}
-
 	private static partial class InfernoStyle
 	{
 		public static void Frame(ShadowRunPrototype game) { }
