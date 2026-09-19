@@ -515,7 +515,7 @@ public sealed partial class ShadowRunPrototype
 		return bestLane;
 	}
 
-	private int FindSafeHighBeamYieldLane(int current)
+	private int FindSafeHighBeamYieldLane(Pickup item, int current)
 	{
 		if (current > 0)
 		{

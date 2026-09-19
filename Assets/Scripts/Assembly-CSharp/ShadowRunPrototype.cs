@@ -2354,252 +2354,6 @@ public sealed partial class ShadowRunPrototype : MonoBehaviour
 		return false;
 	}
 
-	private void PrewarmRampPool()
-	{
-	}
-
-	private void MakeRampLightingIndependent(GameObject model)
-	{
-	}
-
-	private bool RampHighEndFacesPlayer(Transform modelRoot)
-	{
-		return false;
-	}
-
-	private void FitRampModel(Transform model, Transform root)
-	{
-	}
-
-	private void MakeRampDebris(RampObstacle ramp)
-	{
-	}
-
-	private void MakeRampNeonSign(RampObstacle ramp)
-	{
-	}
-
-	private void AddRampNeonSignBar(Transform parent, string name, Vector3 position, Quaternion rotation)
-	{
-	}
-
-	private void AddRampDebrisPiece(RampObstacle ramp, string name, Vector3 position, Vector3 scale, Material material)
-	{
-	}
-
-	private void ReleaseAllRamps()
-	{
-	}
-
-	private void ReleaseRamp(RampObstacle ramp)
-	{
-	}
-
-	private bool SpawnRamp()
-	{
-		return false;
-	}
-
-	private void UpdateRamps(float dt)
-	{
-	}
-
-	private void LaunchPlayerFromRamp(RampObstacle ramp, float coverage, float dx)
-	{
-	}
-
-	private void BreakRampFromSide(RampObstacle ramp, float dx)
-	{
-	}
-
-	private void UpdateBrokenRamp(RampObstacle ramp, float dt)
-	{
-	}
-
-	private void RedirectTrafficFromRamp(RampObstacle ramp)
-	{
-	}
-
-	private int PreferredRampEscapeLane(Pickup traffic, int currentLane, int rampLane)
-	{
-		return 0;
-	}
-
-	private bool TrafficSpawnBlockedByRamp(int lane, float z)
-	{
-		return false;
-	}
-
-	private bool TrafficNeedsRampEscape(int lane, float z)
-	{
-		return false;
-	}
-
-	private int FindRampSafeTrafficLane(int preferredLane, float z)
-	{
-		return 0;
-	}
-
-	private bool IsTrafficLandingCrush(float dx, float dz)
-	{
-		return false;
-	}
-
-	private void TriggerTrafficLandingWreck(Pickup item, float dx)
-	{
-	}
-
-	private void UpdateTrafficWrecks(float dt)
-	{
-	}
-
-	private void UpdateHighBeams(float dt)
-	{
-	}
-
-	private void TriggerHighBeamFlash()
-	{
-	}
-
-	private void ResetHighBeamAbility()
-	{
-	}
-
-	private void UpdateHighBeamAbility(float dt)
-	{
-	}
-
-	private void UpdateHighBeamCooldownVisual()
-	{
-	}
-
-	private void PlayHighBeamSound()
-	{
-	}
-
-	private void StartHighBeamPulse()
-	{
-	}
-
-	private void CompleteHighBeamPulse()
-	{
-	}
-
-	private void UpdateHighBeamTransform()
-	{
-	}
-
-	private void SendHighBeamReaction()
-	{
-	}
-
-	private void DisableHighBeam()
-	{
-	}
-
-	private void SetHighBeamVisual(bool visible)
-	{
-	}
-
-	public void ReactToFlashing(Transform trafficRoot)
-	{
-	}
-
-	private bool TryRequestHighBeamCourtesyGap(Pickup yieldingCar, int targetLane)
-	{
-		return false;
-	}
-
-	private bool ResolveTrafficContact(ref Pickup item, float dx, float dz, float previousDx, float previousDz, float dt)
-	{
-		return false;
-	}
-
-	private bool TrafficMovedIntoPlayerSide(Pickup item, float dx)
-	{
-		return false;
-	}
-
-	private bool FindSweptVehicleHit(Vector2 previousOffset, Vector2 currentOffset, float playerYaw, float trafficYaw, float playerHalfWidth, float playerHalfLength, float trafficHalfWidth, float trafficHalfLength, out Vector2 contactOffset)
-	{
-		contactOffset = default;
-		return false;
-	}
-
-	private bool VehicleHitboxesOverlapPrepared(Vector2 trafficOffset, Vector2 playerRight, Vector2 playerForward, Vector2 trafficRight, Vector2 trafficForward, float playerHalfWidth, float playerHalfLength, float trafficHalfWidth, float trafficHalfLength)
-	{
-		return false;
-	}
-
-	private bool VehicleHitboxesOverlapOnAxis(Vector2 trafficOffset, Vector2 axis, Vector2 playerRight, Vector2 playerForward, Vector2 trafficRight, Vector2 trafficForward, float playerHalfWidth, float playerHalfLength, float trafficHalfWidth, float trafficHalfLength)
-	{
-		return false;
-	}
-
-	private void SpawnTrafficCollisionExplosion(bool sideImpact, Vector3 trafficPosition, float dx)
-	{
-	}
-
-	private void TryShowTrafficWow(Pickup passedCar, float passedDx)
-	{
-	}
-
-	private void SpawnTrafficLandingPow(Vector3 impactPosition)
-	{
-	}
-
-	private GameObject GetTrafficCollisionExplosionPrefab(bool sideImpact)
-	{
-		return null;
-	}
-
-	private Vector3 CalculateRearTrafficImpactPosition(Vector3 trafficPosition)
-	{
-		return default;
-	}
-
-	private Vector3 CalculateSideTrafficImpactPosition(Vector3 trafficPosition, float dx)
-	{
-		return default;
-	}
-
-	private void AutoDestroyParticleEffect(GameObject instance, float fallbackLifetime)
-	{
-	}
-
-	private int FindSafeHighBeamYieldLane(Pickup item, int current)
-	{
-		return 0;
-	}
-
-	private void EnsureVehicleSmoke()
-	{
-	}
-
-	private void EmitVehicleSmoke(float dt, bool boost, bool braking, bool handbrake)
-	{
-	}
-
-	private void ResetVehicleSmoke()
-	{
-	}
-
-	private void SetupPlayerExhaustFire(Transform attachRoot, Transform vehicleRoot)
-	{
-	}
-
-	private void CreatePlayerExhaustFire(Vector3 localPosition, Quaternion exhaustTurn)
-	{
-	}
-
-	private void SetPlayerExhaustFireActive(bool active)
-	{
-	}
-
-	private void ClearPlayerExhaustFire()
-	{
-	}
-
 	private void MakeGarageScreen(Transform parent)
 	{
 	}
@@ -2894,26 +2648,6 @@ public sealed partial class ShadowRunPrototype : MonoBehaviour
 		return null;
 	}
 
-	private void InitializeGameAudioIntegration()
-	{
-	}
-
-	private void ConfigureNativeGameAudioSession()
-	{
-	}
-
-	private void RefreshExternalAudioState(bool force = false)
-	{
-	}
-
-	private void ToggleGameSound()
-	{
-	}
-
-	private void ApplyGameSoundState(bool save)
-	{
-	}
-
 	private Text MakeGameOverValue(Transform parent, Vector2 position)
 	{
 		return null;
@@ -3066,16 +2800,6 @@ public sealed partial class ShadowRunPrototype : MonoBehaviour
 
 	private void AlignCaseHeadToClosedBodyPose()
 	{
-	}
-
-	private Bounds CalculateLocalRendererBounds(Transform relativeTo, GameObject root)
-	{
-		return default;
-	}
-
-	private Bounds MakeLocalBounds(Transform relativeTo, Bounds worldBounds)
-	{
-		return default;
 	}
 
 	private void StyleCasePreviewModel()
@@ -3750,35 +3474,6 @@ public sealed partial class ShadowRunPrototype : MonoBehaviour
 	{
 	}
 
-	private void InitializeVehicleEngineAudio()
-	{
-	}
-
-	private AudioSource CreateVehicleEngineSource(Transform parent, string sourceName, AudioClip clip, bool loop)
-	{
-		return null;
-	}
-
-	private void StartVehicleEngineAudio()
-	{
-	}
-
-	private void UpdateVehicleEngineAudio(float dt)
-	{
-	}
-
-	private void TriggerVehicleEngineImpact(bool sideImpact)
-	{
-	}
-
-	private void SetVehicleEngineLoopTargets(float idle, float onLoad, float offLoad, float dt)
-	{
-	}
-
-	private void SilenceVehicleEngineAudio(bool stopStartup)
-	{
-	}
-
 	private void RebuildGaragePreviewVehicle()
 	{
 	}
@@ -3787,19 +3482,7 @@ public sealed partial class ShadowRunPrototype : MonoBehaviour
 	{
 	}
 
-	private void InitializeBackgroundMusic()
-	{
-	}
-
-	private void UpdateBackgroundMusic(float unscaledDt)
-	{
-	}
-
 	private void InitializeDynamicWeatherSystem()
-	{
-	}
-
-	private void UpdateWeatherAudioMute()
 	{
 	}
 
@@ -3815,10 +3498,6 @@ public sealed partial class ShadowRunPrototype : MonoBehaviour
 	private WeatherStateData BuildPlanetsPreset()
 	{
 		return null;
-	}
-
-	private void ApplyRainAudio()
-	{
 	}
 
 	private WeatherStateData LoadWeatherPresetAsset(string path)
