@@ -68,8 +68,18 @@ Driving (06-run.png, 07-pause.png)
       reaches 1265 m at 48.9 m/s (boost top 49): SPEED UP stage 1 announced at 1000 m, the wrecking-ball
       gantry spawns (20-run-1200m.png: posts, beam with the neon strip, swinging ball), lost hearts render
       through the grayscale UI shader, boost exhaust flames show.
-  [ ] Ramps / jumps, the rewarded-ad path with a real ad, sign-in flows (Apple / Google / email) and
-      purchases need a device with the store / ad SDKs — outside the editor pass.
+  [x] Economy and menus (EconomyMenusAndTutorial, 40-46*.png): with 500 crystals › to RAIN RUN shows
+      "U N L O C K   150", PLAY unlocks it ("MAP UNLOCKED. TAP PLAY.", 350 left, InfernoDrive.MapUnlocked.2)
+      and PLAY again runs on map 2; the three visible daily goals completed and claimed through their CLAIM
+      buttons pay GoalReward per kind (e.g. 10+20+15); a purchase attempt with enough crystals stops at
+      RequireOnlineEconomyAsync (no account in the editor); MASTER/MUSIC/EFFECTS sliders save
+      InfernoDrive.MasterVolume / musicVolume / sfxVolume after 0.6 s and AudioListener.volume = master/100;
+      the profile's own sound button is hidden (settings patch) while the pause menu's toggle mutes;
+      TRY AGAIN restarts, OPEN CASE opens the case sheet; the tutorial stage machine passes the brake
+      stage by itself and stages 4/5 on left/right steering, then remembers completion; ramps put the car
+      airborne in the driven long run (airborneFrames > 0).
+  [ ] The rewarded-ad path with a real ad, sign-in flows (Apple / Google / email) and purchases need a
+      device with the store / ad SDKs — outside the editor pass.
 
 Game over (08-game-over.png)
   [x] YOU LOST / BETTER LUCK NEXT TIME / DISTANCE 0.12 KM / BEST RECORD 0.13 KM / OPEN CASE / TRY AGAIN /

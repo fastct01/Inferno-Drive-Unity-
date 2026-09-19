@@ -25,14 +25,36 @@ public class SmokeTests
 		unexpected.Add(type + ": " + condition);
 	}
 
+	// PlayerPrefs the tests touch are snapshotted and restored (also when a test fails half-way), so one
+	// run never changes what the next one sees.
+	private static readonly string[] PrefKeys = BuildPrefKeys();
+	private static string[] BuildPrefKeys()
+	{
+		var keys = new System.Collections.Generic.List<string> { "InfernoDrive.MapUnlocked.2", "InfernoDrive.MapUnlocked.3", "InfernoDrive.SelectedMap", "shadowRun.daily.claimedMask", "shadowRun.daily.date", "infernoDriveFirstRunTutorialV7", "InfernoDrive.MasterVolume", "shadowRunCrystals", "shadowRunPendingCrystalDelta", "shadowRunCloudDirty" };
+		foreach (var cat in new[] { "Tires", "Flags", "Trails" })
+		{
+			keys.Add("InfernoDrive.Style." + cat + ".Selected");
+			for (int i = 1; i < 8; i++) keys.Add("InfernoDrive.Style." + cat + "." + i + ".Owned");
+		}
+		return keys.ToArray();
+	}
+	private static readonly System.Collections.Generic.Dictionary<string, int?> prefSnapshot = new System.Collections.Generic.Dictionary<string, int?>();
+
 	[SetUp]
-	public void Watch() { unexpected.Clear(); LogAssert.ignoreFailingMessages = true; Application.logMessageReceived += OnLog; }
+	public void Watch()
+	{
+		unexpected.Clear(); LogAssert.ignoreFailingMessages = true; Application.logMessageReceived += OnLog;
+		prefSnapshot.Clear();
+		foreach (var k in PrefKeys) prefSnapshot[k] = PlayerPrefs.HasKey(k) ? PlayerPrefs.GetInt(k) : (int?)null;
+	}
 
 	[TearDown]
 	public void Unwatch()
 	{
 		Application.logMessageReceived -= OnLog;
 		LogAssert.ignoreFailingMessages = false;
+		foreach (var kv in prefSnapshot) { if (kv.Value.HasValue) PlayerPrefs.SetInt(kv.Key, kv.Value.Value); else PlayerPrefs.DeleteKey(kv.Key); }
+		PlayerPrefs.Save();
 		if (unexpected.Count > 0) Assert.Fail(unexpected.Count + " unexpected error log(s):\n" + string.Join("\n", unexpected.GetRange(0, Math.Min(10, unexpected.Count))));
 	}
 
@@ -43,6 +65,35 @@ public class SmokeTests
 	private static Component Game()
 	{
 		return (Component)UnityEngine.Object.FindFirstObjectByType(GameType);
+	}
+
+	// The app boots into SampleScene (Main Camera + AudioListener, Directional Light, Global Volume) and
+	// AutoStart adds the game there; the test runner starts in an empty scene where AutoStart already
+	// created the game. The scene camera's AudioListener is deliberately NOT recreated: on this build
+	// machine (no audio output device) the editor wedges inside the case-opening audio as soon as a
+	// listener exists, and reloading SampleScene mid-test wedges it the same way — the "no audio
+	// listeners" warning is the price. The first-launch authorization screen is closed the way a
+	// completed sign-in would (its private Close) — no guest account is created on the backend.
+	private static IEnumerator Boot()
+	{
+		LogAssert.ignoreFailingMessages = true;
+#if UNITY_EDITOR
+		SetPortraitGameView();
+		yield return null;
+#endif
+		yield return null;
+		if (Game() == null) new GameObject("Shadow Run Prototype").AddComponent(GameType);
+		yield return Seconds(2f);
+		Type authType = Type.GetType("ShadowRun.Services.FirstLaunchAuthScreen, Assembly-CSharp");
+		var auth = (Component)UnityEngine.Object.FindFirstObjectByType(authType);
+		if (auth != null)
+		{
+			yield return Shot("00-first-launch-auth");
+			authType.GetMethod("Close", Any).Invoke(auth, null);
+			yield return Seconds(1f);
+		}
+		Component game = Game();
+		if ((bool)Field(game, "running") || (bool)Field(game, "showingGameOver")) { Call(game, "ShowMainMenu"); yield return Seconds(1f); }
 	}
 
 	private static object Call(Component game, string method, params object[] args)
@@ -85,7 +136,7 @@ public class SmokeTests
 				restore.Add((c, c.renderMode, c.worldCamera, c.planeDistance));
 				c.renderMode = RenderMode.ScreenSpaceCamera;
 				c.worldCamera = cam;
-				c.planeDistance = 0.5f;
+				c.planeDistance = cam.nearClipPlane + 0.02f;   // nothing in the world can sit in front of the UI plane
 			}
 			var rt = new RenderTexture(1080, 1920, 24, RenderTextureFormat.ARGB32);
 			var previous = cam.targetTexture;
@@ -157,28 +208,9 @@ public class SmokeTests
 	public IEnumerator BootsLobbyPagesRunAndGameOver()
 	{
 		Assert.IsNotNull(GameType, "Assembly-CSharp.ShadowRunPrototype");
-		LogAssert.ignoreFailingMessages = true;   // OnLog decides what fails (see Watch)
-#if UNITY_EDITOR
-		SetPortraitGameView();
-		yield return null;
-#endif
-		// AutoStart (RuntimeInitializeOnLoadMethod AfterSceneLoad) created the game when play mode began.
-		yield return null;
-		if (Game() == null) new GameObject("Shadow Run Prototype").AddComponent(GameType);
-		yield return Seconds(2f);
+		yield return Boot();
 		Component game = Game();
 		Assert.IsNotNull(game, "ShadowRunPrototype instance");
-		// First launch: the authorization screen sits over the lobby. Capture it, then close it the
-		// way a completed sign-in would (its private Close) instead of creating a guest account on
-		// the real backend.
-		Type authType = Type.GetType("ShadowRun.Services.FirstLaunchAuthScreen, Assembly-CSharp");
-		var auth = (Component)UnityEngine.Object.FindFirstObjectByType(authType);
-		if (auth != null)
-		{
-			yield return Shot("00-first-launch-auth");
-			authType.GetMethod("Close", Any).Invoke(auth, null);
-			yield return Seconds(1f);
-		}
 		Assert.IsNotNull(Field(game, "menuSceneRoot"), "menuSceneRoot built by MakeUI");
 		Assert.IsNotNull(Field(game, "hudRoot"), "hudRoot built by MakeUI");
 		Assert.IsFalse((bool)Field(game, "running"), "menu first");
@@ -271,19 +303,8 @@ public class SmokeTests
 	[UnityTest]
 	public IEnumerator LongRunReachesTheDistanceSystems()
 	{
-		LogAssert.ignoreFailingMessages = true;
-#if UNITY_EDITOR
-		SetPortraitGameView();
-		yield return null;
-#endif
-		yield return null;
-		if (Game() == null) new GameObject("Shadow Run Prototype").AddComponent(GameType);
-		yield return Seconds(2f);
+		yield return Boot();
 		Component game = Game();
-		Type authType = Type.GetType("ShadowRun.Services.FirstLaunchAuthScreen, Assembly-CSharp");
-		var auth = (Component)UnityEngine.Object.FindFirstObjectByType(authType);
-		if (auth != null) { authType.GetMethod("Close", Any).Invoke(auth, null); yield return Seconds(1f); }
-		if ((bool)Field(game, "running") || (bool)Field(game, "showingGameOver")) { Call(game, "ShowMainMenu"); yield return Seconds(1f); }
 
 		const string tutorialKey = "infernoDriveFirstRunTutorialV7";
 		bool hadTutorial = PlayerPrefs.HasKey(tutorialKey);
@@ -294,7 +315,7 @@ public class SmokeTests
 		float maxDistance = 0f, maxSpeed = 0f; int shots = 0; int minLives = 6;
 		Type drivingType = GameType.GetNestedType("InfernoDriving", Any);
 		Type hazardsType = GameType.GetNestedType("InfernoHazards", Any);
-		int frames = 0;
+		int frames = 0, airborneFrames = 0;
 		// the editor may run well under 60 fps and the gameplay dt is capped at 1/30 s, so the budget is
 		// in distance (1.5 km covers every distance-driven system) with a generous time limit
 		// A simple driver: steer toward the lane whose nearest car ahead is farthest (traffic sits in
@@ -311,6 +332,7 @@ public class SmokeTests
 		{
 			yield return null;
 			frames++;
+			if ((bool)Field(game, "playerAirborne")) airborneFrames++;
 			{
 				float px = (float)Field(game, "playerX");
 				float best = -1f; int bestLane = 0; float current = 0f;
@@ -341,7 +363,7 @@ public class SmokeTests
 		}
 		leftSet.Clear(); rightSet.Clear(); SetField(game, "touchBoostHeld", false);
 		float elapsed = Time.realtimeSinceStartup - start;
-		Debug.Log("[SmokeTests] long run: distance " + maxDistance + " m in " + elapsed.ToString("0") + " s at " + (frames / elapsed).ToString("0") + " fps, top speed " + maxSpeed + " m/s, lives left (half units) " + minLives + ", game over " + (bool)Field(game, "showingGameOver"));
+		Debug.Log("[SmokeTests] long run: distance " + maxDistance + " m in " + elapsed.ToString("0") + " s at " + (frames / elapsed).ToString("0") + " fps, top speed " + maxSpeed + " m/s, lives left (half units) " + minLives + ", game over " + (bool)Field(game, "showingGameOver") + ", airborne frames (ramps) " + airborneFrames);
 		// Without steering the car usually wrecks on traffic before 1 km (three hearts): both outcomes are
 		// valid ends; the systems whose spawn window was passed must have fired.
 		bool over = (bool)Field(game, "showingGameOver");
@@ -409,19 +431,8 @@ public class SmokeTests
 	[UnityTest]
 	public IEnumerator ControlsAndScreensThroughTheirButtons()
 	{
-		LogAssert.ignoreFailingMessages = true;
-#if UNITY_EDITOR
-		SetPortraitGameView();
-		yield return null;
-#endif
-		yield return null;
-		if (Game() == null) new GameObject("Shadow Run Prototype").AddComponent(GameType);
-		yield return Seconds(2f);
+		yield return Boot();
 		Component game = Game();
-		Type authType = Type.GetType("ShadowRun.Services.FirstLaunchAuthScreen, Assembly-CSharp");
-		var auth = (Component)UnityEngine.Object.FindFirstObjectByType(authType);
-		if (auth != null) { authType.GetMethod("Close", Any).Invoke(auth, null); yield return Seconds(1f); }
-		if ((bool)Field(game, "running") || (bool)Field(game, "showingGameOver")) { Call(game, "ShowMainMenu"); yield return Seconds(1f); }
 		Type lobby = GameType.GetNestedType("InfernoLobby", Any);
 
 		// map selector: › steps to RAIN RUN (locked, price 150 > 25 crystals) -> PLAY reads U N L O C K 150,
@@ -509,6 +520,166 @@ public class SmokeTests
 		Assert.IsTrue(Click("Pause Continue"), "CONTINUE DRIVING"); yield return Seconds(0.5f);
 		Assert.IsFalse((bool)Field(game, "paused"), "continue resumes");
 		Call(game, "ShowMainMenu"); yield return Seconds(0.5f);
+		if (hadTutorial) PlayerPrefs.SetInt(tutorialKey, tutorialValue); else PlayerPrefs.DeleteKey(tutorialKey);
+	}
+
+	private static T Find<T>(string objectName) where T : Component
+	{
+		foreach (var c in UnityEngine.Object.FindObjectsByType<T>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+			if (c.gameObject.name == objectName && c.gameObject.activeInHierarchy) return c;
+		return null;
+	}
+
+	// Economy and menus with a local balance: map unlock, daily-goal claims, the settings sliders and
+	// sound toggle, the game-over actions, the tutorial stage machine. Purchases stay behind
+	// RequireOnlineEconomyAsync (an authenticated account), so the garage purchase is only driven up to
+	// its "account required" status — nothing here signs in to the real backend.
+	[UnityTest]
+	public IEnumerator EconomyMenusAndTutorial()
+	{
+		yield return Boot();
+		Component game = Game();
+		Type lobby = GameType.GetNestedType("InfernoLobby", Any);
+		Type manager = Type.GetType("ShadowRun.Services.SupabaseGameManager, Assembly-CSharp");
+		Func<int> crystals = () => (int)manager.GetProperty("Crystals").GetValue(null);
+		Action<int> setBalance = v => lobby.GetMethod("SetCrystalBalance", Any).Invoke(null, new object[] { game, v });
+		int startCrystals = crystals();
+		const string tutorialKey = "infernoDriveFirstRunTutorialV7";
+		bool hadTutorial = PlayerPrefs.HasKey(tutorialKey); int tutorialValue = PlayerPrefs.GetInt(tutorialKey, 0);
+		PlayerPrefs.SetInt(tutorialKey, 1);
+
+		// --- map unlock: 500 crystals, › to RAIN RUN (150), PLAY unlocks, PLAY again starts the run on map 2
+		PlayerPrefs.DeleteKey("InfernoDrive.MapUnlocked.2"); PlayerPrefs.DeleteKey("shadowRun.daily.claimedMask");
+		SetField(game, "dailyGoalClaimedMask", 0);
+		setBalance(500); yield return Seconds(0.3f);
+		lobby.GetMethod("RefreshMap", Any).Invoke(null, new object[] { game });
+		int mapBefore = (int)lobby.GetMethod("SelectedMap", Any).Invoke(null, null);
+		while ((int)lobby.GetMethod("SelectedMap", Any).Invoke(null, null) != 2) { Click("NextMap"); yield return Seconds(0.2f); }
+		var play = (UnityEngine.UI.Button)Field(game, "primaryOverlayButton");
+		var primary = (UnityEngine.UI.Text)Field(game, "primaryButtonLabel");
+		Assert.AreEqual("U N L O C K   150", primary.text);
+		play.onClick.Invoke(); yield return Seconds(0.4f);
+		Assert.IsTrue((bool)lobby.GetMethod("MapUnlocked", Any).Invoke(null, new object[] { 2 }), "RAIN RUN unlocked");
+		Assert.AreEqual(350, crystals(), "150 crystals spent");
+		Assert.AreEqual("P  L  A  Y", primary.text);
+		var descriptionNode = (Transform)lobby.GetMethod("Find", Any).Invoke(null, new object[] { Field(game, "homeHeroRoot"), "MapDescription" });
+		var description = descriptionNode != null ? descriptionNode.GetComponent<UnityEngine.UI.Text>() : null;
+		Debug.Log("[SmokeTests] map 2 after unlock: '" + (description != null ? description.text : "-") + "'");
+		yield return Shot("40-map-unlocked");
+		play.onClick.Invoke(); yield return Seconds(1.5f);
+		Assert.IsTrue((bool)Field(game, "running"), "PLAY starts the run on the unlocked map");
+		Assert.AreEqual(2, (int)lobby.GetMethod("SelectedMap", Any).Invoke(null, null));
+		yield return Shot("41-run-rain-map");
+		Call(game, "ShowMainMenu"); yield return Seconds(0.5f);
+		PlayerPrefs.DeleteKey("InfernoDrive.MapUnlocked.2");
+		PlayerPrefs.SetInt("InfernoDrive.SelectedMap", mapBefore); PlayerPrefs.Save();
+		lobby.GetMethod("RefreshMap", Any).Invoke(null, new object[] { game });
+
+		// --- daily goals: complete the three visible goals, claim each through its CollectGoal button
+		var goals = (Array)Call(game, "PickDailyGoals", 3);
+		Type goalType = GameType.GetNestedType("HomeGoalData", Any);
+		var kinds = new System.Collections.Generic.List<int>();
+		foreach (object g in goals) kinds.Add((int)goalType.GetField("Kind", Any).GetValue(g));
+		SetField(game, "dailyGoalClaimedMask", 0);
+		PlayerPrefs.DeleteKey("shadowRun.daily.claimedMask");
+		foreach (int kind in kinds)
+		{
+			switch (kind)
+			{
+				case 0: SetField(game, "dailyGoalDistanceMeters", 10000f); break;
+				case 1: SetField(game, "dailyGoalRuns", 3); break;
+				case 2: SetField(game, "dailyGoalBoosts", 10); break;
+				case 3: SetField(game, "dailyGoalDriftSeconds", 30f); break;
+				case 4: SetField(game, "dailyGoalCarsPassed", 25); break;
+				case 5: SetField(game, "dailyGoalCasesOpened", 1); break;
+			}
+		}
+		Call(game, "UpdateDailyGoalsTimer", true); yield return Seconds(0.5f);
+		yield return Shot("42-goals-complete");
+		int before = crystals(); int expected = 0;
+		foreach (int kind in kinds) expected += (int)lobby.GetMethod("GoalReward", Any).Invoke(null, new object[] { kind });
+		int claimed = 0;
+		for (int i = 0; i < 3 && Click("CollectGoal"); i++) { claimed++; yield return Seconds(0.3f); }
+		Debug.Log("[SmokeTests] goals " + string.Join(",", kinds) + " claimed " + claimed + ": crystals " + before + " -> " + crystals() + " (expected +" + expected + ")");
+		Assert.AreEqual(3, claimed, "three CLAIM buttons");
+		Assert.AreEqual(before + expected, crystals(), "goal rewards 15/10/10/15/10/20 per kind");
+		yield return Shot("43-goals-claimed");
+		SetField(game, "dailyGoalClaimedMask", 0);
+		SetField(game, "dailyGoalDistanceMeters", 0f); SetField(game, "dailyGoalRuns", 0); SetField(game, "dailyGoalBoosts", 0);
+		SetField(game, "dailyGoalDriftSeconds", 0f); SetField(game, "dailyGoalCarsPassed", 0); SetField(game, "dailyGoalCasesOpened", 0);
+		PlayerPrefs.DeleteKey("shadowRun.daily.claimedMask");
+		Call(game, "UpdateDailyGoalsTimer", true);
+
+		// --- garage purchase with 100+ crystals stops at the account requirement (no sign-in from a test)
+		Click("Garage"); yield return Seconds(0.8f);
+		Call(game, "SelectGarageVehicleCard", 1); yield return Seconds(0.6f);
+		Click("Unlock Selected Vehicle Button"); yield return Seconds(2.5f);
+		var status = (UnityEngine.UI.Text)Field(game, "garagePurchaseStatusText");
+		Debug.Log("[SmokeTests] purchase with " + crystals() + " crystals: button '" + ((UnityEngine.UI.Text)Field(game, "garagePurchaseButtonText")).text + "' status '" + (status != null ? status.text : "-") + "'");
+		Assert.IsFalse((bool)manager.GetMethod("IsVehicleUnlocked").Invoke(null, new object[] { "flying_car" }), "no purchase without an account");
+		Call(game, "SelectGarageVehicleCard", 0); yield return Seconds(0.3f);
+
+		// --- settings: sliders save after 0.6 s, listener volume follows master and the sound toggle
+		Click("Profile"); yield return Seconds(0.8f);
+		var master = Find<UnityEngine.UI.Slider>("MasterSlider"); var music = Find<UnityEngine.UI.Slider>("MusicSlider"); var effects = Find<UnityEngine.UI.Slider>("EffectsSlider");
+		Assert.IsNotNull(master); Assert.IsNotNull(music); Assert.IsNotNull(effects);
+		float m0 = master.value, mu0 = music.value, ef0 = effects.value;
+		master.value = 40f; music.value = 20f; effects.value = 90f;
+		yield return Seconds(1.2f);
+		Assert.AreEqual(40, PlayerPrefs.GetInt("InfernoDrive.MasterVolume", -1), "master saved");
+		Assert.AreEqual(20, (int)Field(game, "musicVolume")); Assert.AreEqual(90, (int)Field(game, "sfxVolume"));
+		Assert.AreEqual(0.4f, AudioListener.volume, 0.01f, "listener = master/100");
+		yield return Shot("44-settings-changed");
+		// the profile page's own sound button is hidden by the settings patch (MASTER replaces it); the
+		// pause menu keeps its toggle
+		Assert.IsNull(FindButton("Profile Sound Toggle"), "profile sound toggle hidden, as shipped");
+		master.value = m0; music.value = mu0; effects.value = ef0; yield return Seconds(1f);
+		Click("Home"); yield return Seconds(0.5f);
+
+		// --- pause-menu sound toggle mutes the listener; game over actions: TRY AGAIN restarts, OPEN CASE
+		// opens the case sheet, BACK TO MENU
+		play.onClick.Invoke(); yield return Seconds(1f);
+		Debug.Log("[SmokeTests] after PLAY: running " + Field(game, "running") + " paused " + Field(game, "paused") + " gameOver " + Field(game, "showingGameOver") + " map " + lobby.GetMethod("SelectedMap", Any).Invoke(null, null) + " unlocked " + lobby.GetMethod("MapUnlocked", Any).Invoke(null, new object[] { lobby.GetMethod("SelectedMap", Any).Invoke(null, null) }) + " purchaseBusy " + Field(game, "garagePurchaseBusy") + " label '" + primary.text + "' listeners " + play.onClick.GetPersistentEventCount());
+		Assert.IsTrue((bool)Field(game, "running"), "PLAY starts the run (menu panel open: " + Call(game, "MenuPanelOpen") + ")");
+		Call(game, "PauseRun"); yield return Seconds(0.3f);
+		Assert.IsTrue((bool)Field(game, "paused"), "paused");
+		Debug.Log("[SmokeTests] pause buttons: " + Names("Pause"));
+		Assert.IsTrue(Click("Pause Sound Toggle"), "pause sound toggle"); yield return Seconds(0.3f);
+		Assert.IsFalse((bool)Field(game, "gameSoundEnabled")); Assert.AreEqual(0f, AudioListener.volume, 0.001f, "muted");
+		Click("Pause Sound Toggle"); yield return Seconds(0.3f);
+		Assert.IsTrue((bool)Field(game, "gameSoundEnabled"));
+		Click("Pause Continue"); yield return Seconds(0.5f);
+		SetField(game, "lifeHalfUnits", 0); yield return Seconds(2f);
+		Assert.IsTrue((bool)Field(game, "showingGameOver"));
+		Assert.IsTrue(Click("TRY AGAIN Profile Button"), "TRY AGAIN"); yield return Seconds(1f);
+		Assert.IsTrue((bool)Field(game, "running") && !(bool)Field(game, "showingGameOver"), "TRY AGAIN restarts the run");
+		SetField(game, "lifeHalfUnits", 0); yield return Seconds(2f);
+		Assert.IsTrue(Click("OPEN CASE Profile Button"), "OPEN CASE"); yield return Seconds(0.8f);
+		yield return Shot("45-game-over-open-case");
+		Call(game, "HideCaseOverlay"); yield return Seconds(0.3f);
+		if (FindButton("BACK TO MENU Profile Button") != null) Click("BACK TO MENU Profile Button"); else Call(game, "ShowMainMenu");
+		yield return Seconds(0.8f);
+		Assert.IsFalse((bool)Field(game, "running"));
+
+		// --- tutorial stage machine: stage 3 (brake stage, auto-passes) -> 4 (steer left) -> 5 (steer right) -> 6 -> done
+		PlayerPrefs.DeleteKey(tutorialKey);
+		play.onClick.Invoke(); yield return Seconds(1f);
+		Assert.IsTrue((bool)Field(game, "firstRunTutorialActive"), "tutorial on a first run");
+		Call(game, "SetFirstRunTutorialStage", 3); yield return Seconds(1f);
+		Assert.AreEqual(4, (int)Field(game, "firstRunTutorialStage"), "the brake stage passes by itself (brake removed)");
+		var left = (System.Collections.Generic.HashSet<int>)Field(game, "touchSteerLeftPointers");
+		var right = (System.Collections.Generic.HashSet<int>)Field(game, "touchSteerRightPointers");
+		left.Add(1); yield return Seconds(1f); left.Clear();
+		Assert.AreEqual(5, (int)Field(game, "firstRunTutorialStage"), "steer left completes stage 4");
+		yield return Shot("46-tutorial-stage-5");
+		right.Add(2); yield return Seconds(1f); right.Clear();
+		Assert.GreaterOrEqual((int)Field(game, "firstRunTutorialStage"), 6, "steer right completes stage 5");
+		yield return Seconds(2f);
+		Assert.IsFalse((bool)Field(game, "firstRunTutorialActive"), "tutorial completes");
+		Assert.AreEqual(1, PlayerPrefs.GetInt(tutorialKey, 0), "completion is remembered");
+		Call(game, "ShowMainMenu"); yield return Seconds(0.5f);
+
+		setBalance(startCrystals);
 		if (hadTutorial) PlayerPrefs.SetInt(tutorialKey, tutorialValue); else PlayerPrefs.DeleteKey(tutorialKey);
 	}
 }
