@@ -69,7 +69,9 @@ public class SmokeTests
 
 	// The app boots into SampleScene (Main Camera + AudioListener, Directional Light, Global Volume) and
 	// AutoStart adds the game there; the test runner starts in an empty scene where AutoStart already
-	// created the game. The scene camera's AudioListener is deliberately NOT recreated: on this build
+	// created the game (the first-launch WELCOME screen is disabled — FirstLaunchAuthScreen.Enabled — so
+	// the auth-screen handling below only matters if it is switched back on). The scene camera's
+	// AudioListener is deliberately NOT recreated: on this build
 	// machine (no audio output device) the editor wedges inside the case-opening audio as soon as a
 	// listener exists, and reloading SampleScene mid-test wedges it the same way — the "no audio
 	// listeners" warning is the price. The first-launch authorization screen is closed the way a

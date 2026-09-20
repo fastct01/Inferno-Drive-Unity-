@@ -41,10 +41,17 @@ namespace ShadowRun.Services
 
 		public static bool IsVisible { get; private set; }
 
+		// The shipped build shows this WELCOME screen on the first launch (and again from the case reward,
+		// purchases, sign-out and account deletion until an account is chosen). Removed on request
+		// (2026-09-20): the game starts straight in the lobby as a local, unauthenticated player and the
+		// profile page keeps CREATE ACCOUNT / LOG IN for anyone who wants an account. Set to true to
+		// restore the shipped first-launch flow.
+		public const bool Enabled = false;
+
 		[RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
 		private static void CreateInstance()
 		{
-			if (!SupabaseGameManager.HasCompletedFirstChoice)
+			if (Enabled && !SupabaseGameManager.HasCompletedFirstChoice)
 			{
 				Show();
 			}
@@ -52,6 +59,10 @@ namespace ShadowRun.Services
 
 		public static void Show()
 		{
+			if (!Enabled)
+			{
+				return;
+			}
 			if (FindAnyObjectByType<FirstLaunchAuthScreen>() != null)
 			{
 				return;

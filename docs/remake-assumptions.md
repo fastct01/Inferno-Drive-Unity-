@@ -127,3 +127,9 @@ resolver is switched to template patching (`ProjectSettings/GvhProjectSettings.x
 copied to `Assets/Plugins/Android/`) and `InfernoBuild.BuildAndroid` forces `PlayServicesResolver.MenuForceResolve`
 before `BuildPlayer`. The UnityAds Android adapter version (5.11.0 / unity-ads 4.19.0) is LevelPlay 9.5.0's
 pairing of the shipped iOS pod 5.9.0.0.
+
+## User-requested deviations from the shipped build
+- 2026-09-20 "remove welcome screen": `FirstLaunchAuthScreen.Enabled = false` — the first-launch WELCOME /
+  sign-in screen is never shown (not at boot, not from the case reward, purchases, sign-out or account
+  deletion). The game starts as a local, unauthenticated player; the profile page still offers CREATE
+  ACCOUNT / LOG IN. Flip the constant to restore the shipped flow.
