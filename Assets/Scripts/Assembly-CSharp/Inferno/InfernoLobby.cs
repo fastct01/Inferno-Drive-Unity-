@@ -27,7 +27,11 @@ public sealed partial class ShadowRunPrototype
 		// Every map is the same city (the presets only change the weather/lighting), so DAYLIGHT
 		// CITY shows the NEON NIGHT shot re-lit as day (tools/relight_map_card.py) — same view.
 		private static readonly string[] MapImages = { "Data/Raw/InfernoLobby/daylight_city.png", "Data/Raw/InfernoLobby/neon_night.png", null, null, null, null };
+		/* [user request 2026-09-20] maps without their own picture show the closest existing city art,
+		   tinted with the map's accent colour, so a locked map still shows a picture of the map. */
+		private static readonly string[] MapFallbackImages = { null, null, "Data/Raw/InfernoLobby/neon_night.png", "Data/Raw/InfernoLobby/neon_night.png", "Data/Raw/InfernoLobby/daylight_city.png", "Data/Raw/InfernoLobby/neon_night.png" };
 		public const float ArtWidth = 820f, ArtHeight = 376f;
+		private static RectTransform s_mapLock;   // the LOCKED overlay inside the art frame (Build / RefreshMap)
 
 		public static Color Hex(uint value, float alpha = 1f)
 		{
@@ -519,15 +523,18 @@ public sealed partial class ShadowRunPrototype
 				RawImage art = s_mapArt[i];
 				if (art == null) continue;
 				bool active = false;
-				if (i == selected && MapImages[i] != null)
+				string file = MapImages[i] ?? MapFallbackImages[i];   /* [user request 2026-09-20] */
+				if (i == selected && file != null)
 				{
 					if (!s_mapArtTried[i])
 					{
 						s_mapArtTried[i] = true;
-						Texture2D texture = LoadTexture(MapImages[i]);
+						Texture2D texture = LoadTexture(file);
 						if (texture != null)
 						{
 							art.texture = texture;
+							// a borrowed picture is tinted towards the map's accent so each map reads differently
+							art.color = MapImages[i] != null ? Color.white : Color.Lerp(Color.white, Hex(MapColors[i]), 0.45f);
 							s_mapArtSize[i, 0] = s_lastLoaded[0]; s_mapArtSize[i, 1] = s_lastLoaded[1];
 							CoverCrop(art, s_mapArtSize[i, 0], s_mapArtSize[i, 1]);
 						}
@@ -576,7 +583,7 @@ public sealed partial class ShadowRunPrototype
 			if (accent != null) Paint(accent.GetComponent<Image>(), MapColors[selected]);
 			ShowMapArt(game, selected);
 			bool locked = !MapUnlocked(selected);
-			Transform lockRoot = Find(game.homeHeroRoot, "MapLock");
+			Transform lockRoot = s_mapLock;   /* [user request 2026-09-20] lives inside the (renamed) art frame; kept by reference */
 			if (lockRoot != null) lockRoot.gameObject.SetActive(locked);
 			if (lockRoot != null && locked)
 			{
@@ -828,16 +835,27 @@ public sealed partial class ShadowRunPrototype
 			Image heroImage = game.homeHeroArtRect.GetComponent<Image>();
 			heroImage.preserveAspect = true;
 			Label(game, arena, "MapDescription", "", 0f, -618f, 880f, 40f, 26, Pearl);
-			{   // lock overlay: dark shade over the art, LOCKED + price with the crystal
-				RectTransform lockRoot = Root(arena, "MapLock");
+			{   // lock overlay: the map picture stays visible under a light shade; a neon plate
+				// in the middle carries LOCKED and the crystal price.
+				// [user request 2026-09-20] original: 0.66 shade, no plate, crystal at -52 (spans -76..-28)
+				// with the price text box starting at -40 — the number overlapped the stone.
+				// Parented to the ArenaCard frame like the map art itself (same y = -246 inside the
+				// frame), so the overlay covers the picture exactly; under the arena it sat 150 px high.
+				RectTransform lockRoot = Root(previewRoot, "MapLock");
+				s_mapLock = lockRoot;
 				Place(lockRoot, 0f, -246f, ArtWidth, ArtHeight);
+				lockRoot.SetAsLastSibling();
 				Image shade = Block(game, lockRoot, "LockShade", 0f, -ArtHeight / 2f, ArtWidth, ArtHeight, Black, true);
-				shade.color = Hex(Black, 0.66f);
-				Label(game, lockRoot, "LockTitle", "LOCKED", 0f, -150f, 600f, 64f, 48, Pearl);
-				Image gem = Block(game, lockRoot, "LockGem", -52f, -222f, 48f, 48f, 0xFFFFFF);
+				shade.color = Hex(Black, 0.42f);
+				Image plate = Card(game, lockRoot, "LockPlate", 0f, -ArtHeight / 2f, 400f, 176f, Ink, Grape);
+				plate.color = Hex(Ink, 0.9f);
+				Label(game, lockRoot, "LockTitle", "LOCKED", 0f, -152f, 360f, 60f, 44, Pearl);
+				// crystal 48 px centred at -50 (spans -74..-26); the price text box starts at -10
+				// (x 70, 160 wide, left-aligned) — 16 px clear of the stone, the pair centred on the plate
+				Image gem = Block(game, lockRoot, "LockGem", -50f, -226f, 48f, 48f, 0xFFFFFF);
 				gem.sprite = GemSprite(game);
 				gem.preserveAspect = true;
-				Label(game, lockRoot, "LockPrice", "", 40f, -222f, 160f, 52f, 36, Lilac, 3);
+				Label(game, lockRoot, "LockPrice", "", 70f, -226f, 160f, 52f, 36, Lilac, 3);
 				lockRoot.gameObject.SetActive(false);
 			}
 

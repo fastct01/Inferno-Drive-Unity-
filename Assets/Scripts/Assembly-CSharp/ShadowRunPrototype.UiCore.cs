@@ -694,7 +694,12 @@ public sealed partial class ShadowRunPrototype
 		root.gameObject.AddComponent<CanvasGroup>().alpha = 1f;
 		root.anchorMin = root.anchorMax = Vector2.zero;
 		root.pivot = Vector2.zero;
-		root.anchoredPosition = new Vector2(-17f, 26f);
+		// [user request 2026-09-20] keep the whole dial on screen. The dial is parented with
+		// worldPositionStays (below), so it keeps a 1/SpeedometerScale local scale and renders
+		// ~354x348 canvas px centred on this root's centre; at the original (-17, 26) that centre
+		// sat 150 px from the left edge and 137 px from the bottom, clipping the dial on both sides.
+		// original: new Vector2(-17f, 26f)
+		root.anchoredPosition = new Vector2(26f, 78f);
 		root.sizeDelta = new Vector2(522f, 348f);
 		root.localScale = Vector3.one * SpeedometerScale;
 		Image dial = new GameObject("Speedometer Dial").AddComponent<Image>();
@@ -883,7 +888,7 @@ public sealed partial class ShadowRunPrototype
 			NotifyFirstRunTutorialBeamPressed();
 		});
 		trigger.triggers.Add(down);
-		/* [InfernoLobby patch] */ highBeamHudButtonRect.localScale = new Vector3(1.3f, 1.3f, 1f);
+		/* [InfernoLobby patch] */ /* [user request 2026-09-20] a bit bigger; was 1.3 */ highBeamHudButtonRect.localScale = new Vector3(1.45f, 1.45f, 1f);
 	}
 
 	private Button MakeHudActionButton(Transform parent, string label, Vector2 pos, Vector2 size, Color accent)

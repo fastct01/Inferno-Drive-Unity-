@@ -115,17 +115,20 @@ public sealed partial class ShadowRunPrototype
 		{
 			if (game.hudRoot == null) return;
 			Transform hud = game.hudRoot.transform;
+			// [user request 2026-09-20] stone 44 px centred at -44 (spans -66..-22); the count's text box
+			// starts at -4 (x 56, 120 wide, left-aligned) — 18 px clear of the stone.
+			// original: stone at -46 (spans -68..-24) and the text box from -30, so "0" sat on the stone.
 			if (s_runGem == null)
 			{
-				s_runGem = InfernoLobby.Block(game, hud, "RunCrystalGem", -46f, -58f, 44f, 44f, 0xFFFFFF);
-				InfernoLobby.Place(s_runGem.rectTransform, -46f, -58f, 44f, 44f, new Vector2(0.5f, 1f));
+				s_runGem = InfernoLobby.Block(game, hud, "RunCrystalGem", -44f, -58f, 44f, 44f, 0xFFFFFF);
+				InfernoLobby.Place(s_runGem.rectTransform, -44f, -58f, 44f, 44f, new Vector2(0.5f, 1f));
 				s_runGem.sprite = InfernoLobby.GemSprite(game);
 				s_runGem.preserveAspect = true;
 			}
 			if (s_runCounter == null)
 			{
-				s_runCounter = InfernoLobby.Label(game, hud, "RunCrystalCount", "0", 30f, -58f, 120f, 52f, 36, InfernoLobby.Pearl, 3);
-				InfernoLobby.Place(s_runCounter.rectTransform, 30f, -58f, 120f, 52f, new Vector2(0.5f, 1f));
+				s_runCounter = InfernoLobby.Label(game, hud, "RunCrystalCount", "0", 56f, -58f, 120f, 52f, 36, InfernoLobby.Pearl, 3);
+				InfernoLobby.Place(s_runCounter.rectTransform, 56f, -58f, 120f, 52f, new Vector2(0.5f, 1f));
 			}
 			InfernoLobby.Caption(s_runCounter, s_runCollected.ToString());
 			s_runGem.gameObject.SetActive(true);

@@ -151,6 +151,18 @@ public sealed partial class ShadowRunPrototype
 		{
 			art.preserveAspect = true;
 			art.raycastTarget = false;
+			/* [user request 2026-09-20] the USD 0.99 pack shows the same faceted crystal as the
+			   top-right counter (InfernoLobby.GemSprite); the 1.99 / 2.49 packs keep their own art. */
+			if (iconResource == "алмаз 1")
+			{
+				Sprite counterGem = InfernoLobby.GemSprite(this);
+				if (counterGem != null)
+				{
+					art.sprite = counterGem;
+					art.rectTransform.sizeDelta = new Vector2(96f, 96f);
+					art.rectTransform.anchoredPosition = new Vector2(0f, 36f);
+				}
+			}
 		}
 		if (sale)
 		{
