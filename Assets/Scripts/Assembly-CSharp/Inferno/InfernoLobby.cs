@@ -18,7 +18,7 @@ public sealed partial class ShadowRunPrototype
 		public const uint Plum = 0x1A0F33, Grape = 0x420E7A, Mulberry = 0x3B1466, Indigo = 0x7A22D6;
 		public const uint Electric = 0x9433FF, Violet = 0xB840FF, Magenta = 0xBF66FF, Orchid = 0xB26BFF;
 		public const uint Lavender = 0x948CD1, Lilac = 0xAD8ADB, Blossom = 0xD199F5, Pearl = 0xE0D6F0;
-		public const float ContentWidth = 960f, ContentHeight = 1440f;
+		public const float ContentWidth = 960f, ContentHeight = 1550f;   /* [user request 2026-09-21 restyle] taller: gem row + picture + cards; was 1440 */
 		public const int MapCount = 6;
 		public static readonly string[] MapNames = { "DAYLIGHT CITY", "NEON NIGHT", "RAIN RUN", "STORM CHASE", "FALLEN SKY", "PLANET HORIZON" };
 		public static readonly string[] MapDescriptions = { "Golden streets. Open throttle.", "Electric skyline. Endless asphalt.", "Rain-lit roads. Stay sharp.", "Lightning overhead. Keep your line.", "A sky full of falling stars.", "A different world above the road." };
@@ -30,7 +30,8 @@ public sealed partial class ShadowRunPrototype
 		/* [user request 2026-09-20] maps without their own picture show the closest existing city art,
 		   tinted with the map's accent colour, so a locked map still shows a picture of the map. */
 		private static readonly string[] MapFallbackImages = { null, null, "Data/Raw/InfernoLobby/neon_night.png", "Data/Raw/InfernoLobby/neon_night.png", "Data/Raw/InfernoLobby/daylight_city.png", "Data/Raw/InfernoLobby/neon_night.png" };
-		public const float ArtWidth = 820f, ArtHeight = 376f;
+		/* [user request 2026-09-21 restyle] picture 936x440 centred at y -232 inside a 464-tall frame; was 820x376 at -246 */
+		public const float ArtWidth = 936f, ArtHeight = 476f, ArtY = -250f;
 		private static RectTransform s_mapLock;   // the LOCKED overlay inside the art frame (Build / RefreshMap)
 
 		public static Color Hex(uint value, float alpha = 1f)
@@ -575,7 +576,7 @@ public sealed partial class ShadowRunPrototype
 			Transform title = Find(game.homeHeroRoot, "MapName");
 			Transform subtitle = Find(game.homeHeroRoot, "MapDescription");
 			if (title != null) Caption(title.GetComponent<Text>(), MapNames[selected]);
-			if (subtitle != null) Caption(subtitle.GetComponent<Text>(), MapDescriptions[selected]);
+			if (subtitle != null) Caption(subtitle.GetComponent<Text>(), "");   /* [user request 2026-09-21 restyle] status line only; was MapDescriptions[selected] */
 			string counter = "MAP " + (selected + 1) + " / " + MapCount;
 			Transform count = Find(game.homeHeroRoot, "MapCounter");
 			if (count != null) Caption(count.GetComponent<Text>(), counter);
@@ -750,6 +751,7 @@ public sealed partial class ShadowRunPrototype
 
 		public static void RefreshGoalRewards(ShadowRunPrototype game)
 		{
+			RefreshGoalRows(game);   /* [user request 2026-09-21 restyle] progress bars + GO buttons */
 			if (s_goalReward[0] == null || game.homeGoalsArtRect == null) return;
 			HomeGoalData[] goals = game.PickDailyGoals(3);
 			if (goals == null) return;
@@ -761,132 +763,96 @@ public sealed partial class ShadowRunPrototype
 			}
 		}
 
-		private static void GoalCard(ShadowRunPrototype game, Transform parent)
-		{
-			Image card = NeonFrame(game, parent, "DailyGoals", 154f, -1227f, 652f, 370f);
-			RectTransform root = card.rectTransform;
-			game.homeGoalsArtRect = root;
-			// Keep both heading and rows clear of the frame's chamfered corners.
-			Label(game, root, "Title", "DAILY GOALS", -112f, -51f, 332f, 42f, 32, Pearl, 3);
-			game.dailyGoalsTimerText = Label(game, root, "Timer", "", 202f, -51f, 150f, 36f, 23, Lilac);
-			HomeGoalData[] goals = game.PickDailyGoals(3);
-			for (int i = 0; i < 3; i++)
-			{
-				HomeGoalData data = goals[i];
-				float y = -120.0f - i * 84f;
-				Text title = Label(game, root, "GoalTitle", data.Title, -108f, y, 340f, 34f, 24, Pearl, 3);
-				Text progress = Label(game, root, "GoalProgress", data.Progress, -108f, y - 30f, 340f, 24f, 20, Lilac, 3);
-				// Reward chip: crystal icon + "+N", right of the progress line.
-				Image rewardGem = Block(game, root, "GoalRewardGem", 94f, y - 30f, 28f, 28f, 0xFFFFFF);
-				rewardGem.sprite = GemSprite(game);
-				rewardGem.preserveAspect = true;
-				s_goalReward[i] = Label(game, root, "GoalReward", "+" + GoalReward((int)data.Kind), 140f, y - 30f, 52f, 26f, 21, Blossom, 3);
-				Image image = Block(game, root, "CollectGoal", 226f, y - 8f, 112f, 55f, Electric, true);
-				Button button = ButtonOn(image);
-				Label(game, image.transform, "Label", "CLAIM", 0f, -27.5f, 100f, 40f, 23);
-				if (i == 0) Connect(game, button, 7);
-				if (i == 1) Connect(game, button, 8);
-				if (i == 2) Connect(game, button, 9);
-				Image claimed = Block(game, root, "GoalClaimed", 226f, y - 8f, 112f, 55f, Grape, true);
-				Label(game, claimed.transform, "Label", "DONE", 0f, -27.5f, 100f, 40f, 23);
-				game.dailyGoalTitleTexts[i] = title;
-				game.dailyGoalProgressTexts[i] = progress;
-				game.dailyGoalCollectImages[i] = image;
-				game.dailyGoalClaimedImages[i] = claimed;
-				bool done = game.IsDailyGoalClaimed(data.Kind);
-				image.gameObject.SetActive(!done && game.IsDailyGoalComplete(data.Kind));
-				claimed.gameObject.SetActive(done);
-				if (i < 2) Block(game, root, "GoalDivider", 0f, y - 54f, 556f, 2f, Mulberry);
-			}
-			game.dailyGoalsDateKey = game.CurrentDailyGoalsDateKey();
-			game.UpdateDailyGoalsTimer(true);
-		}
-
 		public static void Build(ShadowRunPrototype game, Transform parent)
 		{
+			/* [user request 2026-09-21 restyle] layout to the supplied mockup; drawing helpers in InfernoLobbyStyle.cs */
 			RectTransform root = Root(parent, "RacingLobby");
 			game.homeContentRoot = root;
 			Place(root, 0f, -ContentHeight / 2f, ContentWidth, ContentHeight);
 
 			RectTransform arena = Root(root, "Arena");
 			game.homeHeroRoot = arena;
-			Place(arena, 0f, -476f, 960f, 660f);
-			NeonFrame(game, arena, "MapSelector", 0f, -63f, 956f, 126f);
-			Label(game, arena, "MapCounter", "", 0f, -30f, 570f, 30f, 19, Lilac);
-			Label(game, arena, "MapName", "", 0f, -72f, 600f, 52f, 38);
-			ActionButton(game, arena, "PreviousMap", "<", -405f, -63f, 108f, 92f, Plum, Grape, 0, 45);
-			ActionButton(game, arena, "NextMap", ">", 405f, -63f, 108f, 92f, Plum, Grape, 1, 45);
-			Image preview = NeonFrame(game, arena, "ArenaCard", 0f, -405f, 956f, 510f);
+			// The arena starts 112 units down: the gem counter (top-right, 100 tall) sits above it.
+			Place(arena, 0f, -445f, 960f, 666f);
+			// Map selector: a dark strip with square arrow blocks at both ends; "MAP 4 / 6"
+			// small above the name, both left-aligned after the left block.
+			Panel(game, arena, "MapSelector", 0f, -75f, 960f, 150f);
+			Label(game, arena, "MapCounter", "", -50f, -46f, 560f, 26f, 19, Steel, 3);
+			Text mapName = Label(game, arena, "MapName", "", -50f, -92f, 580f, 60f, 46, 0xFFFFFF, 3);
+			mapName.fontStyle = FontStyle.BoldAndItalic;
+			Block(game, arena, "MapAccent", 0f, -148f, 900f, 3f, Lilac);   // RefreshMap tints it with the map colour
+			IconButton(game, arena, "PreviousMap", "chevron-left", -420f, -75f, 104f, 120f, 0);
+			IconButton(game, arena, "NextMap", "chevron-right", 420f, -75f, 104f, 120f, 1);
+			// Picture frame
+			Image preview = Panel(game, arena, "ArenaCard", 0f, -416f, 960f, 500f);
 			RectTransform previewRoot = preview.rectTransform;
-			Block(game, arena, "MapAccent", 0f, -153f, 844f, 4f, Lilac);
-			// Keep the game's existing hero illustration; fit it once in a fixed frame.
 			game.MakeHome101Artwork(previewRoot);
-			Place(game.homeHeroArtRect, 0f, -246f, ArtWidth, ArtHeight);
+			Place(game.homeHeroArtRect, 0f, ArtY, ArtWidth, ArtHeight);
 			for (int i = 0; i < MapCount; i++)
 			{
 				RectTransform artRect = Root(previewRoot, "MapArt" + i);
 				s_mapArt[i] = artRect.gameObject.AddComponent<RawImage>();
 				s_mapArtTried[i] = false;
 				s_mapArtSize[i, 0] = s_mapArtSize[i, 1] = 0;
-				Place(artRect, 0f, -246f, ArtWidth, ArtHeight);
+				Place(artRect, 0f, ArtY, ArtWidth, ArtHeight);
 				s_mapArt[i].raycastTarget = false;
 				artRect.gameObject.SetActive(false);
 			}
 			Image heroImage = game.homeHeroArtRect.GetComponent<Image>();
 			heroImage.preserveAspect = true;
-			Label(game, arena, "MapDescription", "", 0f, -618f, 880f, 40f, 26, Pearl);
-			{   // lock overlay: the map picture stays visible under a light shade; a neon plate
-				// in the middle carries LOCKED and the crystal price.
-				// [user request 2026-09-20] original: 0.66 shade, no plate, crystal at -52 (spans -76..-28)
-				// with the price text box starting at -40 — the number overlapped the stone.
-				// Parented to the ArenaCard frame like the map art itself (same y = -246 inside the
-				// frame), so the overlay covers the picture exactly; under the arena it sat 150 px high.
+			// Status line over the bottom of the picture ("NEED N MORE CRYSTALS", "MAP UNLOCKED. TAP PLAY."); empty otherwise.
+			Label(game, arena, "MapDescription", "", 0f, -640f, 880f, 36f, 24, Pearl);
+			{   // lock overlay: the map picture stays visible under a light shade; a plate in the
+				// middle carries LOCKED and the crystal price (icon and number in separate slots).
 				RectTransform lockRoot = Root(previewRoot, "MapLock");
 				s_mapLock = lockRoot;
-				Place(lockRoot, 0f, -246f, ArtWidth, ArtHeight);
+				Place(lockRoot, 0f, ArtY, ArtWidth, ArtHeight);
 				lockRoot.SetAsLastSibling();
 				Image shade = Block(game, lockRoot, "LockShade", 0f, -ArtHeight / 2f, ArtWidth, ArtHeight, Black, true);
 				shade.color = Hex(Black, 0.42f);
-				Image plate = Card(game, lockRoot, "LockPlate", 0f, -ArtHeight / 2f, 400f, 176f, Ink, Grape);
-				plate.color = Hex(Ink, 0.9f);
-				Label(game, lockRoot, "LockTitle", "LOCKED", 0f, -152f, 360f, 60f, 44, Pearl);
-				// crystal 48 px centred at -50 (spans -74..-26); the price text box starts at -10
-				// (x 70, 160 wide, left-aligned) — 16 px clear of the stone, the pair centred on the plate
-				Image gem = Block(game, lockRoot, "LockGem", -50f, -226f, 48f, 48f, 0xFFFFFF);
+				Image plate = Panel(game, lockRoot, "LockPlate", 0f, -ArtHeight / 2f, 400f, 176f);
+				plate.color = new Color(1f, 1f, 1f, 0.94f);
+				IconImage(game, lockRoot, "LockIcon", "lock", 0f, -ArtHeight / 2f + 52f, 30f, Steel);
+				Text lockTitle = Label(game, lockRoot, "LockTitle", "LOCKED", 0f, -ArtHeight / 2f + 6f, 360f, 56f, 40, Pearl);
+				lockTitle.fontStyle = FontStyle.BoldAndItalic;
+				// crystal 44 px centred at -50 (spans -72..-28); price text starts at -6 (x 70, 152 wide, left-aligned)
+				Image gem = Block(game, lockRoot, "LockGem", -50f, -ArtHeight / 2f - 48f, 44f, 44f, 0xFFFFFF);
 				gem.sprite = GemSprite(game);
 				gem.preserveAspect = true;
-				Label(game, lockRoot, "LockPrice", "", 70f, -226f, 160f, 52f, 36, Lilac, 3);
+				Label(game, lockRoot, "LockPrice", "", 70f, -ArtHeight / 2f - 48f, 152f, 48f, 34, Lilac, 3);
 				lockRoot.gameObject.SetActive(false);
 			}
 
-			// PLAY: the game's neon frame with a solid electric plate that fills it edge
-			// to edge (inside the contour), plus the original gloss sweep. ShowMainMenu
-			// relabels it ("P  L  A  Y") and wires StartRun through primaryOverlayButton;
-			// PauseRun relabels it CONTINUE.
-			Image playFrame = NeonFrame(game, root, "Drive", 0f, -917f, 800f, 176f);
+			// PLAY: the slanted magenta plate; MakeHomeDriveShine adds the light sweep that
+			// UpdateHomeDriveShine animates. ShowMainMenu relabels it ("P  L  A  Y") and wires
+			// StartRun through primaryOverlayButton; PauseRun relabels it CONTINUE.
+			Image halo = Block(game, root, "DriveHalo", 0f, -905f, 944f, 250f, 0xFFFFFF);
+			s_playHalo = halo;
+			halo.sprite = PlayPlateSprite();
+			halo.type = Image.Type.Simple;
+			halo.color = Hex(Neon, 0.16f);
+			Image playFrame = Block(game, root, "Drive", 0f, -905f, 900f, 210f, 0xFFFFFF);
+			playFrame.sprite = PlayPlateSprite();
+			playFrame.type = Image.Type.Simple;
 			RectTransform playRect = playFrame.rectTransform;
-			Image core = NeonPlate(game, playRect, "Core", 0f, -88f, 800f - 2f * PlateInset, 176f - 2f * PlateInset);
 			Button driveButton = ButtonOn(playFrame);
 			game.primaryOverlayButton = driveButton;
 			game.homeDriveArtRect = playRect;
 			game.homeDriveHitRect = playRect;
-			game.primaryButtonLabel = Label(game, playRect, "Label", "PLAY", 0f, -88f, 700f, 110f, 54, 0xFFFFFF);
-			game.MakeHomeDriveShine(core);
+			game.MakeHomeDriveShine(playFrame);
+			Transform sweepMask = playRect.Find("DRIVE Gloss Mask");
+			if (sweepMask != null)
+			{   // clip the sweep to the parallelogram, not the game's rounded rectangle
+				Image mask = sweepMask.GetComponent<Image>();
+				mask.sprite = PlayPlateSprite();
+				mask.type = Image.Type.Simple;
+				mask.rectTransform.offsetMax = Vector2.zero;
+			}
+			game.primaryButtonLabel = Label(game, playRect, "Label", "PLAY", 0f, -105f, 760f, 146f, 100, 0xFFFFFF);
+			game.primaryButtonLabel.fontStyle = FontStyle.BoldAndItalic;
+			Glow(game.primaryButtonLabel, NeonSoft, 0.75f, 2.5f);
 
-			// Titled with the game's own case name (the string its case screen uses).
-			Button caseButton = ActionButton(game, root, "Cases", "N SERIES CASE", -337f, -1227f, 282f, 370f, Ink, Magenta, 5, 31);
-			game.homeCaseArtRect = caseButton.GetComponent<RectTransform>();
-			RectTransform caseRoot = game.homeCaseArtRect;
-			// The game's own 3D case render (the texture the case screen draws); bound in HomePreview().
-			RectTransform artRect2 = Root(caseRoot, "CaseArt");
-			s_caseArt = artRect2.gameObject.AddComponent<RawImage>();
-			s_caseArtBound = false;
-			Place(artRect2, 0f, -150f, 258f, 188f);
-			s_caseArt.raycastTarget = false;
-			Text caseLabel = Find(caseRoot, "Label").GetComponent<Text>();
-			Place(caseLabel.rectTransform, 0f, -236f, 236f, 64f);
-			caseLabel.resizeTextMaxSize = 24;
-			InfernoDailyCases.BindCard(Label(game, caseRoot, "CaseSubtitle", "OPEN CASE", 0f, -294f, 258f, 52f, 19, Pearl));   /* [user request 2026-09-21] daily case allowance */
+			CaseCard(game, root);
 			GoalCard(game, root);
 			RefreshMap(game);
 		}
@@ -908,26 +874,22 @@ public sealed partial class ShadowRunPrototype
 
 		public static void Tabs(ShadowRunPrototype game, Transform parent)
 		{
+			/* [user request 2026-09-21 restyle] icon over label; the active tab on a lifted plate with a neon underline */
 			RectTransform root = Root(parent, "LobbyTabs");
 			game.menuTabBarRoot = root;
 			Place(root, 0f, 112f, 1000f, 184f, new Vector2(0.5f, 0f));
-			Block(game, root, "Dock", 0f, -92f, 1000f, 184f, Ink, true);
-			Block(game, root, "DockRail", 0f, -2f, 1000f, 4f, Violet);
-			NeonTab(game, root, "Garage", "GARAGE", -310f, -92f, 290f, 120f, 26, 2);
-			NeonTab(game, root, "Home", "DRIVE", 0f, -92f, 290f, 120f, 28, 3);
-			NeonTab(game, root, "Profile", "PROFILE", 310f, -92f, 290f, 120f, 26, 4);
+			Image dock = Block(game, root, "Dock", 0f, -92f, 1400f, 184f, PanelFill);
+			dock.color = Hex(PanelFill, 0.98f);
+			Block(game, root, "DockRail", 0f, -1f, 1400f, 2f, PanelRim);
+			DockTab(game, root, "Garage", "GARAGE", "garage", -320f, 2);
+			DockTab(game, root, "Home", "DRIVE", "drive", 0f, 3);
+			DockTab(game, root, "Profile", "PROFILE", "profile", 320f, 4);
+			DockVisual(game, 1);
 		}
 
 		private static void TabVisual(ShadowRunPrototype game, float position)
 		{
-			if (game.menuTabBarRoot == null) return;
-			string[] names = { "Garage", "Home", "Profile" };
-			int selected = (int)(position + 0.5f);
-			for (int i = 0; i < 3; i++)
-			{
-				Transform transform = Find(game.menuTabBarRoot, names[i]);
-				if (transform != null) Paint(transform.GetComponent<Image>(), i == selected ? 0xFFFFFFu : 0x7F739Cu);   // frame art: full vs dimmed
-			}
+			DockVisual(game, (int)(position + 0.5f));   /* [user request 2026-09-21 restyle] */
 		}
 
 		public static void PositionPages(ShadowRunPrototype game)
@@ -981,15 +943,17 @@ public sealed partial class ShadowRunPrototype
 			}
 			if (game.gemCounterRect != null)
 			{
-				Place(game.gemCounterRect, centerX + 350f * scale, -top - 16f - 50f * scale, 252f, 100f);
+				Place(game.gemCounterRect, centerX + 326f * scale, -top - 16f - 50f * scale, 300f, 100f);   /* [user request 2026-09-21 restyle] 300 wide incl. the + segment; was 252 at +350 */
 				game.gemCounterRect.localScale = new Vector3(scale, scale, 1f);
 			}
 			if (game.menuTitleRoot != null) game.menuTitleRoot.gameObject.SetActive(false);
 			HomePreview(game, game.menuTargetTab == 1);
+			if (s_playHalo != null) s_playHalo.color = Hex(Neon, 0.12f + 0.10f * (0.5f + 0.5f * Mathf.Sin(Time.unscaledTime * 2.4f)));   // slow breathing glow behind PLAY
 		}
 
 		public static void Show(ShadowRunPrototype game)
 		{
+			StyleGemCounter(game);   /* [user request 2026-09-21 restyle] */
 			game.impactShake = 0f;
 			RefreshMap(game);
 			RefreshGoalRewards(game);

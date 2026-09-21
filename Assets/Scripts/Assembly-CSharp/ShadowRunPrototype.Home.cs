@@ -358,7 +358,7 @@ public sealed partial class ShadowRunPrototype
 		homeDriveShineRect.anchorMax = center;
 		homeDriveShineRect.anchorMin = center;
 		homeDriveShineRect.pivot = new Vector2(0.5f, 0.5f);
-		homeDriveShineRect.sizeDelta = new Vector2(170f, 620f);
+		homeDriveShineRect.sizeDelta = new Vector2(220f, 700f);   /* [user request 2026-09-21 restyle] wider sweep; was 170 x 620 */
 		homeDriveShineRect.localRotation = Quaternion.Euler(0f, 0f, -20f);
 	}
 

@@ -65,9 +65,10 @@ public sealed partial class ShadowRunPrototype
 		{
 			if (s_cardSubtitle == null) return;
 			int left = Remaining();
+			// one line under the card title; the OPEN CASE outline button sits below it
 			s_cardSubtitle.text = left > 0
-				? "OPEN CASE\n" + left + " OF " + PerDay + " LEFT TODAY"
-				: "ALL OPENED\nNEXT IN " + Countdown();
+				? left + " OF " + PerDay + " LEFT TODAY"
+				: "ALL OPENED  •  NEXT IN " + Countdown();
 		}
 
 		// ---- case screen ------------------------------------------------------------

@@ -367,19 +367,20 @@ public sealed partial class ShadowRunPrototype
 		{
 			return;
 		}
-		float cycle = Mathf.Repeat(Time.unscaledTime, 2.14f);
-		if (cycle >= 0.56f)
+		/* [user request 2026-09-21 restyle] a longer, brighter sweep across the PLAY plate; original: 2.14 s cycle, 0.56 s pass, 0.42 peak */
+		float cycle = Mathf.Repeat(Time.unscaledTime, 2.6f);
+		if (cycle >= 0.72f)
 		{
 			Color hidden = homeDriveShineImage.color;
 			hidden.a = 0f;
 			homeDriveShineImage.color = hidden;
 			return;
 		}
-		float t = Mathf.SmoothStep(0f, 1f, cycle / 0.56f);
+		float t = Mathf.SmoothStep(0f, 1f, cycle / 0.72f);
 		float width = Mathf.Max(700f, homeDriveArtRect.rect.width);
 		homeDriveShineRect.anchoredPosition = new Vector2(Mathf.Lerp(-width * 0.62f, width * 0.62f, t), 0f);
 		Color color = homeDriveShineImage.color;
-		color.a = Mathf.Sin(t * Mathf.PI) * 0.42f;
+		color.a = Mathf.Sin(t * Mathf.PI) * 0.62f;
 		homeDriveShineImage.color = color;
 	}
 
