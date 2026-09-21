@@ -99,6 +99,7 @@ public sealed partial class ShadowRunPrototype
 		MakeCaseBottomArea(caseOpeningWindowRoot);
 		MakeCaseResultPanel(caseOpeningWindowRoot);
 		MakeCaseOpeningPreviewLayer(caseOpeningWindowRoot);
+		InfernoDailyCases.BindOverlay(this);   /* [user request 2026-09-21] "N OF 3 CASES LEFT TODAY" line */
 		caseOverlayRoot.SetActive(false);
 	}
 
@@ -407,6 +408,7 @@ public sealed partial class ShadowRunPrototype
 			caseResultGroup.blocksRaycasts = true;
 			caseResultGroup.interactable = true;
 		}
+		InfernoDailyCases.RefreshOverlay(this);   /* [user request 2026-09-21] "again" is disabled once the last case is used */
 	}
 
 	private void UpdateCaseResultVisual()
@@ -478,6 +480,12 @@ public sealed partial class ShadowRunPrototype
 
 	private void RequestCaseRewardedOpening(bool openingAgain)
 	{
+		/* [user request 2026-09-21] daily allowance used up: no ad, the screen shows the reset countdown */
+		if (!InfernoDailyCases.CanOpen())
+		{
+			InfernoDailyCases.RefreshOverlay(this);
+			return;
+		}
 		if (!SupabaseGameManager.IsAuthenticated || !SupabaseGameManager.ProfileMatchesSession)
 		{
 			FirstLaunchAuthScreen.Show();
@@ -833,6 +841,13 @@ public sealed partial class ShadowRunPrototype
 		{
 			return;
 		}
+		/* [user request 2026-09-21] one of today's cases is spent the moment the lid starts opening */
+		if (!InfernoDailyCases.Consume())
+		{
+			InfernoDailyCases.RefreshOverlay(this);
+			return;
+		}
+		InfernoDailyCases.RefreshOverlay(this);
 		caseSelectedPrize = RollCasePrize();
 		caseRewardApplied = false;
 		if (caseOpenButton != null)
@@ -1611,6 +1626,7 @@ public sealed partial class ShadowRunPrototype
 		caseOverlayRoot.transform.SetAsLastSibling();
 		caseOverlayRoot.SetActive(true);
 		InfernoLobby.CaseVisibility(this, true); /* [InfernoLobby patch] */
+		InfernoDailyCases.RefreshOverlay(this);   /* [user request 2026-09-21] after the reset re-enabled the button */
 	}
 
 	private void HideCaseOverlay()
@@ -1630,6 +1646,7 @@ public sealed partial class ShadowRunPrototype
 			_ = SupabaseGameManager.SyncProfileAfterCaseClosedAsync();
 		}
 		InfernoLobby.CaseVisibility(this, false); /* [InfernoLobby patch] */
+		InfernoDailyCases.RefreshCard();   /* [user request 2026-09-21] the lobby card shows what is left */
 	}
 
 	private Button MakeCaseActionButton(Transform parent, string label, Vector2 pos, Vector2 size, TextAnchor anchor, bool filled)

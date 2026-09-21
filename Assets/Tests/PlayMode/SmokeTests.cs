@@ -30,7 +30,7 @@ public class SmokeTests
 	private static readonly string[] PrefKeys = BuildPrefKeys();
 	private static string[] BuildPrefKeys()
 	{
-		var keys = new System.Collections.Generic.List<string> { "InfernoDrive.MapUnlocked.2", "InfernoDrive.MapUnlocked.3", "InfernoDrive.SelectedMap", "shadowRun.daily.claimedMask", "shadowRun.daily.date", "infernoDriveFirstRunTutorialV7", "InfernoDrive.MasterVolume", "shadowRunCrystals", "shadowRunPendingCrystalDelta", "shadowRunCloudDirty" };
+		var keys = new System.Collections.Generic.List<string> { "InfernoDrive.MapUnlocked.2", "InfernoDrive.MapUnlocked.3", "InfernoDrive.SelectedMap", "shadowRun.daily.claimedMask", "shadowRun.daily.date", "infernoDriveFirstRunTutorialV7", "InfernoDrive.MasterVolume", "shadowRunCrystals", "shadowRunPendingCrystalDelta", "shadowRunCloudDirty", "InfernoDrive.DailyCases.Day", "InfernoDrive.DailyCases.Opened" };
 		foreach (var cat in new[] { "Tires", "Flags", "Trails" })
 		{
 			keys.Add("InfernoDrive.Style." + cat + ".Selected");
@@ -254,6 +254,7 @@ public class SmokeTests
 		int crystalsBefore = (int)Type.GetType("ShadowRun.Services.SupabaseGameManager, Assembly-CSharp").GetProperty("Crystals").GetValue(null);
 		// applying the reward without an authenticated profile (QueueCaseReward) may re-open the auth
 		// screen, whose rounded frames log the editor-only UISprite assert (filtered by OnLog)
+		PlayerPrefs.SetInt("InfernoDrive.DailyCases.Opened", 0);   // daily case allowance: start the test with all 3 available
 		Call(game, "StartCaseOpening");
 		yield return Seconds(2.5f);
 		yield return Shot("04b-case-lid");

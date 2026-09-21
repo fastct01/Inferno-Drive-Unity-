@@ -605,6 +605,8 @@ public sealed partial class ShadowRunPrototype
 			return;
 		}
 		nextDailyGoalsTimerUpdate = Time.unscaledTime + 1f;
+		/* [user request 2026-09-21] */ InfernoDailyCases.RefreshCard();
+		/* [user request 2026-09-21] */ if (caseOverlayRoot != null && caseOverlayRoot.activeInHierarchy) InfernoDailyCases.RefreshOverlay(this);
 		DateTime now = DateTime.Now;
 		int dateKey = now.Year * 10000 + now.Month * 100 + now.Day;
 		EnsureDailyGoalProgressLoaded();

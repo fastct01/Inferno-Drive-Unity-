@@ -886,7 +886,7 @@ public sealed partial class ShadowRunPrototype
 			Text caseLabel = Find(caseRoot, "Label").GetComponent<Text>();
 			Place(caseLabel.rectTransform, 0f, -236f, 236f, 64f);
 			caseLabel.resizeTextMaxSize = 24;
-			Label(game, caseRoot, "CaseSubtitle", "OPEN CASE", 0f, -294f, 258f, 52f, 19, Pearl);
+			InfernoDailyCases.BindCard(Label(game, caseRoot, "CaseSubtitle", "OPEN CASE", 0f, -294f, 258f, 52f, 19, Pearl));   /* [user request 2026-09-21] daily case allowance */
 			GoalCard(game, root);
 			RefreshMap(game);
 		}
