@@ -108,7 +108,7 @@ public sealed partial class ShadowRunPrototype
 			if (transform != null) transform.gameObject.SetActive(on);
 		}
 
-		private static void ShowNote(ShadowRunPrototype game, string text, uint color)
+		public static void ShowNote(ShadowRunPrototype game, string text, uint color)   /* [user request 2026-09-26: night drive] */ // InfernoNightHazards shares the HUD note; original: private
 		{
 			if (game.hudRoot == null) return;
 			if (s_note == null)
@@ -137,7 +137,7 @@ public sealed partial class ShadowRunPrototype
 			return false;
 		}
 
-		private static bool NearPuddle(float z, float within)
+		public static bool NearPuddle(float z, float within)   /* [user request 2026-09-26: night drive] */ // original: private
 		{
 			for (int i = 0; i < s_puddles.Length; i++)
 			{
@@ -273,8 +273,18 @@ public sealed partial class ShadowRunPrototype
 		// road is open while the ball is up at either side: time the pass. Contact is
 		// a heavy side impact (a whole heart, the car is shoved across the road).
 		private const int BallCount = 2;
-		private const float GantryHeight = 10.6f, GantryHalfSpan = 9.6f, RopeLength = 9.2f, BallRadius = 1.1f;
-		private const float SwingAmplitude = 62.0f * Pi / 180.0f, SwingPeriod = 2.7f;
+		/* [user request 2026-09-22: five lanes] The pendulum grows with the road. Over the shipped 10.2 m road (gantry
+		   10.6 m, rope 9.2 m, posts at ±9.6) the ball came down to car height for |x| < 5.47 m — the whole road; left as it
+		   was over 17 m, the outer lanes (±6.2) could never be hit. The gantry scales with the road width (× 17 / 10.2), the
+		   rope keeps the shipped 1.4 m below the beam so the ball still dips to the road at the bottom of its swing (reach now
+		   |x| < 7.4 m: every lane, out to the shoulder), the posts move out with the road edge like every roadside prop
+		   (InfernoLanes.Shift), and the amplitude drops from 62° to 45° so the ball turns short of the posts as before. The
+		   swing period is unchanged, so the open / closed rhythm of the road is the shipped one (~40 % of the period closed). */
+		private const float GantryHeight = 10.6f * InfernoLanes.RoadWidth / 10.2f;   // 17.67 (original: 10.6f)
+		private const float GantryHalfSpan = 9.6f + InfernoLanes.Shift;              // 13.0 (original: 9.6f)
+		private const float RopeLength = GantryHeight - 1.4f;                        // 16.27 (original: 9.2f, i.e. 10.6 - 1.4)
+		private const float BallRadius = 1.1f;
+		private const float SwingAmplitude = 45.0f * Pi / 180.0f, SwingPeriod = 2.7f;   // original: SwingAmplitude = 62.0f * Pi / 180.0f
 		private const float BallFirstMin = 900f, BallFirstMax = 1300f, BallGapMin = 800f, BallGapMax = 1300f;
 
 		private struct Ball
@@ -341,6 +351,14 @@ public sealed partial class ShadowRunPrototype
 			slot.shadow = card.transform;
 			slot.shadow.SetParent(slot.root, false);
 			slot.shadow.localRotation = new Quaternion(0.70710678f, 0f, 0f, 0.70710678f);
+		}
+
+		/* [user request 2026-09-26: night drive] */ // an active gantry within `within` metres of z (InfernoNightHazards keeps its rows clear of them)
+		public static bool NearBall(float z, float within)
+		{
+			for (int i = 0; i < s_balls.Length; i++)
+				if (s_balls[i].active && s_balls[i].root != null && Mathf.Abs(s_balls[i].root.position.z - z) < within) return true;
+			return false;
 		}
 
 		private static bool RoadClearForGantry(ShadowRunPrototype game, float z)

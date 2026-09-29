@@ -18,7 +18,12 @@ public sealed partial class ShadowRunPrototype
 		public const uint Plum = 0x1A0F33, Grape = 0x420E7A, Mulberry = 0x3B1466, Indigo = 0x7A22D6;
 		public const uint Electric = 0x9433FF, Violet = 0xB840FF, Magenta = 0xBF66FF, Orchid = 0xB26BFF;
 		public const uint Lavender = 0x948CD1, Lilac = 0xAD8ADB, Blossom = 0xD199F5, Pearl = 0xE0D6F0;
-		public const float ContentWidth = 960f, ContentHeight = 1550f;   /* [user request 2026-09-21 restyle] taller: gem row + picture + cards; was 1440 */
+		/* [user request 2026-09-22: lobby mockup] the page is 1032x1668 so that Layout's scale (min((safeWidth - 48) /
+		   ContentWidth, (height - dock - 28) / ContentHeight)) is exactly 1 on the 1080x1920 canvas without insets:
+		   page units are canvas px, the page's top-left corner sits at canvas (24, 16), and a widget centred at
+		   canvas (cx, cy) is placed at (cx - 540, 16 - cy). On other aspect ratios / safe areas the same scaling
+		   shrinks and offsets the whole page as before. original: 960f, 1550f */
+		public const float ContentWidth = 1032f, ContentHeight = 1668f;   /* [user request 2026-09-21 restyle] taller: gem row + picture + cards; was 1440 */
 		public const int MapCount = 6;
 		public static readonly string[] MapNames = { "DAYLIGHT CITY", "NEON NIGHT", "RAIN RUN", "STORM CHASE", "FALLEN SKY", "PLANET HORIZON" };
 		public static readonly string[] MapDescriptions = { "Golden streets. Open throttle.", "Electric skyline. Endless asphalt.", "Rain-lit roads. Stay sharp.", "Lightning overhead. Keep your line.", "A sky full of falling stars.", "A different world above the road." };
@@ -26,12 +31,19 @@ public sealed partial class ShadowRunPrototype
 		// Screenshots shipped in Data/Raw/InfernoLobby (bundle-relative). null keeps the hero art.
 		// Every map is the same city (the presets only change the weather/lighting), so DAYLIGHT
 		// CITY shows the NEON NIGHT shot re-lit as day (tools/relight_map_card.py) — same view.
-		private static readonly string[] MapImages = { "Data/Raw/InfernoLobby/daylight_city.png", "Data/Raw/InfernoLobby/neon_night.png", null, null, null, null };
+		/* [user request 2026-09-21: maps] every map has its own picture slot, Resources/InfernoLobby/<slug>.bytes
+		   (captured from the map itself by Inferno Drive > Capture Map Thumbnails); a missing file falls back
+		   to the tinted borrowed shot below. InfernoMaps keys its sky/road/scenery caches on the same slugs. */
+		public static readonly string[] MapSlugs = { "daylight_city", "neon_night", "rain_run", "storm_chase", "fallen_sky", "planet_horizon" };
+		private static readonly string[] MapImages = { "Data/Raw/InfernoLobby/daylight_city.png", "Data/Raw/InfernoLobby/neon_night.png", "Data/Raw/InfernoLobby/rain_run.png", "Data/Raw/InfernoLobby/storm_chase.png", "Data/Raw/InfernoLobby/fallen_sky.png", "Data/Raw/InfernoLobby/planet_horizon.png" };
+		// original: MapImages = { "Data/Raw/InfernoLobby/daylight_city.png", "Data/Raw/InfernoLobby/neon_night.png", null, null, null, null };
 		/* [user request 2026-09-20] maps without their own picture show the closest existing city art,
 		   tinted with the map's accent colour, so a locked map still shows a picture of the map. */
 		private static readonly string[] MapFallbackImages = { null, null, "Data/Raw/InfernoLobby/neon_night.png", "Data/Raw/InfernoLobby/neon_night.png", "Data/Raw/InfernoLobby/daylight_city.png", "Data/Raw/InfernoLobby/neon_night.png" };
 		/* [user request 2026-09-21 restyle] picture 936x440 centred at y -232 inside a 464-tall frame; was 820x376 at -246 */
-		public const float ArtWidth = 936f, ArtHeight = 476f, ArtY = -250f;
+		/* [user request 2026-09-22: lobby mockup] the picture is the whole 1000x476 rectangle (canvas x 40..1040, y 316..792),
+		   straight corners, no frame; ArtY centres it in its 476-tall root. original: 936f, 476f, -250f */
+		public const float ArtWidth = 1000f, ArtHeight = 476f, ArtY = -238f;
 		private static RectTransform s_mapLock;   // the LOCKED overlay inside the art frame (Build / RefreshMap)
 
 		public static Color Hex(uint value, float alpha = 1f)
@@ -42,6 +54,15 @@ public sealed partial class ShadowRunPrototype
 		public static void Paint(Image image, uint color)
 		{
 			image.color = Hex(color);
+		}
+
+		/* [user request 2026-09-26: crystals] */ // The gem counter's slot is 130 px wide: seven digits do not fit and ran under the "+" key, so big
+		// balances read as thousands / millions ("500K", "5M", "5.2M"). Up to 99 999 stays plain.
+		public static string GemText(int amount)
+		{
+			if (amount >= 1000000) { float m = amount / 1000000f; return (m >= 10f ? Mathf.Floor(m).ToString("0") : (Mathf.Floor(m * 10f) / 10f).ToString("0.#")) + "M"; }
+			if (amount >= 100000) return (amount / 1000).ToString("0") + "K";
+			return amount.ToString();
 		}
 
 		public static void Caption(Text text, string value)
@@ -74,6 +95,7 @@ public sealed partial class ShadowRunPrototype
 
 		public static Image Block(ShadowRunPrototype game, Transform parent, string name, float x, float y, float width, float height, uint color, bool rounded = false)
 		{
+			InfernoUi.Remember(game);   /* [user request 2026-09-21: 3D UI] ButtonOn (no game parameter) elevates through the kit */
 			Image image = game.MakeUiBlock(parent, name, new Vector2(x, y), new Vector2(width, height), TextAnchor.UpperCenter, Hex(color));
 			Place(image.rectTransform, x, y, width, height);
 			if (rounded)
@@ -101,7 +123,7 @@ public sealed partial class ShadowRunPrototype
 		private const int FrameTex = 128, FrameGlow = 10, FrameChamfer = 26, FrameEdge = 4;
 		private const int FrameBorder = FrameGlow + FrameChamfer + FrameEdge;   // 40 px per side
 
-		private static void Set(ref Color32 px, int r, int g, int b, int a)
+		internal static void Set(ref Color32 px, int r, int g, int b, int a)   /* [user request 2026-09-21: 3D UI] shared with InfernoUi; original: private */
 		{
 			px.r = (byte)Math.Max(0, Math.Min(255, r));
 			px.g = (byte)Math.Max(0, Math.Min(255, g));
@@ -110,7 +132,7 @@ public sealed partial class ShadowRunPrototype
 		}
 
 		// Signed distance (px) to the octagon inset by `inset` from the texture edge; positive inside.
-		private static float Octagon(int x, int y, int inset, int chamfer)
+		internal static float Octagon(int x, int y, int inset, int chamfer)   /* [user request 2026-09-21: 3D UI] original: private */
 		{
 			const int n = FrameTex - 1;
 			float d = Math.Min(Math.Min((float)(x - inset), (float)(n - inset - x)), Math.Min((float)(y - inset), (float)(n - inset - y)));
@@ -215,23 +237,40 @@ public sealed partial class ShadowRunPrototype
 
 		private static Sprite s_glassFrame;
 
+		/* [user request 2026-09-21: 3D UI] The three lobby sprites now come from the widget kit
+		   (InfernoUi): the frame is the mockup's cut-corner panel (large chamfer top-left /
+		   bottom-right, small top-right / bottom-left, violet contour, glow, lit top edge), so every
+		   NeonFrame / NeonPlate / GlassFrame user switches at once. The old octagon shaders above
+		   stay for reference. original: s_glassFrame = SlicedSprite(GlassPixel, GlassBorder) */
 		private static Sprite GlassFrameSprite(ShadowRunPrototype game)
 		{
-			if (s_glassFrame == null) s_glassFrame = SlicedSprite(GlassPixel, GlassBorder);
+			InfernoUi.Remember(game);
+			if (s_glassFrame == null) s_glassFrame = InfernoUi.BevelGlassSprite();
 			return s_glassFrame;
 		}
 
+		// original: if (s_neonFrame == null) s_neonFrame = SlicedSprite(FramePixel);
 		public static Sprite NeonFrameSprite(ShadowRunPrototype game)
 		{
-			if (s_neonFrame == null) s_neonFrame = SlicedSprite(FramePixel);
+			InfernoUi.Remember(game);
+			if (s_neonFrame == null) s_neonFrame = InfernoUi.ChamferFrameSprite(InfernoUi.Chamfer.Large);
 			return s_neonFrame;
+		}
+
+		// The frame cut to suit a rect: buttons and small widgets get the medium / small chamfers.
+		public static Sprite NeonFrameSprite(ShadowRunPrototype game, float width, float height)
+		{
+			InfernoUi.Remember(game);
+			return InfernoUi.ChamferFrameSprite(InfernoUi.ChamferFor(width, height));
 		}
 
 		private static Sprite s_neonPlate;
 
+		// original: if (s_neonPlate == null) s_neonPlate = SlicedSprite(PlatePixel);
 		private static Sprite NeonPlateSprite(ShadowRunPrototype game)
 		{
-			if (s_neonPlate == null) s_neonPlate = SlicedSprite(PlatePixel);
+			InfernoUi.Remember(game);
+			if (s_neonPlate == null) s_neonPlate = InfernoUi.BevelPlateSprite();
 			return s_neonPlate;
 		}
 
@@ -437,7 +476,7 @@ public sealed partial class ShadowRunPrototype
 
 		public static Image NeonFrame(ShadowRunPrototype game, Transform parent, string name, float x, float y, float width, float height, uint tint = 0xFFFFFF)
 		{
-			Sprite sprite = NeonFrameSprite(game);
+			Sprite sprite = NeonFrameSprite(game, width, height);   /* [user request 2026-09-21: 3D UI] chamfer picked from the size; original: NeonFrameSprite(game) */
 			Image image = Block(game, parent, name, x, y, width, height, sprite != null ? tint : Ink, sprite == null);
 			if (sprite != null)
 			{
@@ -530,12 +569,16 @@ public sealed partial class ShadowRunPrototype
 					if (!s_mapArtTried[i])
 					{
 						s_mapArtTried[i] = true;
+						/* [user request 2026-09-21: maps] the map's own capture first, the tinted borrowed shot when it is missing */
+						bool borrowed = false;
 						Texture2D texture = LoadTexture(file);
+						if (texture == null && MapFallbackImages[i] != null) { texture = LoadTexture(MapFallbackImages[i]); borrowed = true; }
 						if (texture != null)
 						{
 							art.texture = texture;
 							// a borrowed picture is tinted towards the map's accent so each map reads differently
-							art.color = MapImages[i] != null ? Color.white : Color.Lerp(Color.white, Hex(MapColors[i]), 0.45f);
+							art.color = !borrowed ? Color.white : Color.Lerp(Color.white, Hex(MapColors[i]), 0.45f);
+							// original: art.color = MapImages[i] != null ? Color.white : Color.Lerp(Color.white, Hex(MapColors[i]), 0.45f);
 							s_mapArtSize[i, 0] = s_lastLoaded[0]; s_mapArtSize[i, 1] = s_lastLoaded[1];
 							CoverCrop(art, s_mapArtSize[i, 0], s_mapArtSize[i, 1]);
 						}
@@ -564,7 +607,7 @@ public sealed partial class ShadowRunPrototype
 			game.menuGemCount = amount;
 			SupabaseGameManager.SetCrystals(amount);
 			_ = SupabaseGameManager.SyncProfileAfterEconomyChangeAsync();
-			if (game.gemAmountText != null) Caption(game.gemAmountText, amount.ToString());
+			if (game.gemAmountText != null) Caption(game.gemAmountText, GemText(amount));   /* [user request 2026-09-26: crystals] */
 		}
 
 		public static int SelectedMap() { return Math.Max(0, Math.Min(MapCount - 1, PlayerPrefs.GetInt("InfernoDrive.SelectedMap", 1))); }
@@ -579,9 +622,10 @@ public sealed partial class ShadowRunPrototype
 			if (subtitle != null) Caption(subtitle.GetComponent<Text>(), "");   /* [user request 2026-09-21 restyle] status line only; was MapDescriptions[selected] */
 			string counter = "MAP " + (selected + 1) + " / " + MapCount;
 			Transform count = Find(game.homeHeroRoot, "MapCounter");
-			if (count != null) Caption(count.GetComponent<Text>(), counter);
-			Transform accent = Find(game.homeHeroRoot, "MapAccent");
-			if (accent != null) Paint(accent.GetComponent<Image>(), MapColors[selected]);
+			if (count != null) Caption(count.GetComponent<Text>(), InfernoUi.Spaced(counter));   /* [user request 2026-09-22: lobby mockup] letter-spaced "M A P   4   /   6"; original: Caption(..., counter) */
+			/* [user request 2026-09-22: lobby mockup] no accent bar under the map name any more.
+			   original: Transform accent = Find(game.homeHeroRoot, "MapAccent");
+			   original: if (accent != null) Paint(accent.GetComponent<Image>(), MapColors[selected]); */
 			ShowMapArt(game, selected);
 			bool locked = !MapUnlocked(selected);
 			Transform lockRoot = s_mapLock;   /* [user request 2026-09-20] lives inside the (renamed) art frame; kept by reference */
@@ -589,7 +633,22 @@ public sealed partial class ShadowRunPrototype
 			if (lockRoot != null && locked)
 			{
 				Transform p = Find(lockRoot, "LockPrice");
-				if (p != null) Caption(p.GetComponent<Text>(), MapPrices[selected].ToString());
+				if (p != null)
+				{
+					Text priceText = p.GetComponent<Text>();
+					Caption(priceText, MapPrices[selected].ToString());
+					/* [user request 2026-09-22: lobby mockup] the crystal (44 px) + 22 px gap + price run is centred on the
+					   plate as one group, whatever the price's width (a fixed layout left it ~10 px to the left). */
+					Transform g = Find(lockRoot, "LockGem");
+					RectTransform gemRect = g as RectTransform, priceRect = p as RectTransform;
+					if (gemRect != null && priceRect != null)
+					{
+						float textWidth = Mathf.Max(30f, priceText.preferredWidth);
+						float left = -(44f + 22f + textWidth) / 2f;
+						gemRect.anchoredPosition = new Vector2(left + 22f, gemRect.anchoredPosition.y);
+						priceRect.anchoredPosition = new Vector2(left + 66f + priceRect.sizeDelta.x / 2f, priceRect.anchoredPosition.y);   // left-aligned label: its centre is text start + half width
+					}
+				}
 			}
 			if (game.primaryButtonLabel != null && !game.running)
 			{
@@ -626,6 +685,8 @@ public sealed partial class ShadowRunPrototype
 		{
 			if (game.dynamicWeatherReady)
 				game.SetWeatherPreset(SelectedMap(), 0f);
+			/* [user request 2026-09-21: maps] the map's own environment (sky, road, scenery, particles) */
+			InfernoMaps.Apply(game, SelectedMap());
 		}
 
 		private static RawImage s_caseArt;
@@ -696,7 +757,7 @@ public sealed partial class ShadowRunPrototype
 			button.onClick.AddListener(() => Click(game, index));
 		}
 
-		public static Button ButtonOn(Image image)
+		public static Button ButtonOn(Image image, bool elevate = true)
 		{
 			image.raycastTarget = true;
 			Button button = image.gameObject.AddComponent<Button>();
@@ -705,6 +766,10 @@ public sealed partial class ShadowRunPrototype
 			Navigation navigation = Navigation.defaultNavigation;
 			navigation.mode = Navigation.Mode.None;
 			button.navigation = navigation;
+			/* [user request 2026-09-21: 3D UI] every lobby button gets the kit's drop shadow and
+			   press-down feedback (flat art is re-skinned with the chamfered frame; kit sprites,
+			   the PLAY plate and invisible hit areas are kept as they are). */
+			if (elevate) InfernoUi.Elevate(null, image, InfernoUi.Style.Frame);
 			return button;
 		}
 
@@ -770,21 +835,33 @@ public sealed partial class ShadowRunPrototype
 			game.homeContentRoot = root;
 			Place(root, 0f, -ContentHeight / 2f, ContentWidth, ContentHeight);
 
+			/* [user request 2026-09-22: lobby mockup] every position below is the LOBBY-SPEC canvas position mapped into
+			   page units (centre (cx - 540, 16 - cy), see ContentWidth). The arena holds the selector bar, the picture
+			   and the status line (canvas y 143..843); inside it a child centred at canvas (cx, cy) sits at (cx - 540, 143 - cy). */
 			RectTransform arena = Root(root, "Arena");
 			game.homeHeroRoot = arena;
-			// The arena starts 112 units down: the gem counter (top-right, 100 tall) sits above it.
-			Place(arena, 0f, -445f, 960f, 666f);
-			// Map selector: a dark strip with square arrow blocks at both ends; "MAP 4 / 6"
-			// small above the name, both left-aligned after the left block.
-			Panel(game, arena, "MapSelector", 0f, -75f, 960f, 150f);
-			Label(game, arena, "MapCounter", "", -50f, -46f, 560f, 26f, 19, Steel, 3);
-			Text mapName = Label(game, arena, "MapName", "", -50f, -92f, 580f, 60f, 46, 0xFFFFFF, 3);
+			// The arena starts 127 units down: the gem counter (top-right, canvas y 25..109) sits above it.
+			Place(arena, 0f, -477f, 1000f, 700f);   // original: 0f, -445f, 960f, 666f
+			// Map selector: a dark steel strip (canvas x 40..1040, y 143..304; cuts TL/BR 40, TR/BL 14) with square
+			// arrow blocks at both ends; "MAP 4 / 6" small above the name, both left-aligned at x 224.
+			SteelBox(game, arena, "MapSelector", 0f, -80.5f, 1000f, 161f, 40, 14, 40, 14);   // original: Panel(game, arena, "MapSelector", 0f, -75f, 960f, 150f)
+			SpacedLabel(game, arena, "MapCounter", "", -66f, -50f, 500f, 26f, 17, MockRimLit, 3);   // x 224.., centre y 193; original: Label(..., -50f, -46f, 560f, 26f, 19, Steel, 3)
+			Text mapName = Label(game, arena, "MapName", "", 17f, -107f, 666f, 60f, 48, 0xFFFFFF, 3);   // x 224..890, centre y 250; original: -50f, -92f, 580f, 60f, 46
 			mapName.fontStyle = FontStyle.BoldAndItalic;
-			Block(game, arena, "MapAccent", 0f, -148f, 900f, 3f, Lilac);   // RefreshMap tints it with the map colour
-			IconButton(game, arena, "PreviousMap", "chevron-left", -420f, -75f, 104f, 120f, 0);
-			IconButton(game, arena, "NextMap", "chevron-right", 420f, -75f, 104f, 120f, 1);
-			// Picture frame
-			Image preview = Panel(game, arena, "ArenaCard", 0f, -416f, 960f, 500f);
+			mapName.resizeTextMinSize = 34;   // PLANET HORIZON fits before the right arrow
+			// original: Block(game, arena, "MapAccent", 0f, -148f, 900f, 3f, Lilac);   // RefreshMap tints it with the map colour — no accent bar in the mockup
+			IconButton(game, arena, "PreviousMap", "chevron-left", -425f, -80f, 110f, 110f, 0, 22, 0, 12, 0);   // x 60..170, y 168..278, cuts TL 22 / BR 12; original: -420f, -75f, 104f, 120f, 0
+			/* [user request 2026-09-27: lobby corners] the right arrow's cuts are a 180-degree ROTATION of the left arrow's (TL 12 /
+			   BR 22), not a mirror: the bar's cuts are TL/BR 40, TR/BL 14, so the mirrored version (TR 22 / BL 12) left the
+			   arrow's square BR corner 4.2 px from the bar's BR diagonal (2 px of fill between two rims, which merged on a
+			   phone). Now the arrow's BR 22 diagonal runs parallel to the bar's BR 40 cut, 19.8 px away (17.8 px of fill)
+			   by geometry vs the left arrow's 19.1 px; as rasterised (rim to rim, capture claude-131) the right side reads
+			   19.0-19.1 px and the left 17.0 px, because the bar's TL rim lands ~2 px inside its ideal edge and its bottom rim
+			   is 1 px thick vs 2 px on top (top gap 23 / bottom 25 px on a centred arrow). The left arrow's TL chamfer is now
+			   the selector's tightest point; that is not a regression, it was 17.0 px before too. round 1: 1, 0, 22, 0, 12 */
+			IconButton(game, arena, "NextMap", "chevron-right", 425f, -80f, 110f, 110f, 1, 12, 0, 22, 0);      // x 910..1020, cuts TL 12 / BR 22 (BR follows the bar's BR 40 cut, 19.8 px parallel); original: 420f, -75f, 104f, 120f, 1
+			// Picture: a plain straight-cornered rectangle (canvas x 40..1040, y 316..792), no frame, rim or accent bar
+			Image preview = Block(game, arena, "ArenaCard", 0f, -411f, ArtWidth, ArtHeight, MockFill);   // original: Panel(game, arena, "ArenaCard", 0f, -416f, 960f, 500f)
 			RectTransform previewRoot = preview.rectTransform;
 			game.MakeHome101Artwork(previewRoot);
 			Place(game.homeHeroArtRect, 0f, ArtY, ArtWidth, ArtHeight);
@@ -800,38 +877,50 @@ public sealed partial class ShadowRunPrototype
 			}
 			Image heroImage = game.homeHeroArtRect.GetComponent<Image>();
 			heroImage.preserveAspect = true;
-			// Status line over the bottom of the picture ("NEED N MORE CRYSTALS", "MAP UNLOCKED. TAP PLAY."); empty otherwise.
-			Label(game, arena, "MapDescription", "", 0f, -640f, 880f, 36f, 24, Pearl);
+			// Status line between the picture and PLAY ("NEED N MORE CRYSTALS", "MAP UNLOCKED. TAP PLAY."); empty otherwise.
+			/* [user request 2026-09-22: lobby mockup] small grey-lilac line centred at canvas y 826 (rect 811..841: 19 px
+			   under the picture, 20 px above PLAY). original: Label(..., 0f, -640f, 880f, 36f, 24, Pearl) */
+			Text status = Label(game, arena, "MapDescription", "", 0f, -683f, 880f, 30f, 20, MockGreyLilac);
+			status.resizeTextMinSize = 18;
 			{   // lock overlay: the map picture stays visible under a light shade; a plate in the
 				// middle carries LOCKED and the crystal price (icon and number in separate slots).
 				RectTransform lockRoot = Root(previewRoot, "MapLock");
 				s_mapLock = lockRoot;
 				Place(lockRoot, 0f, ArtY, ArtWidth, ArtHeight);
 				lockRoot.SetAsLastSibling();
-				Image shade = Block(game, lockRoot, "LockShade", 0f, -ArtHeight / 2f, ArtWidth, ArtHeight, Black, true);
+				/* [user request 2026-09-22: lobby mockup] straight-cornered shade, a steel plate (cuts TL/BR 18, TR/BL 6) and
+				   grey-lilac / white text. original: Block(..., Black, true) (rounded); Panel(game, lockRoot, "LockPlate", ...);
+				   LockIcon Steel; LockTitle Pearl; LockPrice Lilac */
+				Image shade = Block(game, lockRoot, "LockShade", 0f, -ArtHeight / 2f, ArtWidth, ArtHeight, Black);
 				shade.color = Hex(Black, 0.42f);
-				Image plate = Panel(game, lockRoot, "LockPlate", 0f, -ArtHeight / 2f, 400f, 176f);
-				plate.color = new Color(1f, 1f, 1f, 0.94f);
-				IconImage(game, lockRoot, "LockIcon", "lock", 0f, -ArtHeight / 2f + 52f, 30f, Steel);
-				Text lockTitle = Label(game, lockRoot, "LockTitle", "LOCKED", 0f, -ArtHeight / 2f + 6f, 360f, 56f, 40, Pearl);
+				// opaque plate (nothing of the scenery bleeds through); the 34 px padlock (~32x27 visible) centred 56 above
+				// the picture's middle (canvas y ~498, 22 px above the LOCKED text). original: plate.color = new
+				// Color(1f, 1f, 1f, 0.94f); IconImage(..., "lock", 0f, -ArtHeight / 2f + 52f, 30f, MockGreyLilac)
+				SteelBox(game, lockRoot, "LockPlate", 0f, -ArtHeight / 2f, 400f, 176f, 18, 0, 18, 0);   /* [user request 2026-09-27: lobby corners] TR/BL squared like the two cards (a 6 px nick on the 2 px rim reads as a rounded corner); round 1: 18, 6, 18, 6 */
+				IconImage(game, lockRoot, "LockIcon", "lock", 0f, -ArtHeight / 2f + 56f, 34f, MockGreyLilac);
+				Text lockTitle = Label(game, lockRoot, "LockTitle", "LOCKED", 0f, -ArtHeight / 2f + 6f, 360f, 56f, 40, 0xFFFFFF);
 				lockTitle.fontStyle = FontStyle.BoldAndItalic;
 				// crystal 44 px centred at -50 (spans -72..-28); price text starts at -6 (x 70, 152 wide, left-aligned)
 				Image gem = Block(game, lockRoot, "LockGem", -50f, -ArtHeight / 2f - 48f, 44f, 44f, 0xFFFFFF);
 				gem.sprite = GemSprite(game);
 				gem.preserveAspect = true;
-				Label(game, lockRoot, "LockPrice", "", 70f, -ArtHeight / 2f - 48f, 152f, 48f, 34, Lilac, 3);
+				Label(game, lockRoot, "LockPrice", "", 70f, -ArtHeight / 2f - 48f, 152f, 48f, 34, MockGreyLilac, 3);
 				lockRoot.gameObject.SetActive(false);
 			}
 
-			// PLAY: the slanted magenta plate; MakeHomeDriveShine adds the light sweep that
+			// PLAY: the magenta plate; MakeHomeDriveShine adds the light sweep that
 			// UpdateHomeDriveShine animates. ShowMainMenu relabels it ("P  L  A  Y") and wires
 			// StartRun through primaryOverlayButton; PauseRun relabels it CONTINUE.
-			Image halo = Block(game, root, "DriveHalo", 0f, -905f, 944f, 250f, 0xFFFFFF);
+			/* [user request 2026-09-22: lobby mockup] the 960x212 octagon (cuts TL 92x103, TR 48x46, BR 60x63, BL 32x46)
+			   at canvas x 63..1023, y 861..1073, with its soft glow sprite (28 px larger all round) behind it.
+			   original: Block(game, root, "DriveHalo", 0f, -905f, 944f, 250f, 0xFFFFFF) with PlayPlateSprite() tinted
+			   Hex(Neon, 0.16f); Block(game, root, "Drive", 0f, -905f, 900f, 210f, 0xFFFFFF) */
+			Image halo = Block(game, root, "DriveHalo", 2f, -951f, PlayW + 2 * PlayGlowPad, PlayH + 2 * PlayGlowPad, 0xFFFFFF);
 			s_playHalo = halo;
-			halo.sprite = PlayPlateSprite();
+			halo.sprite = PlayGlowSprite();
 			halo.type = Image.Type.Simple;
-			halo.color = Hex(Neon, 0.16f);
-			Image playFrame = Block(game, root, "Drive", 0f, -905f, 900f, 210f, 0xFFFFFF);
+			halo.color = Color.white;
+			Image playFrame = Block(game, root, "Drive", 2f, -951f, PlayW, PlayH, 0xFFFFFF);
 			playFrame.sprite = PlayPlateSprite();
 			playFrame.type = Image.Type.Simple;
 			RectTransform playRect = playFrame.rectTransform;
@@ -848,7 +937,10 @@ public sealed partial class ShadowRunPrototype
 				mask.type = Image.Type.Simple;
 				mask.rectTransform.offsetMax = Vector2.zero;
 			}
-			game.primaryButtonLabel = Label(game, playRect, "Label", "PLAY", 0f, -105f, 760f, 146f, 100, 0xFFFFFF);
+			/* [user request 2026-09-22: lobby mockup] ~74 px bold italic, centred on the plate; "U N L O C K   150" fits the
+			   760 px slot at 74 px, the best-fit floor (56) only guards longer relabels. original: 0f, -105f, 760f, 146f, 100 */
+			game.primaryButtonLabel = Label(game, playRect, "Label", "PLAY", 0f, -PlayH / 2f, 760f, 146f, 74, 0xFFFFFF);
+			game.primaryButtonLabel.resizeTextMinSize = 56;
 			game.primaryButtonLabel.fontStyle = FontStyle.BoldAndItalic;
 			Glow(game.primaryButtonLabel, NeonSoft, 0.75f, 2.5f);
 
@@ -861,15 +953,32 @@ public sealed partial class ShadowRunPrototype
 		{
 			// Share the reference's faceted crystal artwork with daily-goal rewards.
 			// Tapping the whole counter opens the gem shop.
-			Button button = ActionButton(game, parent, "GemCounter", "", 0f, 0f, 252f, 100f, Ink, Grape, 6, 33);
-			RectTransform rect = button.GetComponent<RectTransform>();
+			/* [user request 2026-09-22: lobby mockup] built in its final look: a 283x84 steel box (cuts TL 10 / TR 14 / BR 14 /
+			   BL 10; Layout puts it at canvas x 767..1050, y 25..109) holding the 44 px crystal centred at x 810, the count
+			   (bold italic 40 px, centred around x 906) and a separate 66x66 darker "+" key (cuts TL 6 / BR 14) at x 981..1047
+			   that also opens the shop. StyleGemCounter used to re-skin this later.
+			   original: Button button = ActionButton(game, parent, "GemCounter", "", 0f, 0f, 252f, 100f, Ink, Grape, 6, 33);
+			   original: Image diamond = Block(game, rect, "Gem", -76f, -50f, 48f, 48f, 0xFFFFFF);   // [user request 2026-09-20: pause/UI fixes]
+			   original: game.gemAmountText = Label(game, rect, "Amount", game.menuGemCount.ToString(), 40f, -50f, 130f, 66f, 34, Pearl, 4); */
+			Image box = SteelBox(game, parent, "GemCounter", 0f, 0f, 283f, 84f, 10, 14, 14, 10);
+			Button button = ButtonOn(box);
+			Connect(game, button, 6);   // ShowGemShop
+			RectTransform rect = box.rectTransform;
 			game.gemCounterRect = rect;
-			// Stone hard left (56 px at x -88: spans -116..-60, inside the -122 inner edge),
-			// number in its own slot on the right (x 40, 130 wide: -25..105).
-			Image diamond = Block(game, rect, "Gem", -88f, -50f, 56f, 56f, 0xFFFFFF);
+			Image diamond = Block(game, rect, "Gem", -98.5f, -42f, 44f, 44f, 0xFFFFFF);
 			diamond.sprite = GemSprite(game);
 			diamond.preserveAspect = true;
-			game.gemAmountText = Label(game, rect, "Amount", game.menuGemCount.ToString(), 40f, -50f, 130f, 66f, 34, Pearl, 4);   // centred in its own slot, right of the stone
+			game.gemAmountText = Label(game, rect, "Amount", GemText(game.menuGemCount), -2f, -42f, 130f, 50f, 40, 0xFFFFFF, 4);   /* [user request 2026-09-26: crystals] */   // centred in its own slot, right of the stone
+			game.gemAmountText.fontStyle = FontStyle.BoldAndItalic;
+			/* [user request 2026-09-26: no box around the "+"] the key's own steel plate is gone; its 66x66 rect
+			   stays as an invisible hit area so tapping the "+" still opens the shop (ButtonOn without the kit's
+			   elevation, which would re-skin flat art with a chamfered frame).
+			   original: Image plus = SteelBox(game, rect, "Plus", 105.5f, -42f, 66f, 66f, 6, 0, 14, 0, Look.Key); */
+			Image plus = Block(game, rect, "Plus", 105.5f, -42f, 66f, 66f, 0xFFFFFF);
+			plus.color = new Color(1f, 1f, 1f, 0f);
+			Button key = ButtonOn(plus, false);
+			Connect(game, key, 6);   // ShowGemShop
+			IconImage(game, plus.transform, "Icon", "plus", 0f, -33f, 34f, 0xFFFFFF).raycastTarget = false;
 		}
 
 		public static void Tabs(ShadowRunPrototype game, Transform parent)
@@ -881,9 +990,12 @@ public sealed partial class ShadowRunPrototype
 			Image dock = Block(game, root, "Dock", 0f, -92f, 1400f, 184f, PanelFill);
 			dock.color = Hex(PanelFill, 0.98f);
 			Block(game, root, "DockRail", 0f, -1f, 1400f, 2f, PanelRim);
-			DockTab(game, root, "Garage", "GARAGE", "garage", -320f, 2);
+			/* [user request 2026-09-21: 3D UI] rhomboid tabs (slanted parallelograms side by side, 330
+			   wide, 52 px slant, 10 px gap) — spacing 288 keeps the slanted sides parallel with a
+			   constant gap; original: 320 apart */
+			DockTab(game, root, "Garage", "GARAGE", "garage", -288f, 2);
 			DockTab(game, root, "Home", "DRIVE", "drive", 0f, 3);
-			DockTab(game, root, "Profile", "PROFILE", "profile", 320f, 4);
+			DockTab(game, root, "Profile", "PROFILE", "profile", 288f, 4);
 			DockVisual(game, 1);
 		}
 
@@ -943,12 +1055,16 @@ public sealed partial class ShadowRunPrototype
 			}
 			if (game.gemCounterRect != null)
 			{
-				Place(game.gemCounterRect, centerX + 326f * scale, -top - 16f - 50f * scale, 300f, 100f);   /* [user request 2026-09-21 restyle] 300 wide incl. the + segment; was 252 at +350 */
+				/* [user request 2026-09-22: lobby mockup] 283x84 box centred at canvas (908.5, 67) = x 767..1050, y 25..109, scaled
+				   with the page. original: Place(..., centerX + 326f * scale, -top - 16f - 50f * scale, 300f, 100f) — [user request
+				   2026-09-21 restyle] 300 wide incl. the + segment; was 252 at +350 */
+				Place(game.gemCounterRect, centerX + 368.5f * scale, -top - 67f * scale, 283f, 84f);
 				game.gemCounterRect.localScale = new Vector3(scale, scale, 1f);
 			}
 			if (game.menuTitleRoot != null) game.menuTitleRoot.gameObject.SetActive(false);
 			HomePreview(game, game.menuTargetTab == 1);
-			if (s_playHalo != null) s_playHalo.color = Hex(Neon, 0.12f + 0.10f * (0.5f + 0.5f * Mathf.Sin(Time.unscaledTime * 2.4f)));   // slow breathing glow behind PLAY
+			// slow breathing of the soft glow behind PLAY (the glow sprite carries its own magenta and 0.35 peak alpha)
+			if (s_playHalo != null) s_playHalo.color = new Color(1f, 1f, 1f, 0.8f + 0.2f * (0.5f + 0.5f * Mathf.Sin(Time.unscaledTime * 2.4f)));   /* [user request 2026-09-22: lobby mockup] original: Hex(Neon, 0.12f + 0.10f * (...)) */
 		}
 
 		public static void Show(ShadowRunPrototype game)
@@ -1028,7 +1144,145 @@ public sealed partial class ShadowRunPrototype
 			game.gameOverMenuButton = menu;
 			Bind(game, menu, game.ShowMainMenu);
 
+			/* [user request 2026-09-21: 3D UI] the gem counter (menuSafeRoot) is hidden while the loss
+			   screen is up and comes back with the menu; GameOver() has no lobby hook, so the root's
+			   own show / hide does it. */
+			UiScreenLink link = root.gameObject.AddComponent<UiScreenLink>();
+			link.onShown = () => HideGemCounter(game, ref s_gameOverGems);
+			link.onHidden = () => RestoreGemCounter(game, ref s_gameOverGems);
+
 			root.gameObject.SetActive(false);
+		}
+
+		// ---- gem counter visibility under the pause / loss screens ---------------------------
+		// Each screen remembers whether the counter was showing when it hid it (a nullable so a
+		// screen that never hid anything restores nothing).
+		private static bool? s_gameOverGems, s_pauseGems, s_pauseDetails;
+
+		private static void HideGemCounter(ShadowRunPrototype game, ref bool? saved)
+		{
+			if (saved.HasValue || game == null || game.gemCounterRect == null) return;
+			saved = game.gemCounterRect.gameObject.activeSelf;
+			game.gemCounterRect.gameObject.SetActive(false);
+		}
+
+		private static void RestoreGemCounter(ShadowRunPrototype game, ref bool? saved)
+		{
+			if (!saved.HasValue) return;
+			bool wasActive = saved.Value;
+			saved = null;
+			if (game != null && game.gemCounterRect != null) game.gemCounterRect.gameObject.SetActive(wasActive);
+		}
+
+		// ---- Pause screen (replaces MakePauseActions) -------------------------------
+		/* [user request 2026-09-20: pause/UI fixes] */
+		// The loss screen's language: black backdrop, PAUSED / subtitle / rule, a neon
+		// stats card with the run so far, the two profile-style action buttons, and the
+		// sound toggle re-cut as a small neon frame around the game's speaker icon.
+		// Keeps every field and wiring the rest of the game relies on: pauseActionsRoot
+		// (shown/hidden by PauseRun / ResumeRun / ShowMainMenu / StartRun / GameOver),
+		// pauseContinueButton -> ResumeRun, pauseMenuButton -> ShowMainMenu,
+		// pauseSoundButton -> ToggleGameSound, pauseSoundIcon (ApplyGameSoundState swaps
+		// its sprite).
+		private static Text s_pauseDistance, s_pauseBest;
+
+		public static void BuildPause(ShadowRunPrototype game, Transform parent)
+		{
+			RectTransform root = Root(parent, "Pause Actions");
+			game.pauseActionsRoot = root.gameObject;
+			// Stretched over the safe root like the original so the toggle can sit in the corner.
+			root.anchorMin = Vector2.zero;
+			root.anchorMax = Vector2.one;
+			root.offsetMin = Vector2.zero;
+			root.offsetMax = Vector2.zero;
+			Image shade = Block(game, root, "Shade", 0f, 0f, 2400f, 2400f, Black);
+			Place(shade.rectTransform, 0f, 0f, 2400f, 2400f, new Vector2(0.5f, 0.5f));
+			shade.raycastTarget = true;   // swallow taps meant for the gem counter / HUD below
+			/* [user request 2026-09-21: transparent pause] the frozen city stays visible through a
+			   dark translucent shade; a gradient band at the top keeps the title legible.
+			   original: opaque Black */
+			shade.color = new Color(0.03f, 0.02f, 0.07f, 0.62f);
+			Image band = Block(game, root, "Title Band", 0f, -210f, 1080f, 420f, 0xFFFFFF);
+			Place(band.rectTransform, 0f, -210f, 1080f, 420f, new Vector2(0.5f, 1f));
+			band.sprite = game.heroBottomFadeSprite;
+			band.type = Image.Type.Simple;
+			band.color = new Color(1f, 1f, 1f, 0.92f);          // the fade sprite carries its own 0.6 peak alpha
+			band.rectTransform.localScale = new Vector3(1f, -1f, 1f);   // flipped: dark at the top, fading down
+
+			Centered(game, root, "Title", "PAUSED", 0f, 560f, 960f, 130f, 96);
+			Centered(game, root, "Subtitle", "THE CITY IS STILL MOVING", 0f, 460f, 900f, 40f, 26, Lilac);
+			Image rule = Block(game, root, "TitleRule", 0f, 0f, 520f, 3f, Mulberry);
+			Place(rule.rectTransform, 0f, 415f, 520f, 3f, new Vector2(0.5f, 0.5f));
+
+			RectTransform statsRoot = Root(root, "Stats");
+			Place(statsRoot, 0f, 230f, 780f, 260f, new Vector2(0.5f, 0.5f));
+			Image card = NeonFrame(game, statsRoot, "StatsCard", 0f, -130f, 780f, 260f);
+			Transform cardRoot = card.transform;
+			s_pauseDistance = StatRow(game, cardRoot, "Distance", "DISTANCE", -70f);
+			Block(game, cardRoot, "StatsDivider", 0f, -130f, 720f, 2f, Mulberry);
+			s_pauseBest = StatRow(game, cardRoot, "Best", "BEST RECORD", -190f);
+
+			// The buttons keep the shipped object names (the smoke tests and any
+			// lookups find "Pause Continue" / "Pause Back To Menu" by name).
+			Button resume = game.MakeProfileActionButton(root, "CONTINUE DRIVING", new Vector2(0f, -200f), new Vector2(720f, 150f), true, false, out _, true, true);
+			resume.gameObject.name = "Pause Continue";
+			game.pauseContinueButton = resume;
+			Bind(game, resume, game.ResumeRun);
+			Button menu = game.MakeProfileActionButton(root, "BACK TO MENU", new Vector2(0f, -380f), new Vector2(720f, 110f), false, false, out _, true, false);
+			menu.gameObject.name = "Pause Back To Menu";
+			game.pauseMenuButton = menu;
+			Bind(game, menu, game.ShowMainMenu);
+
+			// Sound toggle: top-left as before (the old 82 px pink pill at 82,-92), now a
+			// 104 px neon frame (centre 132,-140: spans 80..184 / -88..-192) with the
+			// game's own speaker icon (48 px) inside the 72 px glass, clear of the chamfers.
+			Image toggleFrame = NeonFrame(game, root, "Pause Sound Toggle", 132f, -140f, 104f, 104f);
+			Place(toggleFrame.rectTransform, 132f, -140f, 104f, 104f, new Vector2(0f, 1f));
+			Button toggle = ButtonOn(toggleFrame);
+			game.pauseSoundButton = toggle;
+			game.pauseSoundIcon = game.MakeTabIcon(toggleFrame.transform, "Pause Sound Toggle Icon", game.gameSoundEnabled ? "звук есть" : "звука нет", new Vector2(48f, 48f), Vector2.zero);
+			Bind(game, toggle, game.ToggleGameSound);
+
+			/* [user request 2026-09-21: transparent pause] whatever hides the pause root (ResumeRun,
+			   ShowMainMenu, StartRun, GameOver) also restores what ShowPause hid. */
+			UiScreenLink link = root.gameObject.AddComponent<UiScreenLink>();
+			link.onHidden = () => HidePause(game);
+
+			root.gameObject.SetActive(false);
+		}
+
+		// Called from PauseRun in place of the old overlay title/tag lines: the shared
+		// white "P  A  U  S  E  D" / tag texts are blanked (PauseRun raises them above
+		// the pause root, so they would draw over the backdrop) and the stats card takes
+		// the run so far in the loss screen's format.
+		public static void ShowPause(ShadowRunPrototype game)
+		{
+			if (game.overlayTitle != null) Caption(game.overlayTitle, "");
+			if (game.overlayTag != null) Caption(game.overlayTag, "");
+			if (s_pauseDistance != null) Caption(s_pauseDistance, game.FormatGameOverDistance(game.distance));
+			if (s_pauseBest != null) Caption(s_pauseBest, game.FormatGameOverDistance(game.best));
+			/* [user request 2026-09-21: transparent pause] the shade is see-through now, so the menu
+			   details line (overlayStats) and the gem counter, which live in menuSafeRoot under the
+			   pause root, are hidden for the pause and put back by HidePause. */
+			if (!s_pauseDetails.HasValue && game.menuDetails != null)
+			{
+				s_pauseDetails = game.menuDetails.activeSelf;
+				game.menuDetails.SetActive(false);
+			}
+			HideGemCounter(game, ref s_pauseGems);
+		}
+
+		// Restores what ShowPause hid. Called by ResumeRun / ShowMainMenu (Boot.cs) and by the
+		// pause root's own hide, so it is safe to call more than once.
+		public static void HidePause(ShadowRunPrototype game)
+		{
+			if (s_pauseDetails.HasValue)
+			{
+				bool wasActive = s_pauseDetails.Value;
+				s_pauseDetails = null;
+				if (game != null && game.menuDetails != null) game.menuDetails.SetActive(wasActive);
+			}
+			RestoreGemCounter(game, ref s_pauseGems);
 		}
 	}
 }

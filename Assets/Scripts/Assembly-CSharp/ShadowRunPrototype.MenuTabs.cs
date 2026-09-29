@@ -272,7 +272,7 @@ public sealed partial class ShadowRunPrototype
 		InfernoSettings.CenterHeader(garagePageHeaderRoot); /* [InfernoLobby patch] */
 		// original: LayoutMenuPageHeader(profilePageHeaderRoot, left, top, headerWidth);
 		LayoutMenuPageHeader(profilePageHeaderRoot, (width - headerWidth) * 0.5f, top + 90f, headerWidth); /* [InfernoLobby patch] */
-		InfernoSettings.CenterHeader(profilePageHeaderRoot); /* [InfernoLobby patch] */
+		InfernoSettings.CenterHeader(profilePageHeaderRoot, true); /* [InfernoLobby patch] */ /* [user request 2026-09-21: 3D UI] SETTINGS heading left-aligned inside the centred root (mockup); original: CenterHeader(profilePageHeaderRoot) */
 		LayoutProfileScreen();
 	}
 

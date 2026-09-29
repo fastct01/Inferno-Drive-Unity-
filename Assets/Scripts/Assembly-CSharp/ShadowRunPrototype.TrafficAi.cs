@@ -273,7 +273,7 @@ public sealed partial class ShadowRunPrototype
 			pos.x += away * Mathf.Lerp(0.18f, 0.48f, item.Awareness) * dt;
 			item.Yaw += away * Mathf.Lerp(4f, 10f, item.Awareness) * dt;
 		}
-		pos.x = Mathf.Clamp(pos.x + item.LateralVelocity * dt, PlayerMinX, PlayerMaxX);
+		pos.x = InfernoLanes.Clamp(pos.x + item.LateralVelocity * dt);   /* [user request 2026-09-22: five lanes] */   // original: Mathf.Clamp(pos.x + item.LateralVelocity * dt, PlayerMinX, PlayerMaxX)
 		item.LateralVelocity = Mathf.MoveTowards(item.LateralVelocity, 0f, 8.5f * dt);
 		ResolveTrafficVehicleSeparation(ref item, ref pos);
 		item.Transform.position = pos;
@@ -515,17 +515,39 @@ public sealed partial class ShadowRunPrototype
 		return bestLane;
 	}
 
+	/* [user request 2026-09-22: five lanes] A car asked to move aside now has a neighbour on either side in all but the
+	   two outer lanes, and both are inside the five (the caller re-checks the pick with IsHighBeamYieldLaneSafe and keeps
+	   the car in its lane when it is not safe). The shipped rule — always left, right only from lane 0 — would send
+	   middle-lane traffic across the player's half of a 17 m road and give up whenever that one lane was busy, so both
+	   neighbours are considered: the safe one, of two safe ones the one farther from the player, and the shipped
+	   left-before-right order when neither is safe. */
 	private int FindSafeHighBeamYieldLane(Pickup item, int current)
 	{
-		if (current > 0)
+		// original: if (current > 0) return current - 1; if (current + 1 < lanes.Length) return current + 1; return current;
+		int left = current - 1;
+		int right = current + 1;
+		bool hasLeft = left >= 0;
+		bool hasRight = right < lanes.Length;
+		if (!hasLeft && !hasRight)
 		{
-			return current - 1;
+			return current;
 		}
-		if (current + 1 < lanes.Length)
+		float z = item.Transform != null ? item.Transform.position.z : player.position.z;
+		bool leftSafe = hasLeft && IsHighBeamYieldLaneSafe(left, z, item.Transform, item);
+		bool rightSafe = hasRight && IsHighBeamYieldLaneSafe(right, z, item.Transform, item);
+		if (leftSafe && rightSafe)
 		{
-			return current + 1;
+			return Mathf.Abs(lanes[left] - playerX) >= Mathf.Abs(lanes[right] - playerX) ? left : right;
 		}
-		return current;
+		if (leftSafe)
+		{
+			return left;
+		}
+		if (rightSafe)
+		{
+			return right;
+		}
+		return hasLeft ? left : right;
 	}
 
 	private bool IsHighBeamYieldLaneSafe(int lane, float z, Transform self, Pickup driver)
@@ -601,7 +623,7 @@ public sealed partial class ShadowRunPrototype
 				{
 					side = pos.x >= lanes[ClosestLane(pos.x)] ? 1f : -1f;
 				}
-				pos.x = Mathf.Clamp(pos.x + side * (overlapX + 0.08f) * 0.55f, PlayerMinX, PlayerMaxX);
+				pos.x = InfernoLanes.Clamp(pos.x + side * (overlapX + 0.08f) * 0.55f);   /* [user request 2026-09-22: five lanes] */   // original: Mathf.Clamp(…, PlayerMinX, PlayerMaxX)
 				item.LateralVelocity = Mathf.Clamp(item.LateralVelocity + side * 1.35f, -6.5f, 6.5f);
 				item.Yaw += side * 4.5f;
 			}
@@ -631,7 +653,7 @@ public sealed partial class ShadowRunPrototype
 		{
 			score += Mathf.Abs(lanes[lane] - playerX) * Mathf.Lerp(0.62f, 0.26f, item.Bravery);
 		}
-		float predictedPlayerX = Mathf.Clamp(playerX + velocityX * 0.28f, PlayerMinX, PlayerMaxX);
+		float predictedPlayerX = InfernoLanes.Clamp(playerX + velocityX * 0.28f);   /* [user request 2026-09-22: five lanes] */   // original: Mathf.Clamp(playerX + velocityX * 0.28f, PlayerMinX, PlayerMaxX)
 		float playerOffsetZ = player.position.z - z;
 		float playerReach = Mathf.Lerp(96f, 52f, item.RiskTolerance) + Mathf.Clamp(speed * 0.32f, 0f, 24f);
 		float playerPressure = Mathf.InverseLerp(2.55f, 0.55f, Mathf.Abs(lanes[lane] - predictedPlayerX)) * Mathf.InverseLerp(playerReach, 5f, Mathf.Abs(playerOffsetZ));
@@ -797,7 +819,7 @@ public sealed partial class ShadowRunPrototype
 	private bool IsPlayerLaneReserved(int lane, float z, float risk)
 	{
 		float lookAhead = Mathf.Lerp(0.48f, 0.2f, risk);
-		float predictedPlayerX = Mathf.Clamp(playerX + velocityX * lookAhead, PlayerMinX, PlayerMaxX);
+		float predictedPlayerX = InfernoLanes.Clamp(playerX + velocityX * lookAhead);   /* [user request 2026-09-22: five lanes] */   // original: Mathf.Clamp(playerX + velocityX * lookAhead, PlayerMinX, PlayerMaxX)
 		float predictedDistance = Mathf.Abs(lanes[lane] - predictedPlayerX);
 		float playerOffsetZ = player.position.z - z;
 		float reserveWidth = Mathf.Lerp(2.35f, 1.35f, risk);

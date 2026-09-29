@@ -23,7 +23,7 @@ public sealed partial class ShadowRunPrototype : MonoBehaviour
 		CasesOpened = 5
 	}
 
-	private sealed class GarageVehicleCardData
+	internal sealed class GarageVehicleCardData   /* [user request 2026-09-21: cars] */ // original: private — InfernoCars.Cards (an internal nested class, reachable from the EditMode tests) returns it
 	{
 		public string VehicleId;
 
@@ -1782,7 +1782,9 @@ public sealed partial class ShadowRunPrototype : MonoBehaviour
 
 	private readonly List<Transform> santaAnimParts = new List<Transform>();
 
-	private readonly float[] lanes = new float[3] { -3.1f, 0f, 3.1f };
+	/* [user request 2026-09-22: five lanes] the five lane centres of InfernoLanes (its own copy: nothing writes to it, but the
+	   traffic AI, spawner, ramps, high beams, hazards and the smoke tests all index this field) */
+	private readonly float[] lanes = (float[])InfernoLanes.X.Clone();   // original: new float[3] { -3.1f, 0f, 3.1f }
 
 	private readonly List<GameObject> trafficPrefabs = new List<GameObject>();
 

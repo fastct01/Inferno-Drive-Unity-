@@ -34,6 +34,9 @@ public sealed partial class ShadowRunPrototype
 		}
 	}
 
+	/* [user request 2026-09-20: brighter cars] */ // Warm-white spot that follows the player car so the body reads at night.
+	private Light playerShowcaseLight;
+
 	private void MakeCar()
 	{
 		player = new GameObject("Player Car").transform;
@@ -43,11 +46,36 @@ public sealed partial class ShadowRunPrototype
 			return;
 		}
 		MakeHighBeamLight();
+		MakePlayerShowcaseLight(); /* [user request 2026-09-20: brighter cars] */
+	}
+
+	/* [user request 2026-09-20: brighter cars] */
+	// Parented to the player root (not the model) so it survives RebuildPlayerVehicleModel() and does not tilt with carVisual.
+	// Car front is -Z and the chase camera sits at +Z, so the light hangs above/behind and aims down-forward onto roof and rear.
+	private void MakePlayerShowcaseLight()
+	{
+		if (player == null || playerShowcaseLight != null)
+		{
+			return;
+		}
+		playerShowcaseLight = new GameObject("Player Showcase Light").AddComponent<Light>();
+		Transform showcase = playerShowcaseLight.transform;
+		showcase.SetParent(player, false);
+		showcase.localPosition = new Vector3(0f, 3.4f, 2.0f);
+		showcase.localRotation = Quaternion.LookRotation(new Vector3(0f, 0.55f, -0.4f) - showcase.localPosition, Vector3.up);
+		playerShowcaseLight.type = LightType.Spot;
+		playerShowcaseLight.shadows = LightShadows.None;
+		playerShowcaseLight.range = 15f;
+		playerShowcaseLight.spotAngle = 72f;
+		playerShowcaseLight.innerSpotAngle = 40f;
+		playerShowcaseLight.intensity = 11f;
+		playerShowcaseLight.color = new Color(1f, 0.9f, 0.78f);
+		playerShowcaseLight.renderMode = LightRenderMode.ForcePixel;
 	}
 
 	private VehicleDefinition CreateVehicleDefinition(string vehicleId)
 	{
-		/* [InfernoLobby patch] */ { VehicleDefinition edition = InfernoGarage.MakeDefinition(this, vehicleId); if (edition != null) return edition; }
+		/* [user request 2026-09-21: cars] */ { VehicleDefinition catalogued = InfernoCars.MakeDefinition(this, vehicleId); if (catalogued != null) return catalogued; }   // original: InfernoGarage.MakeDefinition (the 25 editions)
 		if (string.Equals(vehicleId, "flying_car", StringComparison.OrdinalIgnoreCase))
 		{
 			return CreateFlyingCarDefinition();
@@ -156,8 +184,13 @@ public sealed partial class ShadowRunPrototype
 		definition.HeadlightLeftShaftLocalZ = -0.494f;
 		definition.HeadlightRightShaftLocalZ = -0.447f;
 		definition.SmokeOffset = new Vector3(0f, 0.44f, 1.92f);
-		definition.WheelMeshNames = Array.Empty<string>();
-		definition.BrakeDiscNames = Array.Empty<string>();
+		/* [user request 2026-09-21: cars] */ // original: definition.WheelMeshNames = Array.Empty<string>();
+		// IFNAL_MODEL_P900's wheels are flat, origin-pivoted children of the prefab (dtP900:tires_wheelFL_tire_UV1_shared_tire_racing,
+		// dtP900:rims_wheelFL_UV2_car_DeTomaso_P900_details, dtP900:emissive_wheelFL_emissive_mesh_brakedisk_UV1_car_DeTomaso_P900_emissive_brakesonly, ...
+		// per corner FL / FR / BL / BR), so InfernoCars.Decorate re-parents each corner's tire, rims and brake disk under a pivot at the wheel
+		// centre with these names: the front pivots spin (CachePlayerWheelMeshes) and InfernoStyle tints the meshes under them.
+		definition.WheelMeshNames = new string[4] { InfernoCars.P900WheelName(0), InfernoCars.P900WheelName(1), InfernoCars.P900WheelName(2), InfernoCars.P900WheelName(3) };
+		definition.BrakeDiscNames = Array.Empty<string>();   // the brake disks ride inside the wheel pivots (their transforms sit at the origin, so AttachDiscToNearestWheel could not place them)
 		definition.BrakeLightNames = new string[1] { "dtP900:glass_glass_UV1_car_DeTomaso_P900_glass" };
 		definition.BrakeLightMaterialNames = new string[1] { "red_glass" };
 		definition.ExhaustXExtentFactor = 0.76f;
@@ -251,7 +284,7 @@ public sealed partial class ShadowRunPrototype
 		model.transform.localScale = Vector3.one;
 		DisableImportedModelCamerasAndLights(model);
 		PrepareImportedVehicleModel(model);
-		/* [InfernoLobby patch] */ InfernoGarage.Decorate(this, definition, model);
+		/* [user request 2026-09-21: cars] */ InfernoCars.Decorate(this, definition, model);   // original: InfernoGarage.Decorate(this, definition, model); — paint, P900 wheel pivots and the body kit
 		return model;
 	}
 
@@ -299,6 +332,7 @@ public sealed partial class ShadowRunPrototype
 			RebuildGaragePreviewVehicle();
 		}
 		UpdateGarageUi();
+		/* [user request 2026-09-21: cars] */ InfernoStyle.RefreshForVehicle(this);   // the PAINT tab shows the active car's paint
 		return true;
 	}
 

@@ -32,6 +32,18 @@ public sealed partial class ShadowRunPrototype
 		private const float CrystalSize = 1.8f;   // the card's edge; the PNG's diamond spans it tip to tip
 		private const float CrystalHeight = 1.5f;
 
+		/* [user request 2026-09-27: one HUD action row] The speed readout (bottom-left) and the BEAM button
+		   (bottom-right) are one row: same baseline, same height, mirrored side margin, so they read as a pair.
+		   The height is the BEAM button's own tuned size and the inset is the column the Pause button and the
+		   hearts already use, so the bottom of the HUD lines up with the top. The HUD canvas is a fixed
+		   1080x1920 (ApplySafeArea only moves menuSafeRoot), so these are exact canvas px.
+		   Measured before the change: readout x 34..334, y 96..256 (centre 176); BEAM x 592.4..930,
+		   y 168..336.8 (centre 252.4) - 72 px apart at the baseline, 8.8 px different in height. */
+		public const float BeamHudScale = 1.45f;                   // [user request 2026-09-20] "a bit bigger"; was 1.3
+		public const float HudRowBottom = 168f;                    // shared baseline (the BEAM button's)
+		public const float HudRowHeight = 116.4f * BeamHudScale;   // = 168.78, the BEAM button's own height
+		public const float HudRowInset = 56f;                      // same column as the Pause button and the hearts
+
 		// Three dark paints only: navy (style 0), dark red (style 4), dark green (style 3);
 		// the colour pairs live in TRAFFIC_PAINTS in tools/apply_lobby_patches.py.
 		// ApplyTrafficDriverAppearance tests style 2, 0, 4, 3 in that order and paints
@@ -115,20 +127,23 @@ public sealed partial class ShadowRunPrototype
 		{
 			if (game.hudRoot == null) return;
 			Transform hud = game.hudRoot.transform;
-			// [user request 2026-09-20] stone 44 px centred at -44 (spans -66..-22); the count's text box
-			// starts at -4 (x 56, 120 wide, left-aligned) — 18 px clear of the stone.
-			// original: stone at -46 (spans -68..-24) and the text box from -30, so "0" sat on the stone.
+			// [user request 2026-09-20] stone 44 px, the count's text box 18 px clear of the stone.
+			// [user request 2026-09-21: overlaps] both 40 px further right (stone at -4: spans -26..18,
+			// text from 36) — 46 px clear of the score box, which ends at x 468 in this 1080 layout.
+			// original: stone at -46 (spans -68..-24) and the text box from -30, so "0" sat on the stone;
+			// original (2026-09-20): stone at -44, text box from -4 (x 56).
 			if (s_runGem == null)
 			{
-				s_runGem = InfernoLobby.Block(game, hud, "RunCrystalGem", -44f, -58f, 44f, 44f, 0xFFFFFF);
-				InfernoLobby.Place(s_runGem.rectTransform, -44f, -58f, 44f, 44f, new Vector2(0.5f, 1f));
+				s_runGem = InfernoLobby.Block(game, hud, "RunCrystalGem", -4f, -58f, 44f, 44f, 0xFFFFFF);
+				InfernoLobby.Place(s_runGem.rectTransform, -4f, -58f, 44f, 44f, new Vector2(0.5f, 1f));
 				s_runGem.sprite = InfernoLobby.GemSprite(game);
 				s_runGem.preserveAspect = true;
 			}
 			if (s_runCounter == null)
 			{
-				s_runCounter = InfernoLobby.Label(game, hud, "RunCrystalCount", "0", 56f, -58f, 120f, 52f, 36, InfernoLobby.Pearl, 3);
-				InfernoLobby.Place(s_runCounter.rectTransform, 56f, -58f, 120f, 52f, new Vector2(0.5f, 1f));
+				s_runCounter = InfernoLobby.Label(game, hud, "RunCrystalCount", "0", 96f, -58f, 120f, 52f, 36, InfernoLobby.Pearl, 3);
+				InfernoLobby.Place(s_runCounter.rectTransform, 96f, -58f, 120f, 52f, new Vector2(0.5f, 1f));
+				HudShadow(s_runCounter);   /* [user request 2026-09-21: HUD legibility] */
 			}
 			InfernoLobby.Caption(s_runCounter, s_runCollected.ToString());
 			s_runGem.gameObject.SetActive(true);
@@ -159,6 +174,7 @@ public sealed partial class ShadowRunPrototype
 				s_stageNote = InfernoLobby.Label(game, game.hudRoot.transform,
 					"SpeedStage", note, 0f, 210f, 640f, 60f, 40, InfernoLobby.Electric);
 				InfernoLobby.Place(s_stageNote.rectTransform, 0f, 210f, 640f, 60f, new Vector2(0.5f, 0.5f));
+				HudShadow(s_stageNote);   /* [user request 2026-09-21: HUD legibility] */
 			}
 			else
 			{
@@ -197,10 +213,25 @@ public sealed partial class ShadowRunPrototype
 			Image frame = face != null ? face.GetComponent<Image>() : null;
 			if (frame == null) return null;
 			Stretch(frame.rectTransform);
-			frame.sprite = InfernoLobby.NeonFrameSprite(game);
+			/* [user request 2026-09-21: 3D UI] the kit's chamfered frame cut for the button's size, with
+			   the drop shadow and press-down feedback (the Button stays on the rim; the feedback
+			   component lands there and animates the surface). original: NeonFrameSprite(game) */
+			frame.sprite = InfernoLobby.NeonFrameSprite(game, rect.sizeDelta.x, rect.sizeDelta.y);
 			frame.type = Image.Type.Sliced;
 			InfernoLobby.Paint(frame, 0xFFFFFF);
+			InfernoUi.Elevate(game, frame, InfernoUi.Style.Frame);
 			return frame;
+		}
+
+		// HUD texts sit over the sky, which is bright on the daylight map: a dark drop shadow keeps
+		// them readable. [user request 2026-09-21: HUD legibility]
+		public static void HudShadow(Text text)
+		{
+			if (text == null || text.GetComponent<Shadow>() != null) return;
+			Shadow shadow = text.gameObject.AddComponent<Shadow>();
+			shadow.effectColor = new Color(0f, 0f, 0f, 0.85f);
+			shadow.effectDistance = new Vector2(2f, -2f);
+			shadow.useGraphicAlpha = true;
 		}
 
 		public static void StylePauseButton(ShadowRunPrototype game)
@@ -275,6 +306,7 @@ public sealed partial class ShadowRunPrototype
 				s_feedback = InfernoLobby.Label(game, game.hudRoot.transform,
 					"CrystalCollected", "+1 CRYSTAL", 0f, 140f, 420f, 48f, 30, InfernoLobby.Blossom);
 				InfernoLobby.Place(s_feedback.rectTransform, 0f, 140f, 420f, 48f, new Vector2(0.5f, 0.5f));
+				HudShadow(s_feedback);   /* [user request 2026-09-21: HUD legibility] */
 			}
 			s_feedbackTime = 1.2f;
 			if (s_feedback != null) s_feedback.gameObject.SetActive(true);

@@ -16,6 +16,8 @@ public sealed partial class ShadowRunPrototype
 	private void SetupWeatherSkybox()
 	{
 		EnsureWeatherCameraSkybox();
+		/* [user request 2026-09-21: maps] InfernoMaps owns RenderSettings.skybox once a map profile is applied */
+		if (InfernoMaps.OwnsSky) return;
 		if (UseFastSkyRuntimeSkybox && !fastSkyRuntimeUnavailable)
 		{
 			if (IsFastSkyMaterial(RenderSettings.skybox))
@@ -127,6 +129,8 @@ public sealed partial class ShadowRunPrototype
 
 	private void ApplyFallbackSkybox()
 	{
+		/* [user request 2026-09-21: maps] InfernoMaps owns RenderSettings.skybox once a map profile is applied */
+		if (InfernoMaps.OwnsSky) return;
 		if (RenderSettings.skybox != null && RenderSettings.skybox.name.StartsWith("Runtime Weather Skybox"))
 		{
 			return;
@@ -171,6 +175,7 @@ public sealed partial class ShadowRunPrototype
 	private bool ApplyFastSkyRuntime()
 	{
 		EnsureWeatherCameraSkybox();
+		if (InfernoMaps.OwnsSky) return true;   /* [user request 2026-09-21: maps] */
 		if (fastSkyRuntimeUnavailable)
 		{
 			return false;
@@ -198,6 +203,7 @@ public sealed partial class ShadowRunPrototype
 	private bool ApplyPulsarNightSkybox()
 	{
 		EnsureWeatherCameraSkybox();
+		if (InfernoMaps.OwnsSky) return true;   /* [user request 2026-09-21: maps] */
 		if (runtimePulsarNightSkybox == null)
 		{
 			Material source = Resources.Load<Material>(PulsarNightSkyboxResource);
@@ -243,6 +249,8 @@ public sealed partial class ShadowRunPrototype
 	private void EnsureWeatherSkyboxActive()
 	{
 		EnsureWeatherCameraSkybox();
+		/* [user request 2026-09-21: maps] InfernoMaps owns RenderSettings.skybox once a map profile is applied */
+		if (InfernoMaps.OwnsSky) return;
 		if (IsFastSkyMaterial(RenderSettings.skybox))
 		{
 			return;
@@ -311,7 +319,7 @@ public sealed partial class ShadowRunPrototype
 
 	private void ForceFastSkyDayClouds(Material mat)
 	{
-		if (mat == null)
+		if (mat == null || InfernoMaps.OwnsSky)   /* [user request 2026-09-21: maps] */
 		{
 			return;
 		}

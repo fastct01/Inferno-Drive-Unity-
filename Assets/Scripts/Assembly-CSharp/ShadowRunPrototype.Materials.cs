@@ -52,19 +52,31 @@ public sealed partial class ShadowRunPrototype
 		{
 			texture = Resources.Load<Texture2D>("road1");
 		}
+		if (texture != null)
+		{
+			roadNormalTexture = Resources.Load<Texture2D>("asphalt_04_nor_gl_1k");
+			roadAoTexture = Resources.Load<Texture2D>("asphalt_04_ao_1k");
+		}
+		else
+		{
+			/* [user request 2026-09-20: gray road] */ // original: warned, DisableRoadTexture() and return (flat near-black road)
+			Debug.LogWarning("Road texture not found in Resources: asphalt_04_diff_1k or road1 - using procedural gray asphalt.");
+			texture = MakeProceduralAsphaltTexture(256);
+			roadNormalTexture = null;
+			roadAoTexture = null;
+		}
 		if (texture == null)
 		{
-			Debug.LogWarning("Road texture not found in Resources: asphalt_04_diff_1k or road1");
 			DisableRoadTexture();
 			return;
 		}
 		roadTexture = texture;
-		roadNormalTexture = Resources.Load<Texture2D>("asphalt_04_nor_gl_1k");
-		roadAoTexture = Resources.Load<Texture2D>("asphalt_04_ao_1k");
 		ConfigureRoadTexture(texture, true);
 		ConfigureRoadTexture(roadNormalTexture, false);
 		ConfigureRoadTexture(roadAoTexture, false);
-		Color tint = new Color(0.0175f, 0.019f, 0.021f);
+		// Neutral, slightly cool mid-dark gray. The asphalt map averages ~0.52 sRGB, so this lands the lit albedo
+		// around real aged asphalt while leaving the map's grain visible instead of crushing it to black.
+		Color tint = new Color(0.3f, 0.34f, 0.41f); /* [user request 2026-09-20: gray road] */ // cooler than the first pass so the red key light lands on neutral gray, not pink; // original: new Color(0.0175f, 0.019f, 0.021f)
 		roadMat.color = tint;
 		roadMatHasBaseMap = roadMat.HasProperty(BaseMapProperty);
 		roadMatHasMainTex = roadMat.HasProperty(MainTexProperty);
@@ -80,7 +92,8 @@ public sealed partial class ShadowRunPrototype
 		}
 		if (roadMat.HasProperty("_Smoothness"))
 		{
-			roadMat.SetFloat("_Smoothness", 0.58f);
+			// Matte enough that the low red key light gives a broad dull sheen, not a mirror streak.
+			roadMat.SetFloat("_Smoothness", 0.4f); /* [user request 2026-09-20: gray road] */ // original: 0.58f
 		}
 		if (roadMat.HasProperty("_Metallic"))
 		{
@@ -109,16 +122,16 @@ public sealed partial class ShadowRunPrototype
 		}
 		if (roadMatHasBaseMap)
 		{
-			roadMat.SetTextureScale(BaseMapProperty, RoadTextureTiling);
+			roadMat.SetTextureScale(BaseMapProperty, InfernoLanes.TextureTiling); /* [user request 2026-09-22: five lanes] */ // original: RoadTextureTiling (1.35 x 170; x widened to 2.25 so the asphalt does not stretch over the 17 m road)
 		}
 		if (roadMatHasMainTex)
 		{
-			roadMat.SetTextureScale(MainTexProperty, RoadTextureTiling);
+			roadMat.SetTextureScale(MainTexProperty, InfernoLanes.TextureTiling); /* [user request 2026-09-22: five lanes] */ // original: RoadTextureTiling
 		}
 		if (roadMatHasBumpMap && roadNormalTexture != null)
 		{
 			roadMat.SetTexture(BumpMapProperty, roadNormalTexture);
-			roadMat.SetTextureScale(BumpMapProperty, RoadTextureTiling);
+			roadMat.SetTextureScale(BumpMapProperty, InfernoLanes.TextureTiling); /* [user request 2026-09-22: five lanes] */ // original: RoadTextureTiling
 			if (roadMat.HasProperty(BumpScaleProperty))
 			{
 				roadMat.SetFloat(BumpScaleProperty, 1.08f);
@@ -128,13 +141,14 @@ public sealed partial class ShadowRunPrototype
 		if (roadMatHasOcclusionMap && roadAoTexture != null)
 		{
 			roadMat.SetTexture(OcclusionMapProperty, roadAoTexture);
-			roadMat.SetTextureScale(OcclusionMapProperty, RoadTextureTiling);
+			roadMat.SetTextureScale(OcclusionMapProperty, InfernoLanes.TextureTiling); /* [user request 2026-09-22: five lanes] */ // original: RoadTextureTiling
 			if (roadMat.HasProperty(OcclusionStrengthProperty))
 			{
 				roadMat.SetFloat(OcclusionStrengthProperty, 0.6f);
 			}
 			roadMat.EnableKeyword("_OCCLUSIONMAP");
 		}
+		ApplyRoadEmission(texture); /* [user request 2026-09-20: gray road] */ // original: no emission on the road material
 	}
 
 	private void ConfigureRoadTexture(Texture2D texture, bool colorTexture)
@@ -146,6 +160,107 @@ public sealed partial class ShadowRunPrototype
 		texture.wrapMode = TextureWrapMode.Repeat;
 		texture.filterMode = FilterMode.Trilinear;
 		texture.anisoLevel = colorTexture ? 5 : 4;
+	}
+
+	// [user request 2026-09-20: gray road] The scene key light is red (1, 0.28, 0.24) at a low angle and the ambient is
+	// a very dark magenta, so a gray albedo on its own still lights to a dark red plane. A faint self-lit gray base,
+	// masked by the asphalt map so the grain stays visible, keeps the road reading as gray asphalt at night. The
+	// emission color is an sRGB value; multiplied by the ~0.23 linear asphalt map it adds roughly 0.04-0.06 linear
+	// (about 0.25 sRGB on screen), far below any bloom threshold and well short of a daylight road.
+	private void ApplyRoadEmission(Texture2D grainMask)
+	{
+		if (roadMat == null || !roadMat.HasProperty(EmissionColorProperty))
+		{
+			return;
+		}
+		if (roadMat.HasProperty(EmissionMapProperty))
+		{
+			// URP Lit and Standard sample the emission map with the base-map UV transform, so it tiles and scrolls
+			// with the base map set up in ApplyRoadTexture / UpdateRoadTexture.
+			roadMat.SetTexture(EmissionMapProperty, grainMask);
+		}
+		roadMat.SetColor(EmissionColorProperty, new Color(0.4f, 0.48f, 0.58f)); /* [user request 2026-09-20: gray road] */ // original: none (road had no emission)
+		roadMat.EnableKeyword("_EMISSION");
+	}
+
+	// [user request 2026-09-20: gray road] Tileable gray asphalt stand-in (fine grain, two octaves of soft blotches and
+	// sparse lighter aggregate specks) used only when the Resources asphalt map is missing, so the road still reads as
+	// gray asphalt instead of a flat near-black plane. Its mean (~0.52 sRGB) matches asphalt_04_diff_1k, so the same
+	// tint and emission values apply.
+	private static Texture2D MakeProceduralAsphaltTexture(int size)
+	{
+		size = Mathf.Max(16, size);
+		Texture2D texture = new Texture2D(size, size, TextureFormat.RGBA32, true, false);
+		texture.name = "Procedural Asphalt";
+		float[] coarseBlotches = MakeAsphaltLattice(6, 0x1F3D5B79u);
+		float[] fineBlotches = MakeAsphaltLattice(24, 0x2B67A4D1u);
+		Color32[] pixels = new Color32[size * size];
+		for (int y = 0; y < size; y++)
+		{
+			for (int x = 0; x < size; x++)
+			{
+				float value = 0.52f;
+				value += (SampleAsphaltLattice(coarseBlotches, 6, x, y, size) - 0.5f) * 0.09f;
+				value += (SampleAsphaltLattice(fineBlotches, 24, x, y, size) - 0.5f) * 0.06f;
+				uint pixelHash = HashAsphalt((uint)(x + y * size) ^ 0x5851F42Du);
+				value += (HashAsphaltToUnit(pixelHash) - 0.5f) * 0.13f;
+				if (HashAsphaltToUnit(HashAsphalt(pixelHash ^ 0x9E3779B9u)) < 0.035f)
+				{
+					value += 0.12f;
+				}
+				value = Mathf.Clamp01(value);
+				pixels[x + y * size] = new Color32(
+					(byte)Mathf.RoundToInt(Mathf.Clamp01(value - 0.01f) * 255f),
+					(byte)Mathf.RoundToInt(value * 255f),
+					(byte)Mathf.RoundToInt(Mathf.Clamp01(value + 0.012f) * 255f),
+					255);
+			}
+		}
+		texture.SetPixels32(pixels);
+		texture.Apply(true, true);
+		return texture;
+	}
+
+	private static float[] MakeAsphaltLattice(int cells, uint salt)
+	{
+		float[] lattice = new float[cells * cells];
+		for (int i = 0; i < lattice.Length; i++)
+		{
+			lattice[i] = HashAsphaltToUnit(HashAsphalt((uint)i ^ salt));
+		}
+		return lattice;
+	}
+
+	private static float SampleAsphaltLattice(float[] lattice, int cells, int x, int y, int size)
+	{
+		float fx = (x + 0.5f) * cells / size;
+		float fy = (y + 0.5f) * cells / size;
+		int x0 = Mathf.Min((int)fx, cells - 1);
+		int y0 = Mathf.Min((int)fy, cells - 1);
+		int x1 = (x0 + 1) % cells;
+		int y1 = (y0 + 1) % cells;
+		float tx = fx - x0;
+		float ty = fy - y0;
+		tx = tx * tx * (3f - 2f * tx);
+		ty = ty * ty * (3f - 2f * ty);
+		float top = Mathf.Lerp(lattice[x0 + y0 * cells], lattice[x1 + y0 * cells], tx);
+		float bottom = Mathf.Lerp(lattice[x0 + y1 * cells], lattice[x1 + y1 * cells], tx);
+		return Mathf.Lerp(top, bottom, ty);
+	}
+
+	private static uint HashAsphalt(uint value)
+	{
+		value ^= value >> 16;
+		value *= 0x7FEB352Du;
+		value ^= value >> 15;
+		value *= 0x846CA68Bu;
+		value ^= value >> 16;
+		return value;
+	}
+
+	private static float HashAsphaltToUnit(uint hash)
+	{
+		return (hash & 0xFFFFFFu) / 16777216f;
 	}
 
 	private void DisableRoadTexture()
@@ -162,13 +277,15 @@ public sealed partial class ShadowRunPrototype
 		{
 			return;
 		}
+		// Untextured last resort: the same gray as the textured road so it never falls back to a near-black plane.
+		Color flatTint = new Color(0.3f, 0.34f, 0.41f); /* [user request 2026-09-20: gray road] */ // original: new Color(0.012f, 0.012f, 0.014f) for both _BaseColor and _Color
 		if (roadMat.HasProperty("_BaseColor"))
 		{
-			roadMat.SetColor("_BaseColor", new Color(0.012f, 0.012f, 0.014f));
+			roadMat.SetColor("_BaseColor", flatTint);
 		}
 		if (roadMat.HasProperty("_Color"))
 		{
-			roadMat.SetColor("_Color", new Color(0.012f, 0.012f, 0.014f));
+			roadMat.SetColor("_Color", flatTint);
 		}
 		if (roadMatHasBaseMap)
 		{
@@ -186,8 +303,13 @@ public sealed partial class ShadowRunPrototype
 		{
 			roadMat.SetTexture(OcclusionMapProperty, null);
 		}
+		if (roadMat.HasProperty(EmissionMapProperty))
+		{
+			roadMat.SetTexture(EmissionMapProperty, null); /* [user request 2026-09-20: gray road] */ // original: emission map untouched (road never had one)
+		}
 		roadMat.DisableKeyword("_NORMALMAP");
 		roadMat.DisableKeyword("_OCCLUSIONMAP");
+		roadMat.DisableKeyword("_EMISSION"); /* [user request 2026-09-20: gray road] */ // original: keyword untouched (road never had emission)
 	}
 
 	private void UpdateRoadTexture(float move)
@@ -786,14 +908,14 @@ public sealed partial class ShadowRunPrototype
 				cameraData.volumeLayerMask = -1;
 			}
 		}
-		if (!dynamicWeatherReady)
+		if (!dynamicWeatherReady && !InfernoMaps.OwnsLighting)   /* [user request 2026-09-21: maps] the map profile owns fog / ambient / key light */
 		{
 			RenderSettings.fog = false;
-			RenderSettings.ambientLight = quality == 0 ? new Color(0.045f, 0.014f, 0.023f) : new Color(0.07f, 0.026f, 0.036f);
+			RenderSettings.ambientLight = quality == 0 ? new Color(0.08f, 0.03f, 0.042f) : new Color(0.12f, 0.05f, 0.065f); /* [user request 2026-09-20: brighter cars] */ // original: quality == 0 ? new Color(0.045f, 0.014f, 0.023f) : new Color(0.07f, 0.026f, 0.036f)
 			if (sceneKeyLight != null)
 			{
-				sceneKeyLight.intensity = quality == 0 ? 1.25f : (quality == 1 ? 1.5f : 1.72f);
-				sceneKeyLight.color = new Color(1f, 0.28f, 0.24f);
+				sceneKeyLight.intensity = quality == 0 ? 1.6f : (quality == 1 ? 1.9f : 2.15f); /* [user request 2026-09-20: brighter cars] */ // original: quality == 0 ? 1.25f : (quality == 1 ? 1.5f : 1.72f)
+				sceneKeyLight.color = new Color(1f, 0.4f, 0.34f); /* [user request 2026-09-20: brighter cars] */ // original: new Color(1f, 0.28f, 0.24f)
 			}
 		}
 		if (roadTexture != null)

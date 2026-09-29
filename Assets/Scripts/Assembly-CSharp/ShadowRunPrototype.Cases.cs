@@ -367,6 +367,11 @@ public sealed partial class ShadowRunPrototype
 		caseResultBonusText.color = new Color(1f, 0.74f, 0.14f, 0.96f);
 		caseResultBonusText.raycastTarget = false;
 		caseResultBonusText.GetComponent<RectTransform>().sizeDelta = new Vector2(300f, 42f);
+		// "★  PERMANENT GARAGE UNLOCK" (26 glyphs, fallback font at 19 px) overran the
+		// 300 px pill and wrapped into the truncated second line; shrink to fit instead.
+		/* [user request 2026-09-20: pause/UI fixes] */ caseResultBonusText.resizeTextForBestFit = true;   // original: fixed 19 px
+		caseResultBonusText.resizeTextMinSize = 14;
+		caseResultBonusText.resizeTextMaxSize = 19;
 		caseCollectButton = MakeProfileActionButton(caseResultRoot, "COLLECT", new Vector2(-220f, -238f), new Vector2(400f, 82f), false, false, out _, true, true);
 		caseCollectButton.onClick.AddListener(CollectCaseReward);
 		caseSpinAgainButton = MakeProfileActionButton(caseResultRoot, "WATCH AD  •  AGAIN", new Vector2(220f, -238f), new Vector2(400f, 82f), true, false, out _, true, true);
@@ -430,7 +435,7 @@ public sealed partial class ShadowRunPrototype
 		}
 		if (caseResultRarityText != null)
 		{
-			caseResultRarityText.text = vehicle ? "◆  JACKPOT VEHICLE  ◆" : CasePrizeRarity(caseSelectedPrize) + " CRYSTAL CACHE";
+			caseResultRarityText.text = vehicle ? "◆  " + CasePrizeRarity(caseSelectedPrize) + " VEHICLE  ◆" : CasePrizeRarity(caseSelectedPrize) + " CRYSTAL CACHE";   /* [user request 2026-09-21: cars] */ // original: "◆  JACKPOT VEHICLE  ◆"
 			caseResultRarityText.color = color;
 		}
 		if (caseResultTitleText != null)
@@ -987,7 +992,9 @@ public sealed partial class ShadowRunPrototype
 		List<string> locked = GetLockedCaseVehicles();
 		if (locked.Count > 0 && UnityEngine.Random.value < 0.06f)
 		{
-			return CasePrize.Vehicle(locked[UnityEngine.Random.Range(0, locked.Count)]);
+			/* [user request 2026-09-21: cars] */ // original: return CasePrize.Vehicle(locked[UnityEngine.Random.Range(0, locked.Count)]); — uniform over the locked cars
+			string prize = InfernoCars.PickCasePrize(UnityEngine.Random.value);   // rarity-weighted 40 / 30 / 20 / 10 among the locked cars
+			return CasePrize.Vehicle(prize ?? locked[0]);
 		}
 		float roll = UnityEngine.Random.value;
 		if (roll < 0.42f)
@@ -1007,18 +1014,8 @@ public sealed partial class ShadowRunPrototype
 
 	private List<string> GetLockedCaseVehicles()
 	{
-		List<string> locked = new List<string>(3);
-		string[] candidates = new string[3] { "flying_car", "infal_model", "car3" };
-		for (int i = 0; i < candidates.Length; i++)
-		{
-			string vehicleId = candidates[i];
-			if (!SupabaseGameManager.IsVehicleUnlocked(vehicleId))
-			{
-				locked.Add(vehicleId);
-			}
-		}
-		InfernoGarage.AppendLockedCaseVehicles(this, locked); /* [InfernoLobby patch] */
-		return locked;
+		/* [user request 2026-09-21: cars] */ // original: the locked among flying_car / infal_model / car3 + InfernoGarage.AppendLockedCaseVehicles (the 25 editions)
+		return InfernoCars.LockedIds();   // every locked catalogue car, price order (the cloud ids through SupabaseGameManager, the rest through the InfernoGarage bridge)
 	}
 
 	private CasePrize RandomRouletteDisplayPrize()
@@ -1026,7 +1023,9 @@ public sealed partial class ShadowRunPrototype
 		List<string> locked = GetLockedCaseVehicles();
 		if (locked.Count > 0 && UnityEngine.Random.value < 0.08f)
 		{
-			return CasePrize.Vehicle(locked[UnityEngine.Random.Range(0, locked.Count)]);
+			/* [user request 2026-09-21: cars] */ // original: return CasePrize.Vehicle(locked[UnityEngine.Random.Range(0, locked.Count)]);
+			string shown = InfernoCars.PickCasePrize(UnityEngine.Random.value);
+			return CasePrize.Vehicle(shown ?? locked[0]);
 		}
 		float roll = UnityEngine.Random.value;
 		if (roll < 0.38f)
@@ -1046,7 +1045,7 @@ public sealed partial class ShadowRunPrototype
 
 	private string CaseVehicleDisplayName(string vehicleId)
 	{
-		{ string edition = InfernoGarage.CaseName(vehicleId); if (edition != null) return edition; } /* [InfernoLobby patch] */
+		{ string catalogued = InfernoCars.CaseName(vehicleId); if (catalogued != null) return catalogued; } /* [user request 2026-09-21: cars] */ // original: InfernoGarage.CaseName (editions only; the shipped names below covered the three base cars)
 		if (vehicleId == "flying_car")
 		{
 			return "NIGHT GLIDER";
@@ -1064,7 +1063,7 @@ public sealed partial class ShadowRunPrototype
 
 	private string CaseVehicleImageResource(string vehicleId)
 	{
-		{ string edition = InfernoGarage.CasePicture(vehicleId); if (edition != null) return edition; } /* [InfernoLobby patch] */
+		{ string catalogued = InfernoCars.CasePicture(vehicleId); if (catalogued != null) return catalogued; } /* [user request 2026-09-21: cars] */ // original: InfernoGarage.CasePicture
 		if (vehicleId == "flying_car")
 		{
 			return "flyingcar photo";
@@ -1123,6 +1122,7 @@ public sealed partial class ShadowRunPrototype
 	{
 		if (prize.Kind == CasePrizeKind.Vehicle)
 		{
+			/* [user request 2026-09-21: cars] */ if (InfernoCars.Contains(prize.VehicleId)) return InfernoCars.RarityColor(InfernoCars.RarityOf(prize.VehicleId));   // the car's rarity colour
 			return new Color(0.82f, 0.32f, 1f, 1f);
 		}
 		if (prize.Diamonds >= 10)
@@ -1144,6 +1144,7 @@ public sealed partial class ShadowRunPrototype
 	{
 		if (prize.Kind == CasePrizeKind.Vehicle)
 		{
+			/* [user request 2026-09-21: cars] */ if (InfernoCars.Contains(prize.VehicleId)) return InfernoCars.RarityName(InfernoCars.RarityOf(prize.VehicleId));   // original: "JACKPOT VEHICLE"
 			return "JACKPOT VEHICLE";
 		}
 		if (prize.Diamonds >= 10)

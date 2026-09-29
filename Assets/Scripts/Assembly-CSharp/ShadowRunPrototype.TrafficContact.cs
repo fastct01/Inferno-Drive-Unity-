@@ -43,7 +43,7 @@ public sealed partial class ShadowRunPrototype
 		if (sideImpact)
 		{
 			float pushShare = Mathf.Lerp(0.42f, 0.72f, severity);
-			playerX = Mathf.Clamp(playerX + pushDirection * (overlapX + 0.04f) * pushShare, PlayerMinX, PlayerMaxX);
+			playerX = InfernoLanes.Clamp(playerX + pushDirection * (overlapX + 0.04f) * pushShare);   /* [user request 2026-09-22: five lanes] */   // original: Mathf.Clamp(…, PlayerMinX, PlayerMaxX)
 			velocityX = pushDirection * Mathf.Max(2.8f + severity * 3.2f, Mathf.Abs(velocityX) * Mathf.Lerp(0.28f, 0.48f, severity));
 			float speedBefore = speed;
 			speed = InfernoDrivingRules.Impact(speedBefore, Mathf.Max(25f, speedBefore * Mathf.Lerp(0.97f, 0.89f, severity))); /* [InfernoLobby patch] */
@@ -52,12 +52,12 @@ public sealed partial class ShadowRunPrototype
 			impactYaw = Mathf.Clamp(impactYaw + yawDirection * Mathf.Lerp(4f, 9f, severity), -12f, 12f);
 			impactRoll = Mathf.Clamp(impactRoll + pushDirection * Mathf.Lerp(0.9f, 2.6f, penetration), -3.2f, 3.2f);
 			impactShake = Mathf.Max(impactShake, Mathf.Lerp(0.22f, 0.52f, severity));
-			trafficPosition.x = Mathf.Clamp(trafficPosition.x - pushDirection * overlapX * 0.42f, PlayerMinX, PlayerMaxX);
+			trafficPosition.x = InfernoLanes.Clamp(trafficPosition.x - pushDirection * overlapX * 0.42f);   /* [user request 2026-09-22: five lanes] */   // original: Mathf.Clamp(…, PlayerMinX, PlayerMaxX)
 			item.LateralVelocity = Mathf.Clamp(item.LateralVelocity - pushDirection * Mathf.Lerp(1.8f, 4.6f, severity), -7f, 7f);
 			item.Yaw += pushDirection * Mathf.Lerp(5f, 14f, severity);
 			item.Spin += pushDirection * Mathf.Lerp(7f, 18f, penetration);
 			item.ImpactTimer = 0.55f;
-			item.TargetX = Mathf.Clamp(trafficPosition.x, PlayerMinX, PlayerMaxX);
+			item.TargetX = InfernoLanes.Clamp(trafficPosition.x);   /* [user request 2026-09-22: five lanes] */   // original: Mathf.Clamp(trafficPosition.x, PlayerMinX, PlayerMaxX)
 			item.Lane = ClosestLane(item.TargetX);
 			item.Transform.position = trafficPosition;
 			if (item.CollisionCooldown <= 0f)
@@ -218,7 +218,7 @@ public sealed partial class ShadowRunPrototype
 		}
 		nextTrafficWowTime = now + Random.Range(30f, 45f);
 		float side = passedDx < 0f ? -1f : 1f;
-		Vector3 position = new Vector3(Mathf.Clamp(playerX + side * 1.15f, PlayerMinX, PlayerMaxX), 2.75f, player.position.z - 2.8f);
+		Vector3 position = new Vector3(InfernoLanes.Clamp(playerX + side * 1.15f), 2.75f, player.position.z - 2.8f);   /* [user request 2026-09-22: five lanes] */   // original: Mathf.Clamp(playerX + side * 1.15f, PlayerMinX, PlayerMaxX)
 		GameObject instance = Instantiate(trafficWowPrefab, position, Quaternion.identity);
 		instance.name = "Traffic Gap WOW FX";
 		instance.transform.localScale = Vector3.one * 0.72f;

@@ -412,7 +412,10 @@ public sealed partial class ShadowRunPrototype
 			if (!anyActive && SpawnRamp())
 			{
 				rampSpawnCount++;
-				nextRampDistance += Random.Range(1000f, 1200f);
+				/* [user request 2026-09-22: five lanes] a ramp still takes one lane, so on five lanes it is in the
+				   player's lane 3/5 as often; the gap between ramps shrinks by the same 3/5 (LaneSpawnIntervalScale)
+				   so a run meets about as many ramps as it did on three lanes */
+				nextRampDistance += Random.Range(1000f, 1200f) * LaneSpawnIntervalScale;   // original: Random.Range(1000f, 1200f)
 			}
 		}
 		float previousPlayerX = playerX - velocityX * dt;
@@ -648,6 +651,7 @@ public sealed partial class ShadowRunPrototype
 
 	private bool TrafficSpawnBlockedByRamp(int lane, float z)
 	{
+		if (InfernoNightHazards.LaneBlocked(lane, z)) return true;   /* [user request 2026-09-26: night drive] */ // a roadblock closes the lane like a ramp does
 		for (int i = 0; i < rampPool.Count; i++)
 		{
 			RampObstacle ramp = rampPool[i];

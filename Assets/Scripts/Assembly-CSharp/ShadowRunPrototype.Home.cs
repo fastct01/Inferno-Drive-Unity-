@@ -113,12 +113,23 @@ public sealed partial class ShadowRunPrototype
 			Button close = new GameObject("Gem Shop Close Button").AddComponent<Button>();
 			close.transform.SetParent(artwork.transform, false);
 			Image closeImage = close.gameObject.AddComponent<Image>();
-			closeImage.color = Color.clear;
+			/* [user request 2026-09-21: 3D UI] a visible chamfered "x" key in the kit's look (it sits
+			   where the art plate's own close mark is); original: Color.clear hit area */
+			closeImage.color = Color.white;
+			closeImage.sprite = InfernoUi.ChamferLiftSprite(InfernoUi.Chamfer.Small);
+			closeImage.type = Image.Type.Sliced;
 			close.targetGraphic = closeImage;
 			RectTransform closeRect = close.GetComponent<RectTransform>();
 			ApplyAnchor(closeRect, TextAnchor.UpperRight);
 			closeRect.anchoredPosition = new Vector2(-42f, -54f);
-			closeRect.sizeDelta = new Vector2(88f, 88f);
+			closeRect.sizeDelta = new Vector2(76f, 76f);   // original: 88x88
+			Text closeGlyph = MakeText(close.transform, "×", 40, TextAnchor.MiddleCenter, Vector2.zero);
+			closeGlyph.name = "Label";
+			closeGlyph.fontStyle = FontStyle.Bold;
+			closeGlyph.color = InfernoLobby.Hex(InfernoLobby.Pearl);
+			closeGlyph.raycastTarget = false;
+			closeGlyph.GetComponent<RectTransform>().sizeDelta = new Vector2(76f, 76f);
+			InfernoUi.Elevate(this, closeImage, InfernoUi.Style.Frame);
 			close.onClick.AddListener(HideGemShop);
 			gemShopRoot.SetActive(false);
 		}
@@ -145,7 +156,7 @@ public sealed partial class ShadowRunPrototype
 		frameButton.targetGraphic = frame;
 		frameButton.onClick.AddListener(() => AddGemsFromShop(amount));
 		Vector2 artSize = iconResource == "алмаз 1" ? new Vector2(77f, 56f) * 1.3f : new Vector2(154f, 112f);
-		Vector2 artPos = iconResource == "алмаз 1" ? new Vector2(0f, 35f) : new Vector2(0f, 38f);
+		Vector2 artPos = iconResource == "алмаз 1" ? new Vector2(0f, 35f) : new Vector2(0f, 32f);   // original: (0, 38) — 6 px lower so the BEST VALUE strip (88..106) clears the 112-tall art
 		Image art = MakeReferenceArtImage(card, "Pack Reward Art", iconResource, artPos, artSize, TextAnchor.MiddleCenter);
 		if (art != null)
 		{
@@ -166,13 +177,20 @@ public sealed partial class ShadowRunPrototype
 		}
 		if (sale)
 		{
-			Text best = MakeText(card, "BEST", 15, TextAnchor.MiddleCenter, new Vector2(76f, 94f));
+			/* [user request 2026-09-21: no overlaps] the BEST tag sat on the pack art (x 40..112 / y 81..107 vs the
+			   154x112 art up to y 94): it is a small plate riding the frame's top-right corner now (frame top 107),
+			   so it touches neither the art nor the price pill. original: MakeText(card, "BEST", 15, …, (76, 94)) 72x26 */
+			Image bestPlate = MakeUiBlock(card, "Best Tag", new Vector2(0f, 97f), new Vector2(230f, 18f), TextAnchor.MiddleCenter, Color.white);
+			bestPlate.sprite = InfernoUi.ChamferPlateSprite(InfernoUi.Chamfer.Small);
+			bestPlate.type = Image.Type.Sliced;
+			bestPlate.raycastTarget = false;
+			Text best = MakeText(bestPlate.transform, "BEST VALUE", 12, TextAnchor.MiddleCenter, Vector2.zero);
 			best.fontStyle = FontStyle.Bold;
-			best.color = new Color(1f, 0.62f, 1f, 1f);
+			best.color = new Color(1f, 0.93f, 1f, 1f);
 			best.raycastTarget = false;
-			best.GetComponent<RectTransform>().sizeDelta = new Vector2(72f, 26f);
+			best.GetComponent<RectTransform>().sizeDelta = new Vector2(220f, 18f);
 		}
-		Text amountText = MakeText(card, amount.ToString(), 27, TextAnchor.MiddleCenter, new Vector2(0f, -44f));
+		Text amountText = MakeText(card, amount.ToString(), 27, TextAnchor.MiddleCenter, new Vector2(0f, -47f));   // original: (0, -44) — keeps 2 px under the lowered art
 		amountText.fontStyle = FontStyle.Bold;
 		amountText.color = Color.white;
 		amountText.raycastTarget = false;
@@ -191,9 +209,11 @@ public sealed partial class ShadowRunPrototype
 		Button button = new GameObject(price + " Button").AddComponent<Button>();
 		button.transform.SetParent(parent, false);
 		Image background = button.gameObject.AddComponent<Image>();
-		background.sprite = roundedGlassSprite;
+		/* [user request 2026-09-21: 3D UI] the kit's violet chamfered plate (a purchase is the primary
+		   action); original: roundedGlassSprite tinted (0.07, 0.025, 0.13, 0.92) */
+		background.sprite = InfernoUi.ChamferPlateSprite(InfernoUi.Chamfer.Small);
 		background.type = Image.Type.Sliced;
-		background.color = new Color(0.07f, 0.025f, 0.13f, 0.92f);
+		background.color = Color.white;
 		button.targetGraphic = background;
 		RectTransform rect = button.GetComponent<RectTransform>();
 		ApplyAnchor(rect, TextAnchor.MiddleCenter);
@@ -205,6 +225,7 @@ public sealed partial class ShadowRunPrototype
 		colors.pressedColor = new Color(0.72f, 0.45f, 0.88f, 1f);
 		button.colors = colors;
 		Text label = MakeText(button.transform, price, 28, TextAnchor.MiddleCenter, Vector2.zero);
+		label.name = "Label";
 		label.fontStyle = FontStyle.Bold;
 		label.color = new Color(0.96f, 0.84f, 1f, 1f);
 		label.raycastTarget = false;
@@ -212,6 +233,7 @@ public sealed partial class ShadowRunPrototype
 		label.resizeTextMinSize = 23;
 		label.resizeTextMaxSize = 28;
 		label.GetComponent<RectTransform>().sizeDelta = new Vector2(210f, 46f);
+		InfernoUi.Elevate(this, background, InfernoUi.Style.Plate);   /* [user request 2026-09-21: 3D UI] */
 		return button;
 	}
 
@@ -277,7 +299,7 @@ public sealed partial class ShadowRunPrototype
 			menuGemCount = SupabaseGameManager.Crystals;
 			if (gemAmountText != null)
 			{
-				gemAmountText.text = menuGemCount.ToString();
+				gemAmountText.text = InfernoLobby.GemText(menuGemCount);   /* [user request 2026-09-26: crystals] */
 			}
 			if (menuGemCount < expectedBalance)
 			{

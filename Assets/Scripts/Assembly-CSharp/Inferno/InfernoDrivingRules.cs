@@ -51,6 +51,25 @@ public sealed partial class ShadowRunPrototype
 			return Mathf.Clamp(Cruise(distance) + BoostGain, MaxSpeed, BoostTopMax);
 		}
 
+		/* [user request 2026-09-21: cars] */
+		// Upgrade bonuses (InfernoUpgrades): ENGINE adds `topSpeedBonus` m/s to the cruise target and
+		// its clamp, NITRO adds `boostCapBonus` m/s to the boost clamp. The parameterless rules above
+		// are these with 0, so the shipped stages and the C++ checker's values are untouched.
+		public static float Cruise(float distance, float topSpeedBonus)
+		{
+			return Cruise(distance) + Mathf.Max(0f, topSpeedBonus);
+		}
+
+		public static float CruiseTop(float distance, float topSpeedBonus)   // clamp without boost
+		{
+			return Mathf.Max(CruiseCap, Cruise(distance, topSpeedBonus));
+		}
+
+		public static float BoostTop(float distance, float boostCapBonus)
+		{
+			return BoostTop(distance) + Mathf.Max(0f, boostCapBonus);
+		}
+
 		// Collision recovery. A bump sheds speed (Impact); afterwards the car climbs
 		// back to the speed it had before the hit on its own, with no input, faster
 		// than a normal launch. Once it is back, or the window runs out, the normal
@@ -91,9 +110,19 @@ public sealed partial class ShadowRunPrototype
 		public static float AdvanceSpeed(float speed, float cruise, bool boost, float acceleration,
 			float dt, bool airborne, float boostTop = MaxSpeed, float cruiseTop = CruiseCap)
 		{
+			return AdvanceSpeed(speed, cruise, boost, acceleration, dt, airborne, boostTop, cruiseTop, 1f);   /* [user request 2026-09-21: cars] */
+		}
+
+		/* [user request 2026-09-21: cars] */
+		// `boostRateMultiplier` (NITRO upgrade, 1 = shipped) scales the boost approach rate only; the
+		// no-boost rate, the recovery rate and every target stay what the rule above computed.
+		public static float AdvanceSpeed(float speed, float cruise, bool boost, float acceleration,
+			float dt, bool airborne, float boostTop, float cruiseTop, float boostRateMultiplier)
+		{
 			if (dt <= 0f || airborne) return speed;
 			float target = Mathf.Max(speed, boost ? boostTop : cruise);
-			float rate = (boost ? 0.42f : 0.28f) * Mathf.Clamp(acceleration, 0.5f, 2f);
+			// original: float rate = (boost ? 0.42f : 0.28f) * Mathf.Clamp(acceleration, 0.5f, 2f);
+			float rate = (boost ? 0.42f * Mathf.Max(0.1f, boostRateMultiplier) : 0.28f) * Mathf.Clamp(acceleration, 0.5f, 2f);
 			if (recoveryLeft > 0f)
 			{
 				recoveryLeft -= dt;
@@ -112,6 +141,39 @@ public sealed partial class ShadowRunPrototype
 		public static float CrystalGap(float random01)
 		{
 			return CrystalGapMin + (CrystalGapMax - CrystalGapMin) * Mathf.Clamp(random01, 0f, 1f);
+		}
+
+		/* [user request 2026-09-22: five lanes] */
+		// Traffic on a road of `lanes` lanes. The shipped spawner, pool and formations were tuned for
+		// three lanes (ShippedLaneCount); these keep the per-lane density (cars per lane per second)
+		// what it was on the wider road, and put each three-lane formation on a random three-lane
+		// window of it instead of stretching it. With three lanes every rule is the identity.
+		public const int ShippedLaneCount = 3;
+
+		// Pool size for `lanes` lanes from the shipped three-lane pool: 12 stays 12 on three, becomes 20 on five.
+		public static int TrafficPoolFor(int shippedPool, int lanes)
+		{
+			return Mathf.Max(shippedPool, shippedPool * Mathf.Max(ShippedLaneCount, lanes) / ShippedLaneCount);
+		}
+
+		// Spawn-interval multiplier: 1 on three lanes, 3 / 5 on five; never longer than shipped.
+		public static float SpawnIntervalScale(int lanes)
+		{
+			return (float)ShippedLaneCount / Mathf.Max(ShippedLaneCount, lanes);
+		}
+
+		// The leftmost road lane of the three-lane window a formation lands on, uniform from random01 in
+		// [0, 1): always 0 on three lanes, 0..2 on five.
+		public static int FormationOffset(int lanes, float random01)
+		{
+			int windows = Mathf.Max(1, lanes - ShippedLaneCount + 1);
+			return Mathf.Clamp((int)(Mathf.Clamp01(random01) * windows), 0, windows - 1);
+		}
+
+		// A formation's own lane (0..2) as a road lane, inside the lane count.
+		public static int FormationLane(int formationLane, int offset, int lanes)
+		{
+			return Mathf.Clamp(formationLane + offset, 0, Mathf.Max(0, lanes - 1));
 		}
 
 		// Segment/box intersection in car-relative road coordinates; fast movement or

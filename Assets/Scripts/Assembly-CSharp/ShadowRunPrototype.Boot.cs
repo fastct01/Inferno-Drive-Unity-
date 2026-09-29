@@ -43,6 +43,9 @@ public sealed partial class ShadowRunPrototype
 		MakeCity();
 		RefreshRoadReflectionProbe();
 		MakeCar();
+		/* [user request 2026-09-21: maps] the selected map's environment (sky, road, scenery) before the
+		   UI is built, so the first frame already shows it; re-applied on every map step by ApplySelectedMap */
+		InfernoMaps.Apply(this, InfernoLobby.SelectedMap());
 		MakeEvents();
 		MakeUI();
 		best = PlayerPrefs.GetInt("shadowRunBest", 0);
@@ -223,6 +226,7 @@ public sealed partial class ShadowRunPrototype
 	{
 		/* [InfernoLobby patch] */ InfernoStyle.Dispose(this);
 		/* [InfernoLobby patch] */ InfernoHazards.Dispose(this);
+		/* [user request 2026-09-26: night drive] */ InfernoNightHazards.Dispose(this);
 		/* [InfernoLobby patch] */ InfernoDriving.Dispose(this);
 		ClearP900BrakeLightMaterial();
 		SupabaseGameManager.ProfileChanged -= ApplyCloudProfile;
@@ -343,11 +347,11 @@ public sealed partial class ShadowRunPrototype
 			lights[i].enabled = false;
 		}
 		RenderSettings.fog = false;
-		RenderSettings.ambientLight = new Color(0.07f, 0.026f, 0.036f);
+		RenderSettings.ambientLight = new Color(0.12f, 0.05f, 0.065f); /* [user request 2026-09-20: brighter cars] */ // original: new Color(0.07f, 0.026f, 0.036f)
 		sceneKeyLight = new GameObject("Red Rim Light").AddComponent<Light>();
 		sceneKeyLight.type = LightType.Directional;
-		sceneKeyLight.color = new Color(1f, 0.28f, 0.24f);
-		sceneKeyLight.intensity = 1.42f;
+		sceneKeyLight.color = new Color(1f, 0.4f, 0.34f); /* [user request 2026-09-20: brighter cars] */ // original: new Color(1f, 0.28f, 0.24f)
+		sceneKeyLight.intensity = 1.85f; /* [user request 2026-09-20: brighter cars] */ // original: 1.42f
 		sceneKeyLight.transform.rotation = Quaternion.Euler(25f, -165f, 0f);
 	}
 
@@ -441,6 +445,7 @@ public sealed partial class ShadowRunPrototype
 		SeedInitialTraffic();
 		/* [InfernoLobby patch] */ InfernoDriving.Reset(this);
 		/* [InfernoLobby patch] */ InfernoHazards.Reset(this);
+		/* [user request 2026-09-26: night drive] */ InfernoNightHazards.Reset(this);
 		/* [InfernoLobby patch] */ InfernoStyle.ResetTrails(this);
 	}
 
@@ -465,6 +470,7 @@ public sealed partial class ShadowRunPrototype
 		overlay.SetActive(false);
 		hudRoot.SetActive(true);
 		StartVehicleEngineAudio();
+		/* [user request 2026-09-21: maps] */ InfernoMaps.Freeze(this, false);
 		BeginFirstRunTutorialIfNeeded();
 	}
 
@@ -484,6 +490,7 @@ public sealed partial class ShadowRunPrototype
 		SetGaragePreviewVisible(false);
 		overlay.SetActive(false);
 		hudRoot.SetActive(true);
+		/* [user request 2026-09-21: maps / transparent pause] */ InfernoMaps.Freeze(this, false); InfernoLobby.HidePause(this);
 		RestoreFirstRunTutorialAfterPause();
 	}
 
@@ -496,6 +503,7 @@ public sealed partial class ShadowRunPrototype
 		SaveDailyGoalProgress();
 		running = false;
 		paused = true;
+		/* [user request 2026-09-21: maps] */ InfernoMaps.Freeze(this, true);
 		brakeButtonHeld = false;
 		ResetGameplayTouches();
 		DisableHighBeam();
@@ -523,11 +531,14 @@ public sealed partial class ShadowRunPrototype
 			menuSceneRoot.gameObject.SetActive(false);
 		}
 		SetGaragePreviewVisible(false);
-		overlayTitle.text = "P  A  U  S  E  D";
-		overlayTitle.fontSize = 76;
-		overlayTitle.fontStyle = FontStyle.Bold;
-		overlayTag.text = "THE CITY IS STILL MOVING";
-		overlayTag.color = Color.white;
+		// The pause screen draws its own PAUSED title, subtitle and stats card
+		// (InfernoLobby.BuildPause); the shared overlay texts are blanked here.
+		/* [user request 2026-09-20: pause/UI fixes] */ InfernoLobby.ShowPause(this);
+		// original: overlayTitle.text = "P  A  U  S  E  D";
+		// original: overlayTitle.fontSize = 76;
+		// original: overlayTitle.fontStyle = FontStyle.Bold;
+		// original: overlayTag.text = "THE CITY IS STILL MOVING";
+		// original: overlayTag.color = Color.white;
 		int scoreMeters = Mathf.FloorToInt(score);
 		overlayStats.text = scoreMeters.ToString() + "m     BEST " + best.ToString() + "m";
 		primaryButtonLabel.text = "C  O  N  T  I  N  U  E";
@@ -553,7 +564,9 @@ public sealed partial class ShadowRunPrototype
 	{
 		/* [InfernoLobby patch] */ InfernoStyle.HideTrails(this);
 		/* [InfernoLobby patch] */ InfernoHazards.Hide(this);
+		/* [user request 2026-09-26: night drive] */ InfernoNightHazards.Hide(this);
 		/* [InfernoLobby patch] */ InfernoDriving.Hide(this);
+		/* [user request 2026-09-21: transparent pause] */ InfernoLobby.HidePause(this);
 		running = false;
 		paused = false;
 		showingGameOver = false;
@@ -656,6 +669,7 @@ public sealed partial class ShadowRunPrototype
 	{
 		/* [InfernoLobby patch] */ InfernoStyle.HideTrails(this);
 		/* [InfernoLobby patch] */ InfernoHazards.Hide(this);
+		/* [user request 2026-09-26: night drive] */ InfernoNightHazards.Hide(this);
 		/* [InfernoLobby patch] */ InfernoDriving.Hide(this);
 		RegisterDailyRunCompleted();
 		running = false;

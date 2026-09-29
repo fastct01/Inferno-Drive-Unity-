@@ -82,13 +82,37 @@ public sealed partial class ShadowRunPrototype
 		ambient.raycastTarget = false;
 		profilePageHeaderRoot = MakeMenuPageHeader(settingsRoot.transform, "PROFILE", "CLOUD IDENTITY  •  LIVE GARAGE SYNC", out Text subtitle);
 		subtitle.gameObject.SetActive(false); /* [InfernoLobby patch] */
+		/* [user request 2026-09-21: 3D UI] the mockup's heading: bold-italic SETTINGS over a
+		   letter-spaced lilac PROFILE & GAME PREFERENCES (LayoutMenuPageHeaders left-aligns it).
+		   original: "PROFILE" 48 px bold + hidden subtitle "CLOUD IDENTITY  •  LIVE GARAGE SYNC" */
+		{
+			Text title = profilePageHeaderRoot.GetChild(0).GetComponent<Text>();
+			if (title != null)
+			{
+				title.text = "SETTINGS";
+				title.fontStyle = FontStyle.BoldAndItalic;
+				title.fontSize = 58;
+				title.resizeTextMinSize = 36;
+				title.resizeTextMaxSize = 58;
+				title.rectTransform.sizeDelta = new Vector2(0f, 68f);
+			}
+			subtitle.gameObject.SetActive(true);
+			subtitle.text = InfernoUi.Spaced("PROFILE & GAME PREFERENCES");
+			subtitle.fontStyle = FontStyle.Bold;
+			subtitle.color = InfernoLobby.Hex(InfernoLobby.Lilac);
+			subtitle.resizeTextMinSize = 14;
+			subtitle.resizeTextMaxSize = 22;
+			subtitle.rectTransform.anchoredPosition = new Vector2(3f, -80f);
+			subtitle.rectTransform.sizeDelta = new Vector2(0f, 30f);
+		}
 		profileContentRoot = new GameObject("Profile Adaptive Content").AddComponent<RectTransform>();
 		profileContentRoot.SetParent(settingsRoot.transform, false);
 		profileContentRoot.anchorMin = Vector2.zero;
 		profileContentRoot.anchorMax = Vector2.one;
 		profileContentRoot.offsetMin = Vector2.zero;
 		profileContentRoot.offsetMax = Vector2.zero;
-		Image identityCard = MakeProfilePanel(profileContentRoot, "Identity Card", new Vector2(0f, -280f), new Vector2(920f, 190f), new Color(0.018f, 0.01f, 0.036f, 0.92f), Color.clear, false);
+		// original: new Vector2(0f, -280f), new Vector2(920f, 190f)
+		Image identityCard = MakeProfilePanel(profileContentRoot, "Identity Card", new Vector2(0f, -InfernoSettings.ContentTop), new Vector2(980f, InfernoSettings.AccountHeight), new Color(0.018f, 0.01f, 0.036f, 0.92f), Color.clear, false); /* [user request 2026-09-21: 3D UI] the mockup's ACCOUNT card */
 		Image accent = MakeUiBlock(identityCard.transform, "Identity Accent", new Vector2(-448f, 0f), new Vector2(5f, 96f), TextAnchor.MiddleCenter, new Color(0.72f, 0.25f, 1f, 0.92f));
 		accent.raycastTarget = false;
 		profileSoundButton = MakeSoundToggleButton(identityCard.transform, "Profile Sound Toggle", TextAnchor.MiddleCenter, new Vector2(260f, 0f), new Vector2(78f, 78f), out profileSoundIcon);
@@ -138,12 +162,15 @@ public sealed partial class ShadowRunPrototype
 		profileLoginButton.onClick.AddListener(() => ShowProfileAuthForm(false));
 		BuildProfileAuthForm();
 		BuildSignedInProfileActions();
-		profileStatusText = MakeText(profileContentRoot, "", 17, TextAnchor.UpperCenter, new Vector2(0f, -710f));
+		/* [user request 2026-09-21: overlaps] the status line lives inside the ACCOUNT card (its
+		   last line; InfernoSettings.StyleAccount places it) instead of floating over the slider rows.
+		   original: MakeText(profileContentRoot, "", 17, TextAnchor.UpperCenter, new Vector2(0f, -710f)), 860x58 */
+		profileStatusText = MakeText(identityCard.transform, "", 16, TextAnchor.MiddleLeft, new Vector2(0f, -186f));
 		profileStatusText.color = new Color(0.66f, 0.58f, 0.78f, 0.94f);
 		profileStatusText.resizeTextForBestFit = true;
-		profileStatusText.resizeTextMinSize = 14;
-		profileStatusText.resizeTextMaxSize = 18;
-		profileStatusText.GetComponent<RectTransform>().sizeDelta = new Vector2(860f, 58f);
+		profileStatusText.resizeTextMinSize = 13;
+		profileStatusText.resizeTextMaxSize = 17;
+		profileStatusText.GetComponent<RectTransform>().sizeDelta = new Vector2(640f, 24f);
 		profileStatusText.raycastTarget = false;
 		settingsRoot.SetActive(false);
 		LayoutProfileScreen();
@@ -155,7 +182,10 @@ public sealed partial class ShadowRunPrototype
 	private Image MakeProfilePanel(Transform parent, string name, Vector2 pos, Vector2 size, Color fill, Color borderColor, bool useGeneratedOutline = true)
 	{
 		Image panel = MakeUiBlock(parent, name, pos, size, TextAnchor.UpperCenter, fill);
-		panel.sprite = roundedGlassSprite;
+		/* [user request 2026-09-21: 3D UI] every panel is the mockup's cut-corner card (pre-coloured,
+		   so the white tint); original: panel.sprite = roundedGlassSprite tinted `fill` */
+		panel.sprite = InfernoLobby.NeonFrameSprite(this, size.x, size.y);
+		panel.color = Color.white;
 		panel.type = Image.Type.Sliced;
 		panel.raycastTarget = false;
 		if (useGeneratedOutline)
@@ -170,40 +200,48 @@ public sealed partial class ShadowRunPrototype
 
 	private Button MakeProfileActionButton(Transform parent, string label, Vector2 pos, Vector2 size, bool primary, bool danger, out Text labelText, bool neonContour = false, bool addNeonGlow = true)
 	{
+		/* [user request 2026-09-21: 3D UI] the kit's chamfered buttons: primary = violet plate,
+		   secondary = dark frame with the violet contour, danger = crimson plate; the old neon glow
+		   object stays (Cases.cs toggles "WATCH AD + OPEN CASE Neon Glow" by name) as a soft halo in
+		   the button's shape. Elevate adds the drop shadow and the press-down feedback. */
+		InfernoUi.Chamfer chamfer = InfernoUi.ChamferFor(size.x, size.y);
 		if (neonContour && addNeonGlow)
 		{
-			Image glow = MakeUiBlock(parent, label + " Neon Glow", pos, size + new Vector2(14f, 14f), TextAnchor.MiddleCenter, danger ? new Color(1f, 0.04f, 0.16f, 0.22f) : new Color(0.52f, 0.08f, 0.96f, 0.24f));
-			glow.sprite = roundedGlassSprite;
+			// original: roundedGlassSprite, size + 14, (1, 0.04, 0.16, 0.22) / (0.52, 0.08, 0.96, 0.24)
+			Image glow = MakeUiBlock(parent, label + " Neon Glow", pos, size + new Vector2(22f, 22f), TextAnchor.MiddleCenter, danger ? new Color(1f, 0.1f, 0.3f, 0.2f) : new Color(0.62f, 0.2f, 1f, 0.22f));
+			glow.sprite = InfernoUi.ShadowSprite(chamfer);
 			glow.type = Image.Type.Sliced;
 			glow.raycastTarget = false;
 		}
 		Button button = new GameObject(label + " Profile Button").AddComponent<Button>();
 		button.transform.SetParent(parent, false);
 		Image background = button.gameObject.AddComponent<Image>();
-		background.sprite = roundedGlassSprite;
+		// original: roundedGlassSprite tinted (1, 0.055, 0.18) / (0.76, 0.2, 1) with the contour,
+		// original: (0.16, 0.02, 0.05, 0.96) / (0.36, 0.075, 0.62) / (0.05, 0.026, 0.082, 0.98) without
+		background.sprite = danger ? InfernoUi.DangerPlateSprite(chamfer) : (primary ? InfernoUi.ChamferPlateSprite(chamfer) : InfernoUi.ChamferFrameSprite(chamfer));
 		background.type = Image.Type.Sliced;
-		background.color = neonContour
-			? (danger ? new Color(1f, 0.055f, 0.18f, 1f) : new Color(0.76f, 0.2f, 1f, 1f))
-			: (danger ? new Color(0.16f, 0.02f, 0.05f, 0.96f) : (primary ? new Color(0.36f, 0.075f, 0.62f, 1f) : new Color(0.05f, 0.026f, 0.082f, 0.98f)));
+		background.color = Color.white;
 		RectTransform rect = button.GetComponent<RectTransform>();
 		ApplyAnchor(rect, TextAnchor.MiddleCenter);
 		rect.anchoredPosition = pos;
 		rect.sizeDelta = size;
+		button.targetGraphic = background;
 		if (neonContour)
 		{
+			// original: a dark rounded "Button Dark Purple Fill" 8 px inside the contour was the target graphic
 			Image fill = MakeUiBlock(button.transform, "Button Dark Purple Fill", Vector2.zero, size - new Vector2(8f, 8f), TextAnchor.MiddleCenter, danger ? new Color(0.115f, 0.008f, 0.026f, 1f) : new Color(0.06f, 0.014f, 0.105f, 1f));
 			fill.sprite = roundedGlassSprite;
 			fill.type = Image.Type.Sliced;
 			fill.raycastTarget = false;
-			button.targetGraphic = fill;
+			fill.gameObject.SetActive(false);   // the chamfered sprite carries its own fill
 		}
 		else
 		{
-			button.targetGraphic = background;
 			Image accent = MakeUiBlock(button.transform, "Button Accent", new Vector2(0f, size.y * 0.5f - 2f), new Vector2(size.x - 38f, 3f), TextAnchor.MiddleCenter, danger ? new Color(1f, 0.18f, 0.34f, 0.72f) : new Color(0.78f, 0.34f, 1f, primary ? 0.92f : 0.38f));
 			accent.raycastTarget = false;
 		}
 		labelText = MakeText(button.transform, label, 22, TextAnchor.MiddleCenter, Vector2.zero);
+		labelText.name = "Label";
 		labelText.fontStyle = FontStyle.Bold;
 		labelText.color = danger ? new Color(1f, 0.72f, 0.78f, 1f) : Color.white;
 		labelText.resizeTextForBestFit = true;
@@ -217,6 +255,7 @@ public sealed partial class ShadowRunPrototype
 		colors.pressedColor = new Color(0.7f, 0.62f, 0.8f, 1f);
 		colors.fadeDuration = 0.06f;
 		button.colors = colors;
+		InfernoUi.Elevate(this, background, danger ? InfernoUi.Style.Danger : (primary ? InfernoUi.Style.Plate : InfernoUi.Style.Frame));
 		return button;
 	}
 
@@ -267,8 +306,11 @@ public sealed partial class ShadowRunPrototype
 		profileAuthFormRoot.transform.SetParent(profileContentRoot, false);
 		RectTransform rect = profileAuthFormRoot.AddComponent<RectTransform>();
 		ApplyAnchor(rect, TextAnchor.UpperCenter);
-		rect.anchoredPosition = new Vector2(0f, -605f);
-		rect.sizeDelta = new Vector2(920f, 680f);
+		/* [user request 2026-09-21: overlaps] under the ACCOUNT card, as wide as the other cards;
+		   InfernoSettings.Arrange hides the AUDIO / GAME cards while it is open.
+		   original: new Vector2(0f, -605f), new Vector2(920f, 680f) */
+		rect.anchoredPosition = new Vector2(0f, -InfernoSettings.AudioTop);
+		rect.sizeDelta = new Vector2(980f, InfernoSettings.AuthFormHeight);
 		Image card = MakeProfilePanel(rect, "Auth Form Card", Vector2.zero, rect.sizeDelta, new Color(0.018f, 0.01f, 0.036f, 0.96f), Color.clear, false);
 		profileAuthTitleText = MakeText(card.transform, "SECURE GUEST ACCOUNT", 29, TextAnchor.MiddleCenter, new Vector2(0f, 286f));
 		profileAuthTitleText.fontStyle = FontStyle.Bold;
@@ -297,8 +339,11 @@ public sealed partial class ShadowRunPrototype
 		profileAccountRoot.transform.SetParent(profileContentRoot, false);
 		RectTransform rect = profileAccountRoot.AddComponent<RectTransform>();
 		ApplyAnchor(rect, TextAnchor.UpperCenter);
-		rect.anchoredPosition = new Vector2(0f, -605f);
-		rect.sizeDelta = new Vector2(920f, 390f);
+		/* [user request 2026-09-21: overlaps] under the ACCOUNT card; InfernoSettings.Arrange moves
+		   the AUDIO / GAME cards down by its height while it shows.
+		   original: new Vector2(0f, -605f), new Vector2(920f, 390f) */
+		rect.anchoredPosition = new Vector2(0f, -InfernoSettings.AudioTop);
+		rect.sizeDelta = new Vector2(980f, InfernoSettings.AccountActionsHeight);
 		Image card = MakeProfilePanel(rect, "Account Management Card", Vector2.zero, rect.sizeDelta, new Color(0.018f, 0.01f, 0.036f, 0.94f), Color.clear, false);
 		Text heading = MakeText(card.transform, "ACCOUNT", 21, TextAnchor.MiddleLeft, new Vector2(90f, 126f));
 		heading.fontStyle = FontStyle.Bold;
@@ -336,7 +381,7 @@ public sealed partial class ShadowRunPrototype
 		profileContentRoot.offsetMax = new Vector2(0f, -topInset);
 		profileContentRoot.offsetMin = new Vector2(0f, bottomInset + 190f);
 		profileContentRoot.localScale = Vector3.one;
-		InfernoSettings.Relayout(this); /* [InfernoLobby patch] */
+		InfernoSettings.Arrange(this); /* [InfernoLobby patch] */ /* [user request 2026-09-21: overlaps] state-aware layout + Relayout; original: InfernoSettings.Relayout(this) */
 	}
 
 	private void RefreshProfileUi()
@@ -348,9 +393,14 @@ public sealed partial class ShadowRunPrototype
 		bool authenticated = SupabaseGameManager.IsAuthenticated;
 		bool remembered = SupabaseGameManager.HasRememberedAccount;
 		bool guest = remembered && SupabaseGameManager.IsRememberedGuestAccount;
-		profileIdentityText.text = remembered ? SupabaseGameManager.AccountDisplayId : "NO ACCOUNT";
-		profileAccountTypeText.text = guest ? "GUEST ACCOUNT" : (remembered ? "VERIFIED ACCOUNT" : "SIGN IN REQUIRED");
-		profileAccountTypeText.color = guest ? new Color(0.7f, 0.42f, 1f, 1f) : (remembered ? new Color(0.3f, 0.9f, 0.72f, 1f) : new Color(0.54f, 0.48f, 0.66f, 1f));
+		/* [user request 2026-09-21: 3D UI] the mockup's ACCOUNT card: a guest (or a player without any
+		   cloud account) reads GUEST ACCOUNT over a stable local GUEST_ID_<8 digits>; a verified
+		   account keeps its cloud id.
+		   original: identity = remembered ? AccountDisplayId : "NO ACCOUNT"; type = guest ? "GUEST ACCOUNT" : (remembered ? "VERIFIED ACCOUNT" : "SIGN IN REQUIRED") */
+		profileIdentityText.text = remembered && !guest ? SupabaseGameManager.AccountDisplayId : InfernoSettings.GuestId();
+		profileAccountTypeText.text = remembered && !guest ? "VERIFIED ACCOUNT" : "GUEST ACCOUNT";
+		// original: guest (0.7, 0.42, 1) / remembered (0.3, 0.9, 0.72) / (0.54, 0.48, 0.66); the card's type line is white like the mockup, verified stays green
+		profileAccountTypeText.color = remembered && !guest ? new Color(0.3f, 0.9f, 0.72f, 1f) : Color.white;
 		if (!authenticated && remembered)
 		{
 			profileSyncText.text = "●  OFFLINE — ACCOUNT SAVED";
@@ -393,6 +443,7 @@ public sealed partial class ShadowRunPrototype
 		{
 			profileAuthFormRoot.SetActive(false);
 		}
+		InfernoSettings.Arrange(this); /* [user request 2026-09-21: overlaps] the settings cards follow what is visible */
 	}
 
 	private void ShowProfileAuthForm(bool register)
@@ -418,6 +469,7 @@ public sealed partial class ShadowRunPrototype
 		{
 			profileStatusText.text = string.Empty;
 		}
+		InfernoSettings.Arrange(this); /* [user request 2026-09-21: overlaps] hides the AUDIO / GAME cards under the form */
 	}
 
 	private void HideProfileAuthForm()

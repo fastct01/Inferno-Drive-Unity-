@@ -27,6 +27,9 @@ using UnityEngine;
 // IPostgrestTable slots: 12 Get, 36 Where, 43 Upsert(model).
 // InfernoGarage_IsUnlocked / InfernoGarage_SetUnlocked are the extern "C" bridge functions of
 // InfernoGarage.inc; they are exposed as ShadowRunPrototype.InfernoGarageIsUnlocked/SetUnlocked here.
+// /* [user request 2026-09-21: cars] */ The bridge now answers for the six non-cloud cars of the
+// InfernoCars catalogue (PlayerPrefs InfernoDrive.Vehicle.<id>.Unlocked); the four shipped ids
+// (sportcar = Car1, flying_car = Car2, infal_model = Car3, car3 = Car4) keep the cloud columns below.
 namespace ShadowRun.Services
 {
 	public sealed class SupabaseGameManager : MonoBehaviour
@@ -56,6 +59,11 @@ namespace ShadowRun.Services
 		private const string Car4Key = "shadowRunCar4Unlocked";
 
 		private const string RememberedGuestKey = "shadowRunRememberedGuest";
+
+		/* [user request 2026-09-27: cannot buy cars] Profile id of a guest whose session died server-side.
+		   An anonymous user cannot be signed into again, so the replacement guest gets a new id; this key lets
+		   that one profile reset carry the player's crystals and cars over (ResetCachedProfileIfSessionChanged). */
+		private const string StrandedGuestProfileKey = "shadowRunStrandedGuestProfile";
 
 		private const string RememberedEmailKey = "shadowRunRememberedEmail";
 
@@ -1022,10 +1030,27 @@ namespace ShadowRun.Services
 			{
 				return;
 			}
-			Debug.LogWarning("[Supabase] Cached profile " + CurrentPlayer.Id + " does not match session " + sessionUserId + ". Local outbox was isolated.");
+			/* [user request 2026-09-27: cannot buy cars] One mismatch is not an account switch: a guest whose
+			   session expired server-side (RequireAuthentication recorded its id) signing in as the replacement
+			   guest is the same person with a new anonymous id, so it keeps its crystals and cars. The outbox is
+			   still dropped either way — those queued writes name the dead user — and the carried values are
+			   marked dirty so they upload into the new row. Every other mismatch still resets, which is what
+			   keeps two real accounts from mixing.
+			   original: (no carry) CurrentPlayer = CreateDefaultProfile(); CurrentPlayer.Id = sessionUserId; */
+			bool carryStrandedGuest = IsGuestAccount && string.Equals(PlayerPrefs.GetString(StrandedGuestProfileKey, string.Empty), CurrentPlayer.Id, StringComparison.Ordinal);
+			Debug.LogWarning("[Supabase] Cached profile " + CurrentPlayer.Id + " does not match session " + sessionUserId + (carryStrandedGuest ? ". Carried the stranded guest's progress over." : ". Local outbox was isolated."));
 			ClearSyncOutbox();
-			CurrentPlayer = CreateDefaultProfile();
-			CurrentPlayer.Id = sessionUserId;
+			if (carryStrandedGuest)
+			{
+				CurrentPlayer.Id = sessionUserId;
+				PlayerPrefs.DeleteKey(StrandedGuestProfileKey);
+				PlayerPrefs.SetInt(CloudDirtyKey, 1);
+			}
+			else
+			{
+				CurrentPlayer = CreateDefaultProfile();
+				CurrentPlayer.Id = sessionUserId;
+			}
 			SaveToLocalStorage();
 			ProfileChanged?.Invoke();
 		}
@@ -1141,12 +1166,69 @@ namespace ShadowRun.Services
 			{
 				if (IsPermanentSessionFailure(ex.ToString()))
 				{
+					/* [user request 2026-09-27: cannot buy cars] Before telling the player their account is
+					   gone, try the token on disk once. GoTrue rotates refresh tokens, so the usual cause of a
+					   "Session expired" answer is that another process (the device build, an earlier Editor)
+					   spent ours and saved a newer one; the in-memory copy then fails on every purchase while a
+					   working token sits in the session file. Only if that also fails is the session really
+					   dead, and then the prompt is the honest answer. */
+					if (await TryAdoptPersistedSessionAsync())
+					{
+						return true;
+					}
 					RequireAuthentication("The saved account session is no longer valid. Sign in again.");
 				}
 				else
 				{
 					SetStatus("Could not refresh the account session. We will retry when the connection recovers: " + FriendlyError(ex));
 				}
+				return false;
+			}
+		}
+
+		/* [user request 2026-09-27: cannot buy cars] One recovery attempt for a rejected refresh: adopt the
+		   session saved on disk (SupabaseBootstrap.AdoptPersistedSessionAsync only does so when it holds a
+		   different refresh token for the same user) and, if its access token is stale too, refresh once with
+		   the newer token. Returns true only with a usable session in hand, so the caller can carry on as if
+		   the refresh had worked. Deliberately no loop: two failures mean the saved token is dead as well. */
+		private static async Task<bool> TryAdoptPersistedSessionAsync()
+		{
+			if (!await SupabaseBootstrap.AdoptPersistedSessionAsync())
+			{
+				return false;
+			}
+			Session adopted = SupabaseBootstrap.Client?.Auth?.CurrentSession;
+			if (adopted == null || string.IsNullOrWhiteSpace(adopted.AccessToken) || string.IsNullOrWhiteSpace(adopted.RefreshToken))
+			{
+				return false;
+			}
+			if (!SessionNeedsRefresh(adopted))
+			{
+				return true;
+			}
+			try
+			{
+				string expectedUserId = SupabaseBootstrap.Client.Auth.CurrentUser?.Id;
+				Session refreshed;
+				using (SupabaseBootstrap.ProtectPersistedSessionDuringRefresh())
+				{
+					refreshed = await SupabaseBootstrap.Client.Auth.RefreshSession();
+				}
+				string refreshedUserId = refreshed?.User?.Id ?? SupabaseBootstrap.Client.Auth.CurrentUser?.Id;
+				if (refreshed == null || string.IsNullOrWhiteSpace(refreshed.AccessToken) || string.IsNullOrWhiteSpace(refreshed.RefreshToken))
+				{
+					return false;
+				}
+				if (!string.IsNullOrWhiteSpace(expectedUserId) && !string.Equals(expectedUserId, refreshedUserId, StringComparison.Ordinal))
+				{
+					return false;
+				}
+				Debug.Log("[Supabase] The saved session refreshed after the in-memory one was rejected. UserId=" + refreshedUserId);
+				return true;
+			}
+			catch (Exception ex)
+			{
+				Debug.LogWarning("[Supabase] The saved session could not be refreshed either: " + FriendlyError(ex));
 				return false;
 			}
 		}
@@ -1451,8 +1533,17 @@ namespace ShadowRun.Services
 			PlayerPrefs.Save();
 		}
 
+		/* [user request 2026-09-27: cannot buy cars] Every caller reaches here having found the saved session
+		   unusable. For a guest that is terminal — there is no credential to sign in with — so the player's next
+		   "Play as Guest" creates a different user id, and the profile reset that follows would hand them
+		   CreateDefaultProfile() (25 crystals, one car) in place of what they own. Record the stranded id first. */
 		private static void RequireAuthentication(string message)
 		{
+			if (IsRememberedGuestAccount && CurrentPlayer != null && !string.IsNullOrWhiteSpace(CurrentPlayer.Id))
+			{
+				PlayerPrefs.SetString(StrandedGuestProfileKey, CurrentPlayer.Id);
+				PlayerPrefs.Save();
+			}
 			SetStatus(message);
 			FirstLaunchAuthScreen.Show();
 		}
@@ -1468,7 +1559,13 @@ namespace ShadowRun.Services
 				return false;
 			}
 			string lower = error.ToLowerInvariant();
-			return lower.Contains("invalid refresh token") || lower.Contains("refresh_token_not_found") || lower.Contains("session_not_found") || lower.Contains("user not found") || lower.Contains("user_not_found") || lower.Contains("invalid_grant");
+			/* [user request 2026-09-27: cannot buy cars] GoTrue answers a refresh whose session is past its
+			   timebox / inactivity limit with "Session expired" (code session_expired), and a rotated token that
+			   was already spent with refresh_token_already_used. Neither string was listed here, so both fell
+			   through to the transient branch: the game logged "we will retry when the connection recovers" and
+			   retried the same dead token on every purchase, forever, without ever asking the player to sign in.
+			   original: return lower.Contains("invalid refresh token") || lower.Contains("refresh_token_not_found") || lower.Contains("session_not_found") || lower.Contains("user not found") || lower.Contains("user_not_found") || lower.Contains("invalid_grant"); */
+			return lower.Contains("invalid refresh token") || lower.Contains("refresh_token_not_found") || lower.Contains("refresh_token_already_used") || lower.Contains("session_not_found") || lower.Contains("session_expired") || lower.Contains("session expired") || lower.Contains("user not found") || lower.Contains("user_not_found") || lower.Contains("invalid_grant");
 		}
 
 		private static bool IsTransientNetworkFailure(string error)

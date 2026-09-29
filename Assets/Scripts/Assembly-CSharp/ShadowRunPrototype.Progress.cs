@@ -57,7 +57,7 @@ public sealed partial class ShadowRunPrototype
 		menuGemCount = SupabaseGameManager.Crystals;
 		if (gemAmountText != null)
 		{
-			gemAmountText.text = menuGemCount.ToString();
+			gemAmountText.text = InfernoLobby.GemText(menuGemCount);   /* [user request 2026-09-26: crystals] */
 		}
 		ApplyGarageOwnershipFromProfile();
 		RefreshProfileUi();
@@ -266,7 +266,7 @@ public sealed partial class ShadowRunPrototype
 		SupabaseGameManager.SyncProfileAfterEconomyChangeAsync();
 		if (gemAmountText != null)
 		{
-			gemAmountText.text = menuGemCount.ToString();
+			gemAmountText.text = InfernoLobby.GemText(menuGemCount);   /* [user request 2026-09-26: crystals] */
 		}
 		if (collectButton != null)
 		{

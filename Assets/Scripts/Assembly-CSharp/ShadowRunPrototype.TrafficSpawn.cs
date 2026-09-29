@@ -8,9 +8,18 @@ using UnityEngine;
 // _ChooseTrafficLane, _PickTrafficSpawnZ.
 public sealed partial class ShadowRunPrototype
 {
+	/* [user request 2026-09-22: five lanes] Traffic density follows the lane count. The shipped pool of TrafficPoolSize (12)
+	   cars and the spawn timers were tuned for three lanes, so on five the pool is 12 × 5 / 3 = 20 and every spawn interval
+	   is × 3 / 5 (InfernoDrivingRules), keeping the per-lane density what it was; TrafficPoolSize itself is a shipped constant
+	   and stays 12. The 16 spawn formations describe three lanes (0 left, 1 middle, 2 right): each one lands on a random
+	   three-lane window of the road (trafficPatternLaneOffset, chosen once per formation), so it keeps its shape. */
+	private static readonly int LaneScaledTrafficPoolSize = InfernoDrivingRules.TrafficPoolFor(TrafficPoolSize, InfernoLanes.Count);   // 20
+	private static readonly float LaneSpawnIntervalScale = InfernoDrivingRules.SpawnIntervalScale(InfernoLanes.Count);              // 0.6
+	private int trafficPatternLaneOffset;
+
 	private void PrewarmTrafficPool()
 	{
-		bool poolIntact = trafficPool.Count == TrafficPoolSize;
+		bool poolIntact = trafficPool.Count == LaneScaledTrafficPoolSize;   /* [user request 2026-09-22: five lanes] */   // original: TrafficPoolSize
 		if (poolIntact)
 		{
 			for (int i = 0; i < trafficPool.Count; i++)
@@ -45,7 +54,7 @@ public sealed partial class ShadowRunPrototype
 			Debug.LogError("Traffic vehicle model not found in Resources: uploads_files_4881612_uploads_files_3750868_MB.W222.AMG");
 			return;
 		}
-		for (int i = 0; i < TrafficPoolSize; i++)
+		for (int i = 0; i < LaneScaledTrafficPoolSize; i++)   /* [user request 2026-09-22: five lanes] */   // original: i < TrafficPoolSize
 		{
 			GameObject car = new GameObject("Traffic Car Pooled");
 			car.layer = HighBeamTrafficLayer;
@@ -252,17 +261,17 @@ public sealed partial class ShadowRunPrototype
 		playerStoppedTrafficTimer = speed < 0.8f ? Mathf.Min(4f, playerStoppedTrafficTimer + dt) : 0f;
 		bool playerStopped = playerStoppedTrafficTimer >= 1.4f;
 		spawnTimer -= dt;
-		if (spawnTimer <= 0f && pickups.Count < TrafficPoolSize)
+		if (spawnTimer <= 0f && pickups.Count < LaneScaledTrafficPoolSize)   /* [user request 2026-09-22: five lanes] */   // original: pickups.Count < TrafficPoolSize
 		{
 			if (distance < 150f)
 			{
 				SpawnTrafficCar();
-				spawnTimer = Random.Range(0.85f, 1.35f);
+				spawnTimer = Random.Range(0.85f, 1.35f) * LaneSpawnIntervalScale;   /* [user request 2026-09-22: five lanes] */   // original: Random.Range(0.85f, 1.35f)
 			}
 			else
 			{
 				int spawned = SpawnTrafficPattern();
-				spawnTimer = Random.Range(1.05f, 1.55f) + Mathf.Max(0, spawned - 1) * 0.18f;
+				spawnTimer = (Random.Range(1.05f, 1.55f) + Mathf.Max(0, spawned - 1) * 0.18f) * LaneSpawnIntervalScale;   /* [user request 2026-09-22: five lanes] */   // original: Random.Range(1.05f, 1.55f) + Mathf.Max(0, spawned - 1) * 0.18f
 			}
 		}
 		for (int i = pickups.Count - 1; i >= 0; i--)
@@ -353,7 +362,7 @@ public sealed partial class ShadowRunPrototype
 
 	private int SpawnTrafficPattern()
 	{
-		int available = TrafficPoolSize - pickups.Count;
+		int available = LaneScaledTrafficPoolSize - pickups.Count;   /* [user request 2026-09-22: five lanes] */   // original: TrafficPoolSize - pickups.Count
 		if (available <= 0)
 		{
 			return 0;
@@ -409,6 +418,9 @@ public sealed partial class ShadowRunPrototype
 		float tightGap = gap * 0.82f;
 		float wideGap = gap * 1.18f;
 		int spawned = 0;
+		/* [user request 2026-09-22: five lanes] the three-lane window this formation lands on (0, 1 or 2 on five lanes;
+		   always 0 on the shipped three), applied to every lane below by SpawnTrafficPatternCar */
+		trafficPatternLaneOffset = InfernoDrivingRules.FormationOffset(lanes.Length, Random.value);
 		switch (pattern)
 		{
 			case 0:
@@ -526,6 +538,9 @@ public sealed partial class ShadowRunPrototype
 		{
 			return;
 		}
+		/* [user request 2026-09-22: five lanes] `lane` is the formation's own lane (0 left, 1 middle, 2 right); the road
+		   lane is that inside the window SpawnTrafficPattern chose */
+		lane = InfernoDrivingRules.FormationLane(lane, trafficPatternLaneOffset, lanes.Length);
 		if (TrafficSpawnBlockedByRamp(lane, z))
 		{
 			return;
@@ -537,10 +552,12 @@ public sealed partial class ShadowRunPrototype
 
 	private void SeedInitialTraffic()
 	{
-		int count = Random.Range(4, 7);
+		/* [user request 2026-09-22: five lanes] 4-6 cars over the first ~300 m of three lanes become 6-10 over the same
+		   stretch of five (the z steps shrink with the spawn interval), so each lane starts as busy as it did */
+		int count = Random.Range(4 * InfernoLanes.Count / InfernoDrivingRules.ShippedLaneCount, 7 * InfernoLanes.Count / InfernoDrivingRules.ShippedLaneCount);   // original: Random.Range(4, 7)
 		int previousLane = -1;
 		float z = -Random.Range(32f, 48f);
-		for (int i = 0; i < count && pickups.Count < TrafficPoolSize; i++)
+		for (int i = 0; i < count && pickups.Count < LaneScaledTrafficPoolSize; i++)   // original: pickups.Count < TrafficPoolSize
 		{
 			int lane = Random.Range(0, lanes.Length);
 			if (lane == previousLane && Random.value < 0.72f)
@@ -549,9 +566,9 @@ public sealed partial class ShadowRunPrototype
 			}
 			SpawnTrafficCarAt(lane, z, 0f, null, -1f);
 			previousLane = lane;
-			z -= Random.Range(27f, 53f);
+			z -= Random.Range(27f, 53f) * LaneSpawnIntervalScale;   // original: z -= Random.Range(27f, 53f)
 		}
-		spawnTimer = Random.Range(0.85f, 1.35f);
+		spawnTimer = Random.Range(0.85f, 1.35f) * LaneSpawnIntervalScale;   // original: Random.Range(0.85f, 1.35f)
 	}
 
 	private void SpawnTrafficCarAt(int lane, float z, float pressure, TrafficDriverStyle? forcedStyle = null, float forcedSpeed = -1f)

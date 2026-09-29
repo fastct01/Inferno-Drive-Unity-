@@ -142,6 +142,55 @@ namespace ShadowRun.Services
 			return sessionRestoreTask;
 		}
 
+		/* [user request 2026-09-27: cannot buy cars] RestorePersistedSessionAsync deliberately short-circuits
+		   while a session is in memory, which is right at boot but wrong after a refresh was rejected: GoTrue
+		   rotates refresh tokens, so another process (the device build, an earlier Editor) can have spent ours
+		   and saved a newer one, and our in-memory copy then fails forever with "Session expired" while a usable
+		   token sits on disk. This adopts the saved session in place, but only when the file really holds a
+		   different token and it belongs to the same user; the caller refreshes afterwards. */
+		public static async Task<bool> AdoptPersistedSessionAsync()
+		{
+			if (!IsReady || sessionStore == null || Client?.Auth == null)
+			{
+				return false;
+			}
+			try
+			{
+				Session persisted = sessionStore.LoadSession();
+				if (persisted == null || string.IsNullOrWhiteSpace(persisted.AccessToken) || string.IsNullOrWhiteSpace(persisted.RefreshToken))
+				{
+					return false;
+				}
+				Session current = Client.Auth.CurrentSession;
+				if (current != null && string.Equals(current.RefreshToken, persisted.RefreshToken, StringComparison.Ordinal))
+				{
+					return false;   // the disk holds exactly what just failed
+				}
+				string expectedUserId = current?.User?.Id ?? persisted.User?.Id;
+				using (sessionStore.ProtectDuringRestore())
+				{
+					await Client.Auth.SetSession(persisted.AccessToken, persisted.RefreshToken, false);
+				}
+				string adoptedUserId = Client.Auth.CurrentUser?.Id;
+				if (!string.IsNullOrWhiteSpace(expectedUserId) && !string.Equals(expectedUserId, adoptedUserId, StringComparison.Ordinal))
+				{
+					Debug.LogWarning("[Supabase] The saved session belongs to " + adoptedUserId + ", not " + expectedUserId + ". It was not adopted.");
+					return false;
+				}
+				bool has = Client.Auth.CurrentSession != null;
+				if (has)
+				{
+					Debug.Log("[Supabase] Adopted the saved session (a newer refresh token was on disk). UserId=" + adoptedUserId);
+				}
+				return has;
+			}
+			catch (Exception ex)
+			{
+				Debug.LogWarning("[Supabase] The saved session could not be adopted: " + ex.Message);
+				return false;
+			}
+		}
+
 		public static void PersistCurrentSession()
 		{
 			Session session = Client?.Auth?.CurrentSession;

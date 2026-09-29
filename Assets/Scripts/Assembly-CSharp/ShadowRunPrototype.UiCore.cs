@@ -81,10 +81,14 @@ public sealed partial class ShadowRunPrototype
 		scoreText = MakeText(hudRoot.transform, "0m", 77, TextAnchor.UpperLeft, new Vector2(48f, -40f));
 		scoreText.raycastTarget = false;
 		scoreText.rectTransform.sizeDelta = new Vector2(420f, 126f);
+		/* [user request 2026-09-21: HUD legibility] dark drop shadows: the white score and the lilac
+		   BEST line vanish against the bright daylight sky */
+		InfernoDriving.HudShadow(scoreText);
 		bestText = MakeText(hudRoot.transform, "BEST 0m", 28, TextAnchor.UpperLeft, new Vector2(50f, -121f));
 		bestText.raycastTarget = false;
 		bestText.rectTransform.sizeDelta = new Vector2(420f, 126f);
 		bestText.color = new Color(0.55f, 0.48f, 0.7f);
+		InfernoDriving.HudShadow(bestText);
 		RectTransform lives = new GameObject("Lives").AddComponent<RectTransform>();
 		lives.SetParent(hudRoot.transform);
 		lives.anchorMin = lives.anchorMax = new Vector2(1f, 1f);
@@ -437,8 +441,10 @@ public sealed partial class ShadowRunPrototype
 		Button button = new GameObject(name + " Button").AddComponent<Button>();
 		button.transform.SetParent(parent);
 		Image image = button.gameObject.AddComponent<Image>();
-		image.color = new Color(0.035f, 0.055f, 0.095f, 0.86f);
-		image.sprite = roundedGlassSprite;
+		/* [user request 2026-09-21: 3D UI] the kit's chamfered lift key (the case screen's close
+		   button); original: roundedGlassSprite tinted (0.035, 0.055, 0.095, 0.86) */
+		image.color = Color.white;
+		image.sprite = InfernoUi.ChamferLiftSprite(InfernoUi.ChamferFor(size.x, size.y));
 		image.type = Image.Type.Sliced;
 		RectTransform rect = button.GetComponent<RectTransform>();
 		ApplyAnchor(rect, anchor);
@@ -451,9 +457,11 @@ public sealed partial class ShadowRunPrototype
 		colors.pressedColor = new Color(0.78f, 0.78f, 0.86f, 1f);
 		button.colors = colors;
 		Text icon = MakeText(button.transform, iconLabel, iconSize, TextAnchor.MiddleCenter, Vector2.zero);
+		icon.name = "Label";
 		icon.color = Color.white;
 		icon.GetComponent<RectTransform>().sizeDelta = size;
 		icon.raycastTarget = false;
+		InfernoUi.Elevate(this, image, InfernoUi.Style.Frame);
 		return button;
 	}
 
@@ -689,56 +697,69 @@ public sealed partial class ShadowRunPrototype
 
 	private void MakeSpeedometer(Transform parent)
 	{
+		/* [user request 2026-09-22: numeric speed] the shipped dial (спидометр финал + needle) is replaced by a
+		   written speed: a big bold-italic number whose colour runs cool → hot with the speed
+		   (SpeedReadoutColor in Player.cs) on a small chamfered plate, plus a KM/H caption. The root keeps
+		   its name and the speedometerValueText field so UpdateSpeedometerHud / ResetRun are unchanged.
+		   original: root (26, 78) 522x348 scaled by SpeedometerScale 0.64 with the dial image, the needle
+		   (CreateSpeedometerNeedleSprite, pivot (0.5, 0.06), 135° → -135°) and its cap. */
+		/* [user request 2026-09-27: one HUD action row] The readout shares the BEAM button's row: same baseline
+		   (InfernoDriving.HudRowBottom), same height (HudRowHeight) and the side margin mirrored (HudRowInset),
+		   so the two bottom widgets line up exactly. The number and the caption keep their proportions inside the
+		   slightly taller plate. original: root at (34f, 96f) sized 300x160 - its bottom sat 72 px below the BEAM
+		   button's and its centre 76 px below it; the 34 px margin matched nothing else in the HUD. */
+		const float plateWidth = 300f;                        // the readout holds three digits; the button is 337.6 wide
+		float plateHeight = InfernoDriving.HudRowHeight;
+		float numberY = plateHeight * 0.6f, unitY = plateHeight * 0.19f;   // original: 96 and 30 of 160
 		RectTransform root = new GameObject("Speedometer").AddComponent<RectTransform>();
 		root.SetParent(parent, false);
 		root.gameObject.AddComponent<CanvasGroup>().alpha = 1f;
 		root.anchorMin = root.anchorMax = Vector2.zero;
 		root.pivot = Vector2.zero;
-		// [user request 2026-09-20] keep the whole dial on screen. The dial is parented with
-		// worldPositionStays (below), so it keeps a 1/SpeedometerScale local scale and renders
-		// ~354x348 canvas px centred on this root's centre; at the original (-17, 26) that centre
-		// sat 150 px from the left edge and 137 px from the bottom, clipping the dial on both sides.
-		// original: new Vector2(-17f, 26f)
-		root.anchoredPosition = new Vector2(26f, 78f);
-		root.sizeDelta = new Vector2(522f, 348f);
-		root.localScale = Vector3.one * SpeedometerScale;
-		Image dial = new GameObject("Speedometer Dial").AddComponent<Image>();
-		dial.transform.SetParent(root);
-		dial.sprite = LoadResourceSprite("спидометр финал");
-		if (dial.sprite != null)
-		{
-			dial.sprite.texture.filterMode = FilterMode.Bilinear;
-			dial.sprite.texture.anisoLevel = 1;
-			dial.sprite.texture.wrapMode = TextureWrapMode.Clamp;
-		}
-		dial.color = Color.white;
-		dial.raycastTarget = false;
-		dial.preserveAspect = true;
-		RectTransform dialRect = dial.GetComponent<RectTransform>();
-		dialRect.anchorMin = Vector2.zero;
-		dialRect.anchorMax = Vector2.one;
-		dialRect.offsetMin = Vector2.zero;
-		dialRect.offsetMax = Vector2.zero;
-		speedometerNeedleSprite = CreateSpeedometerNeedleSprite();
+		root.anchoredPosition = new Vector2(InfernoDriving.HudRowInset, InfernoDriving.HudRowBottom);
+		root.sizeDelta = new Vector2(plateWidth, plateHeight);
+		root.localScale = Vector3.one;
+		speedometerNeedleSprite = null;
+		speedometerNeedle = null;
 		speedometerNeedleGlow = null;
-		Image needle = MakeUiBlock(root, "Speedometer Needle", new Vector2(261f, 174f), new Vector2(13f, 132f), TextAnchor.LowerLeft, new Color(1f, 0.025f, 0.02f, 1f));
-		needle.sprite = speedometerNeedleSprite;
-		needle.type = Image.Type.Simple;
-		speedometerNeedle = needle.rectTransform;
-		speedometerNeedle.pivot = new Vector2(0.5f, 0.06f);
-		speedometerNeedle.anchoredPosition = new Vector2(261f, 174f);
-		speedometerNeedle.localRotation = Quaternion.Euler(0f, 0f, 135f);
-		Image cap = MakeUiBlock(root, "Speedometer Needle Cap", new Vector2(0f, 0f), new Vector2(30f, 30f), TextAnchor.MiddleCenter, new Color(0.02f, 0.015f, 0.016f, 0.96f));
-		cap.sprite = softCircleSprite;
-		cap.raycastTarget = false;
-		speedometerValueText = MakeText(root, "000", 66, TextAnchor.MiddleCenter, new Vector2(0f, -8f));
-		speedometerValueText.color = new Color(1f, 1f, 1f, 0.96f);
-		speedometerValueText.fontStyle = FontStyle.Bold;
+		// plate: the kit's medium chamfer, dark and translucent so the road shows through a little
+		/* [user request 2026-09-27: one HUD action row] the frame is built at 1 / BeamHudScale and scaled back up,
+		   so its 9-slice corner cuts render at the same size as the BEAM button's (same Medium sprite, same 1.45)
+		   instead of 45 % smaller - a sliced sprite's border does not grow with the rect. The number and the
+		   caption are siblings of this image, so they stay unscaled and crisp.
+		   original: size (plateWidth, plateHeight) with no localScale */
+		Image plate = MakeUiBlock(root, "Speed Plate", Vector2.zero, new Vector2(plateWidth / InfernoDriving.BeamHudScale, plateHeight / InfernoDriving.BeamHudScale), TextAnchor.LowerLeft, new Color(1f, 1f, 1f, 0.9f));   // original: 300x160
+		plate.rectTransform.localScale = new Vector3(InfernoDriving.BeamHudScale, InfernoDriving.BeamHudScale, 1f);
+		plate.sprite = InfernoUi.ChamferFrameSprite(InfernoUi.Chamfer.Medium);
+		plate.type = Image.Type.Sliced;
+		plate.raycastTarget = false;
+		// number: 000..240, bold italic, best-fit inside the plate's upper band
+		speedometerValueText = MakeText(root, "000", 92, TextAnchor.MiddleCenter, new Vector2(plateWidth / 2f, numberY));   // original: (150f, 96f)
+		speedometerValueText.fontStyle = FontStyle.BoldAndItalic;
+		speedometerValueText.color = SpeedReadoutColor(0);
 		speedometerValueText.raycastTarget = false;
 		speedometerValueText.resizeTextForBestFit = true;
-		speedometerValueText.resizeTextMinSize = 42;
-		speedometerValueText.resizeTextMaxSize = 66;
-		speedometerValueText.GetComponent<RectTransform>().sizeDelta = new Vector2(180f, 82f);
+		speedometerValueText.resizeTextMinSize = 56;
+		speedometerValueText.resizeTextMaxSize = 92;
+		speedometerValueText.horizontalOverflow = HorizontalWrapMode.Wrap;
+		speedometerValueText.verticalOverflow = VerticalWrapMode.Truncate;
+		RectTransform valueRect = speedometerValueText.GetComponent<RectTransform>();
+		ApplyAnchor(valueRect, TextAnchor.LowerLeft);
+		valueRect.pivot = new Vector2(0.5f, 0.5f);
+		valueRect.anchoredPosition = new Vector2(plateWidth / 2f, numberY);   // original: (150f, 96f)
+		valueRect.sizeDelta = new Vector2(250f, 100f);
+		InfernoDriving.HudShadow(speedometerValueText);
+		// caption under the number: letter-spaced, lilac like the other HUD captions
+		Text unit = MakeText(root, InfernoUi.Spaced("KM/H"), 20, TextAnchor.MiddleCenter, new Vector2(plateWidth / 2f, unitY));   // original: (150f, 30f)
+		unit.fontStyle = FontStyle.Bold;
+		unit.color = InfernoLobby.Hex(InfernoLobby.Lilac);
+		unit.raycastTarget = false;
+		RectTransform unitRect = unit.GetComponent<RectTransform>();
+		ApplyAnchor(unitRect, TextAnchor.LowerLeft);
+		unitRect.pivot = new Vector2(0.5f, 0.5f);
+		unitRect.anchoredPosition = new Vector2(plateWidth / 2f, unitY);   // original: (150f, 30f)
+		unitRect.sizeDelta = new Vector2(250f, 28f);
+		InfernoDriving.HudShadow(unit);
 	}
 
 	private Sprite CreateSpeedometerNeedleSprite()
@@ -862,17 +883,23 @@ public sealed partial class ShadowRunPrototype
 	private void MakeHudHighBeamButton(Transform parent)
 	{
 		// original position: new Vector2(-296f, 168f) (tools/apply_lobby_patches.py)
-		Button button = MakeHudActionButton(parent, "BEAM", new Vector2(-150f, 168f), new Vector2(232.8f, 116.4f), new Color(0.68f, 0.34f, 1f, 1f)); /* [InfernoLobby patch] */
+		/* [user request 2026-09-27: one HUD action row] the 150 px right margin was the gap left by the BRAKE
+		   button, which this build disables at birth (MakeHudBrakeButton), so the only bottom-right control sat
+		   94 px inside the column the Pause button and the hearts use. Now it mirrors the speed readout's margin.
+		   original: new Vector2(-150f, 168f) */
+		Button button = MakeHudActionButton(parent, "BEAM", new Vector2(-InfernoDriving.HudRowInset, InfernoDriving.HudRowBottom), new Vector2(232.8f, 116.4f), new Color(0.68f, 0.34f, 1f, 1f)); /* [InfernoLobby patch] */
 		highBeamHudButton = button;
 		highBeamHudButtonRect = button.GetComponent<RectTransform>();
 		Image mask = MakeUiBlock(button.transform, "BEAM Cooldown Mask", Vector2.zero, new Vector2(228.8f, 112.4f), TextAnchor.MiddleCenter, Color.white);
-		mask.sprite = roundedGlassSprite;
+		/* [user request 2026-09-21: 3D UI] the recharge fill is clipped to the chamfered frame's inside
+		   (the kit's edge-to-edge core shape); original: roundedGlassSprite mask + rounded filled sprite */
+		mask.sprite = InfernoUi.ChamferCoreSprite(InfernoUi.ChamferFor(228.8f, 112.4f));
 		mask.type = Image.Type.Sliced;
 		mask.raycastTarget = false;
 		mask.gameObject.AddComponent<Mask>().showMaskGraphic = false;
 		mask.rectTransform.SetSiblingIndex(2);
 		highBeamCooldownFill = MakeUiBlock(mask.transform, "BEAM Recharge Fill", Vector2.zero, new Vector2(228.8f, 112.4f), TextAnchor.MiddleCenter, new Color(0.56f, 0.16f, 0.94f, 0.58f));
-		highBeamCooldownFill.sprite = roundedGlassSprite;
+		highBeamCooldownFill.sprite = null;
 		highBeamCooldownFill.type = Image.Type.Filled;
 		highBeamCooldownFill.fillMethod = Image.FillMethod.Vertical;
 		highBeamCooldownFill.fillOrigin = (int)Image.OriginVertical.Bottom;
@@ -888,7 +915,10 @@ public sealed partial class ShadowRunPrototype
 			NotifyFirstRunTutorialBeamPressed();
 		});
 		trigger.triggers.Add(down);
-		/* [InfernoLobby patch] */ /* [user request 2026-09-20] a bit bigger; was 1.3 */ highBeamHudButtonRect.localScale = new Vector3(1.45f, 1.45f, 1f);
+		/* [InfernoLobby patch] */ /* [user request 2026-09-20] a bit bigger; was 1.3 */
+		/* [user request 2026-09-27: one HUD action row] the literal lives in InfernoDriving.BeamHudScale now, so the
+		   readout's height (HudRowHeight) follows any later change to it. original: new Vector3(1.45f, 1.45f, 1f) */
+		highBeamHudButtonRect.localScale = new Vector3(InfernoDriving.BeamHudScale, InfernoDriving.BeamHudScale, 1f);
 	}
 
 	private Button MakeHudActionButton(Transform parent, string label, Vector2 pos, Vector2 size, Color accent)
@@ -896,9 +926,12 @@ public sealed partial class ShadowRunPrototype
 		Button button = new GameObject(label + " Button").AddComponent<Button>();
 		button.transform.SetParent(parent, false);
 		Image frame = button.gameObject.AddComponent<Image>();
-		frame.sprite = roundedGlassSprite;
+		/* [user request 2026-09-21: 3D UI] the kit's chamfered frame (violet contour, dark fill, lit
+		   edge) replaces the tinted rounded glass + dark surface pair; the frame is the target graphic.
+		   original: frame = roundedGlassSprite tinted (accent, 0.74); glow = roundedGlassSprite (accent, 0.12) 18x14 larger; surface = dark rounded glass 4 px inside, the target graphic */
+		frame.sprite = InfernoUi.ChamferFrameSprite(InfernoUi.ChamferFor(size.x, size.y));
 		frame.type = Image.Type.Sliced;
-		frame.color = new Color(accent.r, accent.g, accent.b, 0.74f);
+		frame.color = Color.white;
 		RectTransform rect = button.GetComponent<RectTransform>();
 		ApplyAnchor(rect, TextAnchor.LowerRight);
 		rect.anchoredPosition = pos;
@@ -907,11 +940,13 @@ public sealed partial class ShadowRunPrototype
 		glow.sprite = roundedGlassSprite;
 		glow.type = Image.Type.Sliced;
 		glow.raycastTarget = false;
+		glow.gameObject.SetActive(false);   // the chamfered frame carries its own glow
 		Image surface = MakeUiBlock(button.transform, label + " Surface", Vector2.zero, size - new Vector2(4f, 4f), TextAnchor.MiddleCenter, new Color(0.018f, 0.009f, 0.035f, 0.94f));
 		surface.sprite = roundedGlassSprite;
 		surface.type = Image.Type.Sliced;
 		surface.raycastTarget = false;
-		button.targetGraphic = surface;
+		surface.gameObject.SetActive(false);   // the chamfered frame carries its own fill
+		button.targetGraphic = frame;
 		Image sheen = MakeUiBlock(button.transform, label + " Upper Sheen", new Vector2(0f, size.y * 0.5f - 8f), new Vector2(size.x - 30f, 2f), TextAnchor.MiddleCenter, new Color(0.92f, 0.72f, 1f, 0.28f));
 		sheen.raycastTarget = false;
 		Image innerGlow = MakeUiBlock(button.transform, label + " Inner Glow", new Vector2(-size.x * 0.2f, 0f), new Vector2(size.x * 0.5f, size.y - 18f), TextAnchor.MiddleCenter, new Color(accent.r, accent.g, accent.b, 0.075f));
@@ -922,6 +957,7 @@ public sealed partial class ShadowRunPrototype
 		accentLine.raycastTarget = false;
 		MakeHudActionIcon(button.transform, label, size, accent);
 		Text text = MakeText(button.transform, label, 32, TextAnchor.MiddleCenter, new Vector2(34f, 2f));
+		text.name = "Label";
 		text.color = new Color(0.98f, 0.94f, 1f, 1f);
 		text.fontStyle = FontStyle.Bold;
 		text.raycastTarget = false;
@@ -936,6 +972,7 @@ public sealed partial class ShadowRunPrototype
 		colors.colorMultiplier = 1f;
 		colors.fadeDuration = 0.06f;
 		button.colors = colors;
+		InfernoUi.Elevate(this, frame, InfernoUi.Style.Frame);   /* [user request 2026-09-21: 3D UI] drop shadow + press-down */
 		return button;
 	}
 
@@ -1069,29 +1106,34 @@ public sealed partial class ShadowRunPrototype
 
 	private void MakePauseActions(Transform parent)
 	{
-		pauseActionsRoot = new GameObject("Pause Actions");
-		pauseActionsRoot.transform.SetParent(parent, false);
-		RectTransform rect = pauseActionsRoot.AddComponent<RectTransform>();
-		rect.anchorMin = Vector2.zero;
-		rect.anchorMax = Vector2.one;
-		rect.offsetMin = Vector2.zero;
-		rect.offsetMax = Vector2.zero;
-		Image shade = MakeUiBlock(pauseActionsRoot.transform, "Pause Controls Soft Shade", new Vector2(0f, -30f), new Vector2(820f, 1460f), TextAnchor.MiddleCenter, new Color(0f, 0f, 0f, 0.8f));
-		shade.sprite = caseRadialGlowSprite;
-		shade.type = Image.Type.Simple;
-		shade.raycastTarget = false;
-		pauseContinueButton = MakePauseArtButton(pauseActionsRoot.transform, "Pause Continue", "кнопка из паузы", new Vector2(0f, 143.75f), new Vector2(640f, 160f));
-		pauseContinueButton.onClick.AddListener(ResumeRun);
-		pauseMenuButton = MakePauseArtButton(pauseActionsRoot.transform, "Pause Back To Menu", "back to menu button", new Vector2(0f, 21.25f), new Vector2(640f, 160f));
-		pauseMenuButton.onClick.AddListener(ShowMainMenu);
-		pauseSoundButton = MakeSoundToggleButton(pauseActionsRoot.transform, "Pause Sound Toggle", TextAnchor.UpperLeft, new Vector2(82f, -92f), new Vector2(82f, 82f), out pauseSoundIcon);
-		pauseSoundButton.onClick.AddListener(ToggleGameSound);
-		if (pauseSoundIcon != null)
-		{
-			pauseSoundIcon.rectTransform.sizeDelta = new Vector2(63f, 63f);
-			pauseSoundIcon.rectTransform.anchoredPosition = new Vector2(0f, -5f);
-		}
-		pauseActionsRoot.SetActive(false);
+		// The pause screen is built in the lobby's design (black backdrop, neon stats
+		// card, profile-style buttons, neon-framed sound toggle) by InfernoLobby.BuildPause,
+		// which assigns pauseActionsRoot / pauseContinueButton / pauseMenuButton /
+		// pauseSoundButton / pauseSoundIcon and wires ResumeRun / ShowMainMenu / ToggleGameSound.
+		/* [user request 2026-09-20: pause/UI fixes] */ InfernoLobby.BuildPause(this, parent);
+		// original: pauseActionsRoot = new GameObject("Pause Actions");
+		// original: pauseActionsRoot.transform.SetParent(parent, false);
+		// original: RectTransform rect = pauseActionsRoot.AddComponent<RectTransform>();
+		// original: rect.anchorMin = Vector2.zero;
+		// original: rect.anchorMax = Vector2.one;
+		// original: rect.offsetMin = Vector2.zero;
+		// original: rect.offsetMax = Vector2.zero;
+		// original: Image shade = MakeUiBlock(pauseActionsRoot.transform, "Pause Controls Soft Shade", new Vector2(0f, -30f), new Vector2(820f, 1460f), TextAnchor.MiddleCenter, new Color(0f, 0f, 0f, 0.8f));
+		// original: shade.sprite = caseRadialGlowSprite;
+		// original: shade.type = Image.Type.Simple;
+		// original: shade.raycastTarget = false;
+		// original: pauseContinueButton = MakePauseArtButton(pauseActionsRoot.transform, "Pause Continue", "кнопка из паузы", new Vector2(0f, 143.75f), new Vector2(640f, 160f));
+		// original: pauseContinueButton.onClick.AddListener(ResumeRun);
+		// original: pauseMenuButton = MakePauseArtButton(pauseActionsRoot.transform, "Pause Back To Menu", "back to menu button", new Vector2(0f, 21.25f), new Vector2(640f, 160f));
+		// original: pauseMenuButton.onClick.AddListener(ShowMainMenu);
+		// original: pauseSoundButton = MakeSoundToggleButton(pauseActionsRoot.transform, "Pause Sound Toggle", TextAnchor.UpperLeft, new Vector2(82f, -92f), new Vector2(82f, 82f), out pauseSoundIcon);
+		// original: pauseSoundButton.onClick.AddListener(ToggleGameSound);
+		// original: if (pauseSoundIcon != null)
+		// original: {
+		// original: 	pauseSoundIcon.rectTransform.sizeDelta = new Vector2(63f, 63f);
+		// original: 	pauseSoundIcon.rectTransform.anchoredPosition = new Vector2(0f, -5f);
+		// original: }
+		// original: pauseActionsRoot.SetActive(false);
 	}
 
 	private Button MakePauseArtButton(Transform parent, string objectName, string resource, Vector2 position, Vector2 size)

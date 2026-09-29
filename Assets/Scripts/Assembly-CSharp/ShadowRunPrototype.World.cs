@@ -18,18 +18,18 @@ public sealed partial class ShadowRunPrototype
 	{
 		Transform road = new GameObject("Continuous Road").transform;
 		road.position = new Vector3(0f, 0f, -900f);
-		GameObject roadSurface = AddPlane(road, "Road Surface", Vector3.zero, new Vector2(RoadWidth, RoadTextureLength), roadMat);
+		GameObject roadSurface = AddPlane(road, "Road Surface", Vector3.zero, new Vector2(InfernoLanes.RoadWidth, RoadTextureLength), roadMat); /* [user request 2026-09-22: five lanes] */ // original: RoadWidth (10.2)
 		ConfigureRoadReflectionRenderer(roadSurface);
-		AddPlane(road, "Left Edge", new Vector3(-5.1f, 0.025f, 0f), new Vector2(0.07f, 1890f), lineMat);
-		AddPlane(road, "Right Edge", new Vector3(5.1f, 0.025f, 0f), new Vector2(0.07f, 1890f), lineMat);
-		float[] laneMarks = new float[2] { -1.55f, 1.55f };
+		AddPlane(road, "Left Edge", new Vector3(-InfernoLanes.EdgeX, 0.025f, 0f), new Vector2(0.07f, 1890f), lineMat); /* [user request 2026-09-22: five lanes] */ // original: -5.1f
+		AddPlane(road, "Right Edge", new Vector3(InfernoLanes.EdgeX, 0.025f, 0f), new Vector2(0.07f, 1890f), lineMat); /* [user request 2026-09-22: five lanes] */ // original: 5.1f
+		float[] laneMarks = InfernoLanes.DividerX; /* [user request 2026-09-22: five lanes] */ // original: new float[2] { -1.55f, 1.55f } (two dividers between three lanes)
 		for (int i = 0; i < laneMarks.Length; i++)
 		{
 			float x = laneMarks[i];
 			AddPlane(road, "Lane Mark", new Vector3(x, 0.03f, 0f), new Vector2(0.035f, 1890f), lineMat);
 		}
-		AddPlane(road, "Left Concrete City Base", new Vector3(-12.09f, 0.012f, 0f), new Vector2(14.02f, 1890f), cityGroundMat);
-		AddPlane(road, "Right Concrete City Base", new Vector3(12.09f, 0.012f, 0f), new Vector2(14.02f, 1890f), cityGroundMat);
+		AddPlane(road, "Left Concrete City Base", new Vector3(-InfernoLanes.VergeX, 0.012f, 0f), new Vector2(14.02f, 1890f), cityGroundMat); /* [user request 2026-09-22: five lanes] */ // original: -12.09f
+		AddPlane(road, "Right Concrete City Base", new Vector3(InfernoLanes.VergeX, 0.012f, 0f), new Vector2(14.02f, 1890f), cityGroundMat); /* [user request 2026-09-22: five lanes] */ // original: 12.09f
 	}
 
 	private void ConfigureRoadReflectionRenderer(GameObject roadSurface)
@@ -65,7 +65,7 @@ public sealed partial class ShadowRunPrototype
 		probe.importance = 1;
 		probe.intensity = 0.35f;
 		probe.boxProjection = true;
-		probe.size = new Vector3(34f, 18f, 1900f);
+		probe.size = new Vector3(InfernoLanes.Widen(34f), 18f, 1900f); /* [user request 2026-09-22: five lanes] */ // original: 34f wide (the box walls sat 11.9 m outside the shipped edge)
 		probe.center = new Vector3(0f, -3.5f, -780f);
 		probe.resolution = 64;
 		probe.nearClipPlane = 0.3f;
@@ -102,7 +102,7 @@ public sealed partial class ShadowRunPrototype
 	{
 		Transform root = new GameObject(side < 0 ? "Left Neon Fence Segment" : "Right Neon Fence Segment").transform;
 		root.SetParent(cityRoot, false);
-		root.position = new Vector3(side * NeonFenceX, 0f, z);
+		root.position = new Vector3(side * InfernoLanes.FenceX, 0f, z); /* [user request 2026-09-22: five lanes] */ // original: side * NeonFenceX (6.08)
 		root.gameObject.isStatic = false;
 		float length = 13.8f;
 		float tubeX = -side * 0.28f;
@@ -208,7 +208,9 @@ public sealed partial class ShadowRunPrototype
 		UpdateTrafficLights(move);
 		/* [InfernoLobby patch] */ InfernoDriving.Tick(this, dt);
 		/* [InfernoLobby patch] */ InfernoHazards.Tick(this, dt);
+		/* [user request 2026-09-26: night drive] */ InfernoNightHazards.Tick(this, dt);
 		/* [InfernoLobby patch] */ InfernoStyle.TickTrails(this, dt);
+		/* [user request 2026-09-21: maps] */ InfernoMaps.Tick(this, dt);
 	}
 
 	private void MakeCity()
@@ -272,7 +274,7 @@ public sealed partial class ShadowRunPrototype
 	{
 		Transform root = new GameObject(side < 0 ? "Left Street Lamp" : "Right Street Lamp").transform;
 		root.SetParent(cityRoot, false);
-		root.position = new Vector3(side * StreetLampX, 0f, z);
+		root.position = new Vector3(side * InfernoLanes.LampX, 0f, z); /* [user request 2026-09-22: five lanes] */ // original: side * StreetLampX (5.72)
 		root.rotation = Quaternion.Euler(0f, side < 0 ? 0f : 180f, 0f);
 		root.gameObject.isStatic = false;
 		GameObject model = Instantiate(lampPrefab);
@@ -400,7 +402,7 @@ public sealed partial class ShadowRunPrototype
 		height *= CityBuildingScale;
 		width *= CityBuildingScale;
 		depth *= CityBuildingScale;
-		float x = side * (12.5f + inset);
+		float x = side * (InfernoLanes.BuildingX + inset); /* [user request 2026-09-22: five lanes] */ // original: side * (12.5f + inset)
 		Transform root = new GameObject("City Building " + buildingPrefab.name + " (" + (side < 0 ? "L" : "R") + ")").transform;
 		if (cityRoot != null)
 		{
@@ -937,7 +939,7 @@ public sealed partial class ShadowRunPrototype
 	private TrafficLightSignal CreateTrafficLightSignal(float z, int side, int seed)
 	{
 		Transform root = new GameObject("Traffic Light Signal").transform;
-		root.position = new Vector3(side * 6.7f, 0f, z);
+		root.position = new Vector3(side * InfernoLanes.TrafficLightX, 0f, z); /* [user request 2026-09-22: five lanes] */ // original: side * 6.7f
 		root.rotation = Quaternion.Euler(0f, side > 0 ? -90f : 90f, 0f);
 		Transform modelRoot = root;
 		if (trafficLightPrefab != null)
@@ -1035,7 +1037,7 @@ public sealed partial class ShadowRunPrototype
 			z -= Random.Range(TrafficLightMinSpacing, TrafficLightMaxSpacing);
 			signal.Z = z;
 			signal.Side = Random.value < 0.5f ? -1 : 1;
-			signal.Root.position = new Vector3(signal.Side * 6.7f, 0f, signal.Z);
+			signal.Root.position = new Vector3(signal.Side * InfernoLanes.TrafficLightX, 0f, signal.Z); /* [user request 2026-09-22: five lanes] */ // original: signal.Side * 6.7f
 			signal.Root.rotation = Quaternion.Euler(0f, signal.Side > 0 ? -90f : 90f, 0f);
 			signal.CycleOffset = i * 3.9f + Random.Range(0f, 12f);
 			signal.AppliedState = TrafficLightState.Unknown;
@@ -1066,7 +1068,7 @@ public sealed partial class ShadowRunPrototype
 				signal.CycleOffset = Random.Range(0f, 18f);
 				signal.AppliedState = TrafficLightState.Unknown;
 			}
-			signal.Root.position = new Vector3(signal.Side * 6.7f, 0f, signal.Z);
+			signal.Root.position = new Vector3(signal.Side * InfernoLanes.TrafficLightX, 0f, signal.Z); /* [user request 2026-09-22: five lanes] */ // original: signal.Side * 6.7f
 			signal.Root.rotation = Quaternion.Euler(0f, signal.Side > 0 ? -90f : 90f, 0f);
 			ApplyTrafficLightState(ref signal);
 			trafficLights[i] = signal;

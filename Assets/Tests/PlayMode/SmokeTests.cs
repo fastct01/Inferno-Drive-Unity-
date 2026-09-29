@@ -36,6 +36,15 @@ public class SmokeTests
 			keys.Add("InfernoDrive.Style." + cat + ".Selected");
 			for (int i = 1; i < 8; i++) keys.Add("InfernoDrive.Style." + cat + "." + i + ".Owned");
 		}
+		// [user request 2026-09-21: cars] the catalogue's ownership, upgrade levels and per-car paint, plus the PAINT tab's colours
+		string[] carIds = { "sportcar", "amg_w222", "car3", "sportcar_rs", "infal_model", "amg_armour", "car3_clubsport", "flying_car", "infal_spyder", "flying_x" };
+		foreach (var id in carIds)
+		{
+			if (id != "sportcar" && id != "flying_car" && id != "infal_model" && id != "car3") keys.Add("InfernoDrive.Vehicle." + id + ".Unlocked");
+			foreach (var stat in new[] { "Engine", "Handling", "Nitro" }) keys.Add("InfernoDrive.Upgrade." + id + "." + stat);
+			keys.Add("InfernoDrive.Paint." + id + ".Selected");
+		}
+		for (int i = 1; i <= 12; i++) keys.Add("InfernoDrive.Style.Paint." + i + ".Owned");
 		return keys.ToArray();
 	}
 	private static readonly System.Collections.Generic.Dictionary<string, int?> prefSnapshot = new System.Collections.Generic.Dictionary<string, int?>();
@@ -340,9 +349,9 @@ public class SmokeTests
 		int frames = 0, airborneFrames = 0;
 		// the editor may run well under 60 fps and the gameplay dt is capped at 1/30 s, so the budget is
 		// in distance (1.5 km covers every distance-driven system) with a generous time limit
-		// A simple driver: steer toward the lane whose nearest car ahead is farthest (traffic sits in
-		// `pickups`, ahead = smaller z than the player at z 5) using the same touch pointer sets a finger
-		// would fill; boost is held all the way.
+		// A simple driver: steer toward the lane whose nearest car ahead is farthest, discounted by how far
+		// that lane is across the road (traffic sits in `pickups`, ahead = smaller z than the player at z 5),
+		// using the same touch pointer sets a finger would fill; boost is held all the way.
 		var lanes = (float[])Field(game, "lanes");
 		var leftSet = (System.Collections.Generic.HashSet<int>)Field(game, "touchSteerLeftPointers");
 		var rightSet = (System.Collections.Generic.HashSet<int>)Field(game, "touchSteerRightPointers");
@@ -357,7 +366,12 @@ public class SmokeTests
 			if ((bool)Field(game, "playerAirborne")) airborneFrames++;
 			{
 				float px = (float)Field(game, "playerX");
-				float best = -1f; int bestLane = 0; float current = 0f;
+				// [user request 2026-09-22: five lanes] the road is five lanes (12.4 m between the outer two) instead of
+				// three, so the driver pays for the crossing: a lane is only worth changing to if its gap beats the
+				// current one by more than the metres of road it costs to get there, and it moves one lane at a time
+				// like a real lane change instead of cutting straight across the road.
+				float best = float.NegativeInfinity; int bestLane = 0; float current = 0f;
+				int here = 0; float nearest = float.PositiveInfinity;
 				for (int lane = 0; lane < lanes.Length; lane++)
 				{
 					float gap = 400f;
@@ -370,10 +384,14 @@ public class SmokeTests
 						float ahead = 5f - cp.z;   // metres in front of the car
 						if (ahead > -6f && ahead < gap) gap = ahead;
 					}
-					if (Mathf.Abs(px - lanes[lane]) < 1.2f) current = gap;
-					if (gap > best) { best = gap; bestLane = lane; }
+					float reach = Mathf.Abs(px - lanes[lane]);
+					if (reach < 1.2f) current = gap;
+					if (reach < nearest) { nearest = reach; here = lane; }
+					float score = gap - reach * 1.5f;   // original (three lanes): the lane with the farthest car ahead, whatever the distance
+					if (score > best) { best = score; bestLane = lane; }
 				}
-				float targetX = current > 45f ? px : lanes[bestLane];
+				int stepLane = bestLane > here ? here + 1 : (bestLane < here ? here - 1 : here);
+				float targetX = current > 45f ? px : lanes[stepLane];   // original: lanes[bestLane]
 				leftSet.Clear(); rightSet.Clear();
 				if (targetX < px - 0.3f) leftSet.Add(1); else if (targetX > px + 0.3f) rightSet.Add(2);
 			}
@@ -473,23 +491,44 @@ public class SmokeTests
 			Debug.Log("[SmokeTests] locked map note '" + primary.text + "'");
 		}
 		Assert.IsTrue(Click("PreviousMap")); yield return Seconds(0.2f);
-		while ((int)lobby.GetMethod("SelectedMap", Any).Invoke(null, null) != mapBefore) { Click("PreviousMap"); yield return Seconds(0.2f); }
+		for (int step = 0; step < 8 && (int)lobby.GetMethod("SelectedMap", Any).Invoke(null, null) != mapBefore; step++) { Click("PreviousMap"); yield return Seconds(0.2f); }
+		Assert.AreEqual(mapBefore, (int)lobby.GetMethod("SelectedMap", Any).Invoke(null, null), "PreviousMap returns to map " + mapBefore + " — " + LobbyState(game));
 
 		// daily goal claim buttons exist (three goals) and the gem counter opens the shop
 		Debug.Log("[SmokeTests] lobby buttons: " + Names(""));
 		Assert.IsTrue(Click("GemCounter")); yield return Seconds(0.5f);
 		Call(game, "HideGemShop"); yield return Seconds(0.3f);
 
-		// garage through the dock: select the next card, try the purchase (25 < 100 crystals -> "Need 75 more"),
-		// open the STYLE sheet, page each row, pick a free item, close
+		// garage through the dock: select the next card (index 1 = AMG SOVEREIGN, 120 crystals; with the default 25 the
+		// button reads "NEED 95 MORE"), try the purchase, open the STYLE sheet, page each row, pick a free item, close
+		// original: card 1 was the flying car at the literal 100 -> "Need 75 more" /* [user request 2026-09-21: cars] */
 		Assert.IsTrue(Click("Garage")); yield return Seconds(1f);
 		Call(game, "SelectGarageVehicleCard", 1); yield return Seconds(0.8f);
 		var purchaseText = (UnityEngine.UI.Text)Field(game, "garagePurchaseButtonText");
 		Debug.Log("[SmokeTests] garage card 1 purchase label '" + (purchaseText != null ? purchaseText.text : "-") + "'");
+		{
+			Type managerType = Type.GetType("ShadowRun.Services.SupabaseGameManager, Assembly-CSharp");
+			int balance = (int)managerType.GetProperty("Crystals").GetValue(null);
+			Type cars = GameType.GetNestedType("InfernoCars", Any);
+			var cards = (Array)Field(game, "garageVehicleCards");
+			Type cardType = GameType.GetNestedType("GarageVehicleCardData", Any);
+			string cardId = (string)cardType.GetField("VehicleId", Any).GetValue(cards.GetValue(1));
+			Assert.AreEqual("amg_w222", cardId, "card 1 is the AMG SOVEREIGN");
+			int price = (int)cars.GetMethod("Price", Any).Invoke(null, new object[] { cardId });
+			Assert.AreEqual(120, price);
+			bool unlocked = (bool)managerType.GetMethod("IsVehicleUnlocked").Invoke(null, new object[] { cardId });
+			if (!unlocked)
+			{
+				Assert.IsNotNull(purchaseText, "purchase label");
+				string expectedLabel = balance >= price ? "PURCHASE · " + price + " ◆" : "NEED " + (price - balance) + " MORE";
+				Assert.IsTrue(purchaseText.text.Contains(expectedLabel), "purchase label '" + purchaseText.text + "' for " + balance + " crystals (expected '" + expectedLabel + "')");
+			}
+		}
 		if (FindButton("Unlock Selected Vehicle Button") != null)
 		{
 			Click("Unlock Selected Vehicle Button"); yield return Seconds(1.5f);
 			Debug.Log("[SmokeTests] after purchase attempt '" + purchaseText.text + "'");
+			Call(game, "HideGemShop"); yield return Seconds(0.3f);   // an unaffordable purchase opens the diamond shop
 		}
 		yield return Shot("31-garage-card-1");
 		Call(game, "SelectGarageVehicleCard", 0); yield return Seconds(0.5f);
@@ -545,6 +584,17 @@ public class SmokeTests
 		if (hadTutorial) PlayerPrefs.SetInt(tutorialKey, tutorialValue); else PlayerPrefs.DeleteKey(tutorialKey);
 	}
 
+	// The InfernoLobby.CanSelectMap conditions, for assertion messages.
+	private static string LobbyState(Component game)
+	{
+		var overlay = (GameObject)Field(game, "overlay");
+		var caseRoot = (GameObject)Field(game, "caseOverlayRoot");
+		var shopRoot = (GameObject)Field(game, "gemShopRoot");
+		return "running " + Field(game, "running") + ", paused " + Field(game, "paused") + ", showingGameOver " + Field(game, "showingGameOver")
+			+ ", menuTargetTab " + Field(game, "menuTargetTab") + ", overlay active " + (overlay != null && overlay.activeInHierarchy)
+			+ ", case overlay " + (caseRoot != null && caseRoot.activeInHierarchy) + ", gem shop " + (shopRoot != null && shopRoot.activeInHierarchy);
+	}
+
 	private static T Find<T>(string objectName) where T : Component
 	{
 		foreach (var c in UnityEngine.Object.FindObjectsByType<T>(FindObjectsInactive.Include, FindObjectsSortMode.None))
@@ -576,7 +626,8 @@ public class SmokeTests
 		setBalance(500); yield return Seconds(0.3f);
 		lobby.GetMethod("RefreshMap", Any).Invoke(null, new object[] { game });
 		int mapBefore = (int)lobby.GetMethod("SelectedMap", Any).Invoke(null, null);
-		while ((int)lobby.GetMethod("SelectedMap", Any).Invoke(null, null) != 2) { Click("NextMap"); yield return Seconds(0.2f); }
+		for (int step = 0; step < 8 && (int)lobby.GetMethod("SelectedMap", Any).Invoke(null, null) != 2; step++) { Click("NextMap"); yield return Seconds(0.2f); }
+		Assert.AreEqual(2, (int)lobby.GetMethod("SelectedMap", Any).Invoke(null, null), "NextMap reaches RAIN RUN from map " + mapBefore + " — " + LobbyState(game));
 		var play = (UnityEngine.UI.Button)Field(game, "primaryOverlayButton");
 		var primary = (UnityEngine.UI.Text)Field(game, "primaryButtonLabel");
 		Assert.AreEqual("U N L O C K   150", primary.text);
@@ -638,7 +689,7 @@ public class SmokeTests
 		Click("Unlock Selected Vehicle Button"); yield return Seconds(2.5f);
 		var status = (UnityEngine.UI.Text)Field(game, "garagePurchaseStatusText");
 		Debug.Log("[SmokeTests] purchase with " + crystals() + " crystals: button '" + ((UnityEngine.UI.Text)Field(game, "garagePurchaseButtonText")).text + "' status '" + (status != null ? status.text : "-") + "'");
-		Assert.IsFalse((bool)manager.GetMethod("IsVehicleUnlocked").Invoke(null, new object[] { "flying_car" }), "no purchase without an account");
+		Assert.IsFalse((bool)manager.GetMethod("IsVehicleUnlocked").Invoke(null, new object[] { "amg_w222" }), "no purchase without an account");   // original: "flying_car" (card 1 of the shipped four) /* [user request 2026-09-21: cars] */
 		Call(game, "SelectGarageVehicleCard", 0); yield return Seconds(0.3f);
 
 		// --- settings: sliders save after 0.6 s, listener volume follows master and the sound toggle

@@ -29,15 +29,22 @@ public sealed partial class ShadowRunPrototype
 		bool boosting = (touchBoostHeld || KeyHeld(32, "space") || KeyHeld(273, "up")) && !braking;
 		RegisterDailyBoostState(boosting);
 		bool drifting = KeyHeld(304, "shift") || KeyHeld(303, "shift");
-		float arcadeAcceleration = Mathf.Max(0.5f, ActiveVehicle.ArcadeAcceleration);
-		float arcadeSteering = Mathf.Max(0.5f, ActiveVehicle.ArcadeSteering);
-		float arcadeGrip = Mathf.Max(0.5f, ActiveVehicle.ArcadeGrip);
+		/* [user request 2026-09-21: cars] garage upgrades: ENGINE / HANDLING multiply the arcade values, ENGINE and
+		   NITRO raise the cruise / boost caps (InfernoUpgrades), read once per frame from the active car */
+		string upgradeId = ActiveVehicle.Id;
+		float arcadeAcceleration = Mathf.Max(0.5f, ActiveVehicle.ArcadeAcceleration * InfernoUpgrades.AccelMultiplier(upgradeId));
+		float arcadeSteering = Mathf.Max(0.5f, ActiveVehicle.ArcadeSteering * InfernoUpgrades.SteerMultiplier(upgradeId));
+		float arcadeGrip = Mathf.Max(0.5f, ActiveVehicle.ArcadeGrip * InfernoUpgrades.GripMultiplier(upgradeId));
 		float arcadeDrift = Mathf.Max(0.5f, ActiveVehicle.ArcadeDrift);
+		float topSpeedBonus = InfernoUpgrades.TopSpeedBonus(upgradeId);
+		float boostCapBonus = InfernoUpgrades.BoostCapBonus(upgradeId);
+		float boostRateMultiplier = InfernoUpgrades.BoostRateMultiplier(upgradeId);
+		// original: float arcadeAcceleration = Mathf.Max(0.5f, ActiveVehicle.ArcadeAcceleration); (steering / grip alike)
 		// original: cruise = Mathf.Lerp(29f, 40f, Mathf.Clamp01(distance / 2600f))
-		float cruise = InfernoDrivingRules.Cruise(distance); /* [InfernoLobby patch] */
+		float cruise = InfernoDrivingRules.Cruise(distance, topSpeedBonus); /* [InfernoLobby patch] */   // original: InfernoDrivingRules.Cruise(distance)
 		brakePressure = Mathf.MoveTowards(brakePressure, braking ? 1f : 0f, (braking ? 2.85f : 4.2f) * dt);
 		// original: targetSpeed = braking ? 0f : (boosting ? 49f : (drifting ? Mathf.Max(20f, cruise - 8f) : cruise))
-		float targetSpeed = Mathf.Max(speed, boosting ? InfernoDrivingRules.BoostTop(distance) : cruise); /* [InfernoLobby patch] */
+		float targetSpeed = Mathf.Max(speed, boosting ? InfernoDrivingRules.BoostTop(distance, boostCapBonus) : cruise); /* [InfernoLobby patch] */   // original: BoostTop(distance)
 		if (braking && !playerAirborne)
 		{
 			brakeRecoveryActive = true;
@@ -50,13 +57,13 @@ public sealed partial class ShadowRunPrototype
 		// original: accelerationRate = (boosting ? 18f : (speed < targetSpeed ? 8.6f : (drifting ? 11f : 6.8f))) * arcadeAcceleration * recoveryScale;
 		//           speed = Mathf.MoveTowards(speed, targetSpeed, accelerationRate * dt)
 		// [InfernoLobby patch] replaced by the exponential rule:
-		speed = InfernoDrivingRules.AdvanceSpeed(speed, cruise, boosting, arcadeAcceleration, dt, playerAirborne, InfernoDrivingRules.BoostTop(distance), InfernoDrivingRules.CruiseTop(distance));
+		speed = InfernoDrivingRules.AdvanceSpeed(speed, cruise, boosting, arcadeAcceleration, dt, playerAirborne, InfernoDrivingRules.BoostTop(distance, boostCapBonus), InfernoDrivingRules.CruiseTop(distance, topSpeedBonus), boostRateMultiplier);   // original: (…, BoostTop(distance), CruiseTop(distance))
 		if (braking)
 		{
 			float brakeRate = Mathf.Lerp(5.5f, 18f, brakePressure) + Mathf.Clamp(speed * 0.14f, 0f, 9f);
 			speed = Mathf.MoveTowards(speed, 0f, brakeRate * dt);
 		}
-		speed = Mathf.Max(speedAtFrameStart, Mathf.Clamp(speed, 0f, boosting ? InfernoDrivingRules.BoostTop(distance) : InfernoDrivingRules.CruiseTop(distance))); /* [InfernoLobby patch] */
+		speed = Mathf.Max(speedAtFrameStart, Mathf.Clamp(speed, 0f, boosting ? InfernoDrivingRules.BoostTop(distance, boostCapBonus) : InfernoDrivingRules.CruiseTop(distance, topSpeedBonus))); /* [InfernoLobby patch] */   // original: BoostTop(distance) / CruiseTop(distance)
 		if (playerAirborne)
 		{
 			// original: speed = Mathf.Max(0f, speedAtFrameStart - 0.22f * dt)
@@ -124,7 +131,9 @@ public sealed partial class ShadowRunPrototype
 			float highSpeedDamping = Mathf.Lerp(5.8f, 8.6f, speedT) * arcadeGrip;
 			velocityX -= highSpeedError * Mathf.Clamp01(highSpeedDamping * dt);
 		}
-		float edgeOverlap = Mathf.Max(0f, Mathf.Abs(playerX) - 3.45f);
+		/* [user request 2026-09-22: five lanes] the road edge moved out with the outer lanes: the push-back starts 0.4 m
+		   inside the limit and the stop sits 0.01 m inside it, as they did against ±3.85 */
+		float edgeOverlap = Mathf.Max(0f, Mathf.Abs(playerX) - (InfernoLanes.PlayerMaxX - 0.4f));   // original: Mathf.Abs(playerX) - 3.45f
 		if (edgeOverlap > 0f)
 		{
 			velocityX -= Mathf.Sign(playerX) * edgeOverlap * 34f * dt;
@@ -134,12 +143,12 @@ public sealed partial class ShadowRunPrototype
 		{
 			velocityX = 0f;
 		}
-		playerX = Mathf.Clamp(playerX + velocityX * dt, PlayerMinX, PlayerMaxX);
-		if (playerX <= -3.84f && velocityX < 0f)
+		playerX = InfernoLanes.Clamp(playerX + velocityX * dt);   // original: Mathf.Clamp(playerX + velocityX * dt, PlayerMinX, PlayerMaxX)
+		if (playerX <= InfernoLanes.PlayerMinX + 0.01f && velocityX < 0f)   // original: playerX <= -3.84f
 		{
 			velocityX = 0f;
 		}
-		if (playerX >= 3.84f && velocityX > 0f)
+		if (playerX >= InfernoLanes.PlayerMaxX - 0.01f && velocityX > 0f)   // original: playerX >= 3.84f
 		{
 			velocityX = 0f;
 		}
@@ -361,12 +370,21 @@ public sealed partial class ShadowRunPrototype
 		ShadowRun_PlayImpactHaptic(Mathf.Clamp(strength, 0, 2));
 	}
 
+	/* [user request 2026-09-22: five lanes] chase-camera framing for the 17 m road (UpdateCamera / ResetCameraImmediate): the
+	   shipped camera (height 1.95 → 2.45, distance 10.9 → 12.4, FOV 54.2 + speed) framed the 10.2 m road; it now sits 0.6 m
+	   higher and 1.8 m further back with a 6° wider field of view, so the outer lanes (±6.2 m) read beside the car and the
+	   whole road is in view a little way ahead. The speed / jump / drift modulation, the smoothing and the look target are
+	   the shipped ones. */
+	private const float CameraFovBase = 54.2f + 6f;      // original: 54.2f
+	private const float CameraHeightRaise = 0.6f;        // added to the shipped 1.95 → 2.45 height
+	private const float CameraDistanceBack = 1.8f;       // added to the shipped 10.9 → 12.4 distance behind the car
+
 	private void UpdateCamera(float dt)
 	{
 		bool brakeHeld = brakeButtonHeld || KeyHeld(274, "down") || KeyHeld(115, "s");
 		float speedT = Mathf.Clamp01(speed / 82f);
 		float jumpT = Mathf.Clamp01(playerJumpHeight / 5.5f);
-		float targetFov = 54.2f + speedT * 2.4f + drift * 0.18f - brakePressure * 0.35f + jumpT * 2.6f;
+		float targetFov = CameraFovBase + speedT * 2.4f + drift * 0.18f - brakePressure * 0.35f + jumpT * 2.6f;   /* [user request 2026-09-22: five lanes] */   // original: 54.2f + speedT * 2.4f + …
 		float fovSmoothTime = playerAirborne ? 0.15f : 0.2f;
 		cam.fieldOfView = Mathf.SmoothDamp(cam.fieldOfView, targetFov, ref cameraFovVelocity, fovSmoothTime, 38f, dt);
 		float shakeAmount = 0.0025f + drift * 0.0022f + impactShake * 0.032f;
@@ -377,7 +395,7 @@ public sealed partial class ShadowRunPrototype
 			nextShakeSampleTime = Time.time + 1f / 30f;
 		}
 		Vector3 shake = new Vector3(0f, (cachedShakeY - 0.5f) * shakeAmount * speedT, 0f);
-		Vector3 targetPosition = new Vector3(playerX, Mathf.Lerp(1.95f, 2.45f, speedT) + playerJumpHeight * 0.78f + jumpT * 0.25f, Mathf.Lerp(10.9f, 12.4f, speedT) + jumpT * 1.4f) + shake;
+		Vector3 targetPosition = new Vector3(playerX, Mathf.Lerp(1.95f, 2.45f, speedT) + CameraHeightRaise + playerJumpHeight * 0.78f + jumpT * 0.25f, Mathf.Lerp(10.9f, 12.4f, speedT) + CameraDistanceBack + jumpT * 1.4f) + shake;   /* [user request 2026-09-22: five lanes] */   // original: Mathf.Lerp(1.95f, 2.45f, speedT) + playerJumpHeight * 0.78f + jumpT * 0.25f, Mathf.Lerp(10.9f, 12.4f, speedT) + jumpT * 1.4f
 		float positionSmoothTime = playerAirborne ? 0.11f : 0.12f;
 		Vector3 position = Vector3.SmoothDamp(cam.transform.position, targetPosition, ref cameraVelocity, positionSmoothTime, 92f, dt);
 		position.x = playerX;
@@ -403,8 +421,8 @@ public sealed partial class ShadowRunPrototype
 		cameraLookVelocity = Vector3.zero;
 		cameraFovVelocity = 0f;
 		cameraLookTarget = new Vector3(0f, 0.74f, -10.4f);
-		cam.fieldOfView = 54.5f;
-		cam.transform.position = new Vector3(0f, 2.05f, 11.1f);
+		cam.fieldOfView = 54.5f + (CameraFovBase - 54.2f);   /* [user request 2026-09-22: five lanes] */   // original: 54.5f
+		cam.transform.position = new Vector3(0f, 2.05f + CameraHeightRaise, 11.1f + CameraDistanceBack);   /* [user request 2026-09-22: five lanes] */   // original: new Vector3(0f, 2.05f, 11.1f)
 		cam.transform.rotation = Quaternion.LookRotation(cameraLookTarget - cam.transform.position, Vector3.up);
 	}
 
@@ -485,7 +503,35 @@ public sealed partial class ShadowRunPrototype
 		{
 			lastSpeedometerKmh = kmh;
 			speedometerValueText.text = kmh.ToString("000");
+			/* [user request 2026-09-22: numeric speed] the written speed changes colour as the speed rises */
+			speedometerValueText.color = SpeedReadoutColor(kmh);
 		}
+	}
+
+	/* [user request 2026-09-22: numeric speed] */
+	// Cool → hot ramp over the dial's old 0..240 km/h range: pearl white at rest, electric violet by
+	// 80, magenta by 140, orange by 190, red at the cap — the game's own palette, so the number reads
+	// as "how fast" at a glance.
+	private static readonly Color[] SpeedReadoutStops =
+	{
+		new Color(0.88f, 0.84f, 0.94f, 0.98f),   // 0   pearl
+		new Color(0.58f, 0.20f, 1.00f, 0.98f),   // 80  electric violet
+		new Color(1.00f, 0.25f, 0.75f, 0.98f),   // 140 magenta
+		new Color(1.00f, 0.55f, 0.12f, 0.98f),   // 190 orange
+		new Color(1.00f, 0.12f, 0.10f, 0.98f),   // 240 red
+	};
+	private static readonly float[] SpeedReadoutKmh = { 0f, 80f, 140f, 190f, 240f };
+
+	private static Color SpeedReadoutColor(int kmh)
+	{
+		float v = Mathf.Clamp(kmh, 0f, 240f);
+		for (int i = 1; i < SpeedReadoutKmh.Length; i++)
+		{
+			if (v > SpeedReadoutKmh[i]) continue;
+			float t = Mathf.InverseLerp(SpeedReadoutKmh[i - 1], SpeedReadoutKmh[i], v);
+			return Color.Lerp(SpeedReadoutStops[i - 1], SpeedReadoutStops[i], t);
+		}
+		return SpeedReadoutStops[SpeedReadoutStops.Length - 1];
 	}
 
 	private void UpdateEvents(float dt)
@@ -520,21 +566,41 @@ public sealed partial class ShadowRunPrototype
 
 	private void UpdateSceneLighting()
 	{
+		/* [user request 2026-09-21: maps] every map but Neon Night owns its key light and ambient */
+		if (InfernoMaps.OwnsLighting)
+		{
+			return;
+		}
 		if (dynamicWeatherReady)
 		{
 			return;
 		}
-		int quality = Mathf.Clamp(graphicsIndex, 0, 2);
-		float pulse = Mathf.Clamp01((Mathf.Sin(Time.time * 0.72f) + Mathf.Sin(Time.time * 0.29f + 1.7f) * 0.45f) * 0.5f + 0.5f);
-		Color ambientLow = quality == 0 ? new Color(0.04f, 0.012f, 0.02f) : new Color(0.058f, 0.018f, 0.03f);
-		Color ambientHigh = quality == 0 ? new Color(0.07f, 0.026f, 0.034f) : new Color(0.105f, 0.045f, 0.055f);
-		RenderSettings.ambientLight = Color.Lerp(ambientLow, ambientHigh, pulse);
+		Color ambient, keyColor; float keyIntensity;
+		ShippedLightPulse(out ambient, out keyColor, out keyIntensity);   /* [user request 2026-09-24: neon night cycle] */ // the same values, computed in one place so InfernoMaps can blend them
+		RenderSettings.ambientLight = ambient;
 		if (sceneKeyLight != null)
 		{
-			sceneKeyLight.color = Color.Lerp(new Color(0.82f, 0.18f, 0.16f), new Color(1f, 0.36f, 0.28f), pulse);
-			float baseIntensity = quality == 0 ? 0.95f : (quality == 1 ? 1.12f : 1.28f);
-			sceneKeyLight.intensity = baseIntensity + pulse * 0.22f;
+			sceneKeyLight.color = keyColor;
+			sceneKeyLight.intensity = keyIntensity;
 		}
+	}
+
+	/* [user request 2026-09-24: neon night cycle] */
+	// The per-frame red pulse of UpdateSceneLighting as values, so InfernoMaps.ApplyCycle can fade Neon Night's
+	// night lighting toward its daytime look. The body is UpdateSceneLighting's, unchanged.
+	internal void ShippedLightPulse(out Color ambient, out Color keyColor, out float keyIntensity)
+	{
+		int quality = Mathf.Clamp(graphicsIndex, 0, 2);
+		float pulse = Mathf.Clamp01((Mathf.Sin(Time.time * 0.72f) + Mathf.Sin(Time.time * 0.29f + 1.7f) * 0.45f) * 0.5f + 0.5f);
+		/* [user request 2026-09-20: brighter cars] */ // This runs every frame while the weather system is not ready (it never is
+		// without the Dynamic Weather System package), so the MakeLights / ApplyVisualQuality values are overridden here:
+		// the brightening has to happen in this pulse as well. original values in the comments.
+		Color ambientLow = quality == 0 ? new Color(0.07f, 0.024f, 0.036f) : new Color(0.1f, 0.036f, 0.052f); // original: (0.04, 0.012, 0.02) / (0.058, 0.018, 0.03)
+		Color ambientHigh = quality == 0 ? new Color(0.12f, 0.05f, 0.06f) : new Color(0.18f, 0.08f, 0.095f); // original: (0.07, 0.026, 0.034) / (0.105, 0.045, 0.055)
+		ambient = Color.Lerp(ambientLow, ambientHigh, pulse);
+		keyColor = Color.Lerp(new Color(0.9f, 0.3f, 0.26f), new Color(1f, 0.46f, 0.38f), pulse); // original: (0.82, 0.18, 0.16) -> (1, 0.36, 0.28)
+		float baseIntensity = quality == 0 ? 1.45f : (quality == 1 ? 1.7f : 1.95f); // original: 0.95 / 1.12 / 1.28
+		keyIntensity = baseIntensity + pulse * 0.3f; // original: pulse * 0.22
 	}
 
 	private void AnimateSanta()

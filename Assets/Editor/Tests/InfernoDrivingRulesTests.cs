@@ -1,6 +1,7 @@
 using NUnit.Framework;
 using UnityEngine;
 using Rules = ShadowRunPrototype.InfernoDrivingRules;
+using Lanes = ShadowRunPrototype.InfernoLanes;
 
 // Port of car точно финал/tools/check_driving_rules.cpp: the expected values of the
 // post-source speed / recovery / crystal rules (InfernoDrivingRules.h). Every assert of the
@@ -135,6 +136,42 @@ public class InfernoDrivingRulesTests
 		Assert.IsFalse(Rules.CrossesCrystal(-5f, -8f, 1f, -4f));    // not yet alongside the car
 	}
 
+	// [user request 2026-09-21: cars] The upgrade overloads: ENGINE's top-speed bonus lifts the cruise
+	// target and its clamp, NITRO's cap bonus lifts the boost clamp and its rate multiplier speeds up
+	// the boost approach only; every parameterless rule is the overload with 0 / 1.
+	[Test]
+	public void UpgradeBonusOverloads()
+	{
+		Assert.AreEqual(Rules.Cruise(0f), Rules.Cruise(0f, 0f));
+		Assert.AreEqual(Rules.Cruise(1234f) + 6f, Rules.Cruise(1234f, 6f), 0.0001f);
+		Assert.AreEqual(Rules.Cruise(1234f), Rules.Cruise(1234f, -3f));                  // a bonus never slows the car
+		Assert.AreEqual(Rules.CruiseCap, Rules.CruiseTop(0f, 6f));                       // 29 + 6 stays under the 42 clamp
+		Assert.AreEqual(Rules.CruiseTopMax + 6f, Rules.CruiseTop(9000f, 6f), 0.0001f);   // 52 + 6
+		Assert.AreEqual(Rules.CruiseTop(9000f), Rules.CruiseTop(9000f, 0f));
+		Assert.AreEqual(Rules.BoostTop(0f) + 5f, Rules.BoostTop(0f, 5f), 0.0001f);
+		Assert.AreEqual(Rules.BoostTop(9000f), Rules.BoostTop(9000f, 0f));
+		Assert.AreEqual(Rules.BoostTopMax + 5f, Rules.BoostTop(9000f, 5f), 0.0001f);     // 58 + 5
+		for (float d = 0f; d < 9000f; d += 250f) Assert.Greater(Rules.BoostTop(d, 5f), Rules.Cruise(d, 6f));   // boost stays above cruise with the level-5 bonuses
+		Rules.ResetRecovery();
+		float plain = Rules.AdvanceSpeed(30f, 29f, true, 1f, 0.5f, false, 49f, 42f, 1f);
+		Assert.AreEqual(Rules.AdvanceSpeed(30f, 29f, true, 1f, 0.5f, false, 49f, 42f), plain);   // the old signature is the overload with 1
+		float quick = Rules.AdvanceSpeed(30f, 29f, true, 1f, 0.5f, false, 49f, 42f, 1.35f);
+		Assert.Greater(quick, plain);
+		Assert.LessOrEqual(quick, 49f);
+		Assert.AreEqual(Rules.AdvanceSpeed(20f, 29f, false, 1f, 0.5f, false, 49f, 42f, 1f), Rules.AdvanceSpeed(20f, 29f, false, 1f, 0.5f, false, 49f, 42f, 1.35f));   // no boost: the multiplier is idle
+		Assert.AreEqual(35f, Rules.AdvanceSpeed(35f, 40f, true, 1f, 0f, false, 49f, 42f, 1.35f));    // paused
+		Assert.AreEqual(35f, Rules.AdvanceSpeed(35f, 40f, true, 1f, 1f, true, 49f, 42f, 1.35f));     // airborne momentum
+		// with the level-5 bonuses the car settles exactly the bonus above the stage limits
+		Rules.ResetRecovery();
+		float speed = 40f;
+		for (int i = 0; i < 60 * 30; ++i) speed = Rules.AdvanceSpeed(speed, Rules.Cruise(4000f, 6f), false, 1f, 1.0f / 60, false, Rules.BoostTop(4000f, 5f), Rules.CruiseTop(4000f, 6f), 1f);
+		Assert.IsTrue(speed > 57.5f && speed <= 58f, "cruise + 6: " + speed);
+		speed = 40f;
+		for (int i = 0; i < 60 * 30; ++i) speed = Rules.AdvanceSpeed(speed, Rules.Cruise(4000f, 6f), true, 1f, 1.0f / 60, false, Rules.BoostTop(4000f, 5f), Rules.CruiseTop(4000f, 6f), 1.35f);
+		Assert.IsTrue(speed > 62.5f && speed <= 63f, "boost + 5: " + speed);
+		Rules.ResetRecovery();
+	}
+
 	[Test]
 	public void ShippedConstants()
 	{
@@ -150,5 +187,134 @@ public class InfernoDrivingRulesTests
 		Assert.AreEqual(6f, Rules.RecoverWindow);
 		Assert.AreEqual(550f, Rules.CrystalGapMin);
 		Assert.AreEqual(950f, Rules.CrystalGapMax);
+	}
+
+	// [user request 2026-09-22: five lanes] The traffic rules for a wider road: on the shipped three lanes every
+	// helper is the identity; on five the pool grows 12 -> 20, the spawn intervals shrink by 3 / 5 (so the per-lane
+	// density is unchanged) and each three-lane formation lands whole on one of the windows 0..2, 1..3 or 2..4.
+	[Test]
+	public void FiveLaneTrafficRules()
+	{
+		Assert.AreEqual(3, Rules.ShippedLaneCount);
+		Assert.AreEqual(12, Rules.TrafficPoolFor(12, 3));
+		Assert.AreEqual(20, Rules.TrafficPoolFor(12, 5));
+		Assert.AreEqual(12, Rules.TrafficPoolFor(12, 2));                                    // never below the shipped pool
+		Assert.AreEqual(20, Rules.TrafficPoolFor(12, Lanes.Count));
+		Assert.AreEqual(1f, Rules.SpawnIntervalScale(3));
+		Assert.AreEqual(0.6f, Rules.SpawnIntervalScale(5), 0.0001f);
+		Assert.AreEqual(1f, Rules.SpawnIntervalScale(2));                                    // never longer than shipped
+		Assert.AreEqual(Rules.SpawnIntervalScale(5), Rules.SpawnIntervalScale(Lanes.Count));
+		// per-lane density: cars per second per lane, and pooled cars per lane, are what they were on three lanes
+		Assert.AreEqual(Rules.SpawnIntervalScale(3) * 3f, Rules.SpawnIntervalScale(5) * 5f, 0.0001f);
+		Assert.AreEqual(Rules.TrafficPoolFor(12, 3) / 3, Rules.TrafficPoolFor(12, 5) / 5);
+		// the formation window
+		for (float r = 0f; r <= 1f; r += 0.05f) Assert.AreEqual(0, Rules.FormationOffset(3, r));   // three lanes: one window
+		Assert.AreEqual(0, Rules.FormationOffset(5, 0f));
+		Assert.AreEqual(0, Rules.FormationOffset(5, 0.33f));
+		Assert.AreEqual(1, Rules.FormationOffset(5, 0.34f));
+		Assert.AreEqual(1, Rules.FormationOffset(5, 0.66f));
+		Assert.AreEqual(2, Rules.FormationOffset(5, 0.67f));
+		Assert.AreEqual(2, Rules.FormationOffset(5, 0.999f));
+		Assert.AreEqual(2, Rules.FormationOffset(5, 1f));                                    // Random.value can return 1
+		Assert.AreEqual(0, Rules.FormationOffset(5, -1f));
+		Assert.AreEqual(0, Rules.FormationOffset(2, 0.9f));                                  // fewer lanes than a formation: still lane 0
+		int[] seen = new int[3];
+		for (int i = 0; i < 300; ++i) seen[Rules.FormationOffset(5, i / 300f)]++;
+		for (int k = 0; k < 3; ++k) Assert.IsTrue(seen[k] >= 98 && seen[k] <= 102, "window " + k + " picked " + seen[k] + " of 300");   // uniform
+		Assert.AreEqual(0, Rules.FormationLane(0, 0, 5));
+		Assert.AreEqual(2, Rules.FormationLane(2, 0, 5));
+		Assert.AreEqual(2, Rules.FormationLane(1, 1, 5));                                    // the formation's middle on the road's middle
+		Assert.AreEqual(4, Rules.FormationLane(2, 2, 5));                                    // the last window ends on the outer lane
+		Assert.AreEqual(4, Rules.FormationLane(2, 3, 5));                                    // never past the road
+		Assert.AreEqual(2, Rules.FormationLane(2, 2, 3));                                    // three lanes: clamped to the road
+		Assert.AreEqual(1, Rules.FormationLane(1, 0, 3));
+		Assert.AreEqual(0, Rules.FormationLane(-1, 0, 5));
+		for (int offset = 0; offset < 3; ++offset)
+		{
+			for (int lane = 0; lane < 3; ++lane)
+			{
+				int road = Rules.FormationLane(lane, offset, Lanes.Count);
+				Assert.IsTrue(road >= 0 && road < Lanes.Count);                              // every formation lane of every window is a road lane
+				Assert.AreEqual(lane + offset, road);                                        // and the formation keeps its shape
+			}
+			// the mirrored formations (side / 2 - side) stay mirrored about the window's middle
+			Assert.AreEqual(2 * Rules.FormationLane(1, offset, 5), Rules.FormationLane(0, offset, 5) + Rules.FormationLane(2, offset, 5));
+		}
+	}
+
+	// [user request 2026-09-22: five lanes] The shared road geometry every lane-indexed system reads (InfernoLanes):
+	// five lane centres on the shipped 3.1 m pitch, the player limits 0.75 m outside the outer lanes as ±3.85 was
+	// outside ±3.1, and the road edge and every roadside prop moved out by Shift.
+	[Test]
+	public void FiveLaneGeometry()
+	{
+		Assert.AreEqual(5, Lanes.Count);
+		Assert.AreEqual(Lanes.Count, Lanes.X.Length);
+		float[] expected = { -6.2f, -3.1f, 0f, 3.1f, 6.2f };
+		for (int i = 0; i < expected.Length; ++i) Assert.AreEqual(expected[i], Lanes.X[i], 0.0001f);
+		for (int i = 1; i < Lanes.X.Length; ++i) Assert.AreEqual(Lanes.Spacing, Lanes.X[i] - Lanes.X[i - 1], 0.0001f);
+		Assert.AreEqual(0f, Lanes.X[Lanes.Count / 2]);                                       // the middle lane is index 2, not 1
+		Assert.AreEqual(3.1f, Lanes.Spacing);
+		Assert.AreEqual(17f, Lanes.RoadWidth, 0.0001f);
+		Assert.AreEqual(8.5f, Lanes.HalfRoad);
+		Assert.AreEqual(Lanes.HalfRoad, Lanes.EdgeX);
+		Assert.AreEqual(5.1f, Lanes.ShippedHalfRoad);
+		Assert.AreEqual(3.4f, Lanes.Shift, 0.0001f);
+		Assert.AreEqual(-6.95f, Lanes.PlayerMinX);
+		Assert.AreEqual(6.95f, Lanes.PlayerMaxX);
+		Assert.AreEqual(Lanes.X[Lanes.Count - 1] + 0.75f, Lanes.PlayerMaxX, 0.0001f);         // 3.85 was 3.1 + 0.75
+		Assert.AreEqual(-Lanes.PlayerMaxX, Lanes.PlayerMinX);
+		Assert.Less(Lanes.PlayerMaxX, Lanes.HalfRoad);                                        // the car stays on the asphalt
+		Assert.AreEqual(Lanes.Count - 1, Lanes.DividerX.Length);
+		for (int i = 0; i < Lanes.DividerX.Length; ++i) Assert.AreEqual((Lanes.X[i] + Lanes.X[i + 1]) * 0.5f, Lanes.DividerX[i], 0.0001f);   // dividers halfway between lanes
+		// roadside props keep their shipped distance from the road edge
+		Assert.AreEqual(6.08f + Lanes.Shift, Lanes.FenceX, 0.0001f);
+		Assert.AreEqual(5.72f + Lanes.Shift, Lanes.LampX, 0.0001f);
+		Assert.AreEqual(12.09f + Lanes.Shift, Lanes.VergeX, 0.0001f);
+		Assert.AreEqual(12.5f + Lanes.Shift, Lanes.BuildingX, 0.0001f);
+		Assert.AreEqual(13f, Lanes.Outward(9.6f), 0.0001f);                                   // the wrecking-ball posts
+		Assert.AreEqual(-9.12f, Lanes.Outward(-5.72f), 0.0001f);                              // sign kept
+		Assert.AreEqual(1.35f * 17f / 10.2f, Lanes.TextureTilingX, 0.0001f);                  // the asphalt keeps its metres per tile
+		// Clamp and NearestLane
+		Assert.AreEqual(Lanes.PlayerMinX, Lanes.Clamp(-40f));
+		Assert.AreEqual(Lanes.PlayerMaxX, Lanes.Clamp(40f));
+		Assert.AreEqual(1.2f, Lanes.Clamp(1.2f));
+		for (int i = 0; i < Lanes.Count; ++i) Assert.AreEqual(i, Lanes.NearestLane(Lanes.X[i]));
+		Assert.AreEqual(0, Lanes.NearestLane(-40f));
+		Assert.AreEqual(4, Lanes.NearestLane(40f));
+		Assert.AreEqual(1, Lanes.NearestLane(-1.6f));
+		Assert.AreEqual(2, Lanes.NearestLane(-1.5f));
+		Assert.AreEqual(3, Lanes.NearestLane(4.6f));
+		Assert.AreEqual(4, Lanes.NearestLane(4.7f));
+		Assert.AreEqual(4, Lanes.NearestLane(Lanes.PlayerMaxX));
+		Assert.AreEqual(0, Lanes.NearestLane(Lanes.PlayerMinX));
+		for (int i = 0; i < Lanes.DividerX.Length; ++i) Assert.IsTrue(Lanes.NearestLane(Lanes.DividerX[i] - 0.01f) == i && Lanes.NearestLane(Lanes.DividerX[i] + 0.01f) == i + 1);
+	}
+
+	// [user request 2026-09-22: five lanes] The wrecking ball must be a hazard in every lane: at car height its reach
+	// covers the outer lane centres and the shoulder limit, it still dips to the road at the bottom of the swing, it
+	// turns short of the gantry posts at the swing extreme, and the posts stand outside the road edge and the fence.
+	// (InfernoHazards keeps its geometry private; the consts are read back by reflection.)
+	[Test]
+	public void WreckingBallReachesEveryLane()
+	{
+		const System.Reflection.BindingFlags any = System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static;
+		System.Type hazards = typeof(ShadowRunPrototype).GetNestedType("InfernoHazards", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Public);
+		Assert.IsNotNull(hazards);
+		float Const(string name) { return (float)hazards.GetField(name, any).GetRawConstantValue(); }
+		float gantryHeight = Const("GantryHeight"), halfSpan = Const("GantryHalfSpan"), rope = Const("RopeLength");
+		float radius = Const("BallRadius"), amplitude = Const("SwingAmplitude"), carHeight = Const("CarHeight");
+		float hook = gantryHeight - 0.5f;                                                     // PlaceBall: the ball hangs 0.5 below the beam
+		float BallCentreY(float x) { return hook - Mathf.Sqrt(rope * rope - x * x); }
+		Assert.Less(hook - rope - radius, 0.05f);                                             // dips to the road at the bottom of the swing...
+		Assert.Greater(hook - rope - radius, -0.5f);                                          // ...without sinking into it
+		foreach (float x in Lanes.X) Assert.LessOrEqual(BallCentreY(x) - radius, carHeight, "lane at x " + x);   // hits a car in every lane
+		Assert.LessOrEqual(BallCentreY(Lanes.PlayerMaxX) - radius, carHeight);                // and one hugging the shoulder
+		float reach = rope * Mathf.Sin(amplitude);
+		Assert.Greater(reach, Lanes.HalfRoad);                                                // swings out past the road edge
+		Assert.Less(reach + radius, halfSpan - 0.3f);                                         // and turns short of the posts (0.6 wide)
+		Assert.Greater(BallCentreY(reach) - radius, carHeight + 1f);                          // the road is open while the ball is up at a side
+		Assert.Greater(halfSpan, Lanes.FenceX);                                               // posts outside the road edge and the fence...
+		Assert.Less(halfSpan, Lanes.VergeX);                                                  // ...and inside the verge
 	}
 }

@@ -77,11 +77,61 @@ public sealed partial class ShadowRunPrototype
 		garagePageHeaderRoot = MakeMenuPageHeader(garageRoot.transform, "MY GARAGE", "0 OF 0 CARS UNLOCKED", out garageUnlockedCountText);
 		MakeGarageVehicleSelector();
 		MakeGaragePurchaseAction();
+		// MakeGarageTuningCard(); /* [user request 2026-09-21: cars] */ /* [user request 2026-09-22: tuning card removed from the garage] */
 		garageRoot.SetActive(false);
 		SetGaragePreviewVisible(false);
 		UpdateGarageUi();
 		InfernoStyle.Build(this); /* [InfernoLobby patch] */
 	}
+
+	/* [user request 2026-09-21: cars] */
+	// Garage bottom layout, y measured from the page bottom (every rect 16+ px from its neighbours):
+	//   dock (InfernoLobby.Tabs, 1000x184 centred at 112)      20..204
+	//   tuning card 960x290 centred at 367                      222..512   (18 px above the dock)
+	//   action row 100 tall centred at 580                      530..630   (18 px above the card)
+	//     PURCHASE 560 wide at x 0                              -280..280
+	//     STYLE 170 wide at x 385 (InfernoStyle.Build)          300..470   (20 px right of PURCHASE)
+	//   card carousel (top-anchored -56, 560 tall)             1304..1864  (674 px above the action row: the 3D preview's band)
+	private const float GarageTuningCardWidth = 960f;
+	private const float GarageTuningCardHeight = 290f;
+	private const float GarageTuningCardCentreY = 367f;
+	private const float GarageActionRowBottom = 530f;
+	private const float GarageActionRowHeight = 100f;
+	private const float GaragePurchaseButtonWidth = 560f;
+	private const float GarageTuningRowPitch = 80f;          // rows at +80 / 0 / -80 of the card centre: 64 px buttons leave 16 px between rows
+	private const float GarageMiniBarWidth = 106f;           // three columns in the card's 338 px info panel: 3 x 106 + 2 x 10
+	private const float GarageMiniBarGap = 10f;
+	/* [user request 2026-09-27: card data] */
+	// The card's 338x150 info panel (bottom 22 px above the card edge) stacks, from its top: the name (0..-42, best fit
+	// 22..34), the subtitle (-42..-70, 14..21), the price row (-74..-106, 26 px) and the three mini-bar labels (-112..-132,
+	// 15 px) over their 8 px bars (-134..-142) - the rows end 30 px above the card edge (was 57 with 28/17/18/12 px text
+	// and 5 px bars). The locked card's blur strip ends at the price row's top, so it reads these too.
+	private const float GarageCardInfoBottom = 22f;
+	private const float GarageCardInfoHeight = 150f;
+	private const float GarageCardNameHeight = 42f;          // original: 36
+	private const int GarageCardNameFontMin = 22;            // original: 18
+	private const int GarageCardNameFontMax = 34;            // original: 28
+	private const float GarageCardSubtitleHeight = 28f;      // original: 24
+	private const int GarageCardSubtitleFontMin = 14;        // original: 12
+	private const int GarageCardSubtitleFontMax = 21;        // original: 17
+	private const float GarageCardPriceY = -74f;             // original: -64
+	private const float GarageCardPriceHeight = 32f;         // original: 22
+	private const int GarageCardPriceFont = 26;              // original: 18
+	private const float GarageCardStatLabelY = -112f;        // original: -92
+	private const float GarageCardStatLabelHeight = 20f;     // original: 16
+	private const int GarageCardStatLabelFont = 15;          // original: 12
+	private const float GarageMiniBarHeight = 8f;            // original: 5
+	private const float GarageMiniBarOffset = 22f;           // bar top below its label's top: label 20 + 2 px gap (original: 18)
+	private const float GarageCardPhotoSlotWidth = 336f;     // 392 - 56
+	private const float GarageCardPhotoSlotHeight = 142f;
+	private RectTransform garageTuningRoot;
+	private readonly Text[] garageTuningLabels = new Text[InfernoUpgrades.StatCount];
+	private readonly RectTransform[] garageTuningBars = new RectTransform[InfernoUpgrades.StatCount];
+	private readonly Text[] garageTuningLevels = new Text[InfernoUpgrades.StatCount];
+	private readonly Button[] garageTuningButtons = new Button[InfernoUpgrades.StatCount];
+	private Text[] garageVehicleCardPriceTexts;
+	private Image[][] garageVehicleCardStatFills;
+	private Image[] garageVehicleCardPhotos;
 
 	private void MakeGaragePurchaseAction()
 	{
@@ -89,20 +139,188 @@ public sealed partial class ShadowRunPrototype
 		garagePurchaseActionRoot = root;
 		root.SetParent(garageRoot.transform, false);
 		ApplyAnchor(root, TextAnchor.LowerCenter);
-		root.anchoredPosition = new Vector2(-40f, 375f);
-		root.sizeDelta = new Vector2(650f, 140f);
-		garagePurchaseButton = MakeReferenceArtButton(root, "Unlock Selected Vehicle Button", "кнопка в гараж", Vector2.zero, new Vector2(620f, 121f), TextAnchor.MiddleCenter);
-		garagePurchaseButton.GetComponent<RectTransform>().anchoredPosition = Vector2.zero;
-		garagePurchaseButtonText = MakeText(garagePurchaseButton.transform, "Purchase for 100", 28, TextAnchor.MiddleCenter, new Vector2(-46f, 0f));
-		garagePurchaseButtonText.fontStyle = FontStyle.Bold;
-		garagePurchaseButtonText.color = new Color(0.98f, 0.9f, 1f, 1f);
-		garagePurchaseButtonText.raycastTarget = false;
-		garagePurchaseButtonText.resizeTextForBestFit = true;
-		garagePurchaseButtonText.resizeTextMinSize = 20;
-		garagePurchaseButtonText.resizeTextMaxSize = 28;
-		garagePurchaseButtonText.GetComponent<RectTransform>().sizeDelta = new Vector2(470f, 58f);
+		/* [user request 2026-09-21: cars] */
+		// original: root at (-40, 375) 650x140 holding the "кнопка в гараж" art button (620x121) with a 28 px label at (-46, 0) reading "Purchase for 100"
+		root.anchoredPosition = new Vector2(0f, GarageActionRowBottom);
+		root.sizeDelta = new Vector2(GaragePurchaseButtonWidth, GarageActionRowHeight);
+		garagePurchaseButton = InfernoUi.MakeButton3D(this, root, "Unlock Selected Vehicle Button", "PURCHASE · 0 ◆", 0f, 0f, GaragePurchaseButtonWidth, GarageActionRowHeight, InfernoUi.Style.Plate, 28);
+		garagePurchaseButtonText = InfernoUi.ButtonLabel(garagePurchaseButton);
+		if (garagePurchaseButtonText != null)
+		{
+			garagePurchaseButtonText.fontStyle = FontStyle.Bold;
+			garagePurchaseButtonText.color = new Color(0.98f, 0.9f, 1f, 1f);
+			garagePurchaseButtonText.raycastTarget = false;
+			garagePurchaseButtonText.resizeTextForBestFit = true;
+			garagePurchaseButtonText.resizeTextMinSize = 18;
+			garagePurchaseButtonText.resizeTextMaxSize = 28;
+		}
 		garagePurchaseButton.onClick.AddListener(() => { _ = PurchaseSelectedGarageVehicleAsync(); });
 		root.gameObject.SetActive(false);
+	}
+
+	/* [user request 2026-09-21: cars] */
+	// The tuning card under the action row: one row per upgrade (ENGINE / HANDLING / NITRO) with the
+	// stat's five-segment bar, its level and a buy button showing the next level's price (or MAX).
+	// Row geometry (x from the card centre, 20 px gaps): label 190 wide at -345 (-440..-250),
+	// segment bar 380x26 at -40 (-230..150), level 70 wide at 205 (170..240), button 180x64 at 350 (260..440).
+	private void MakeGarageTuningCard()
+	{
+		garageTuningRoot = InfernoLobby.Root(garageRoot.transform, "Garage Tuning Card");
+		InfernoLobby.Place(garageTuningRoot, 0f, GarageTuningCardCentreY, GarageTuningCardWidth, GarageTuningCardHeight, new Vector2(0.5f, 0f));
+		Image frame = InfernoUi.MakePanel(this, garageTuningRoot, "Frame", 0f, 0f, GarageTuningCardWidth, GarageTuningCardHeight);
+		frame.raycastTarget = true;   // taps on the card must not spin the preview underneath it
+		for (int i = 0; i < InfernoUpgrades.StatCount; i++)
+		{
+			InfernoUpgrades.Stat stat = (InfernoUpgrades.Stat)i;
+			string statName = InfernoUpgrades.StatName(stat);
+			float y = GarageTuningRowPitch - GarageTuningRowPitch * i;
+			Text label = InfernoLobby.Label(this, garageTuningRoot, "Tuning Label " + statName, statName, -345f, y, 190f, 30f, 26, InfernoLobby.Lilac, (int)TextAnchor.MiddleLeft);
+			InfernoLobby.Place(label.rectTransform, -345f, y, 190f, 30f, new Vector2(0.5f, 0.5f));
+			garageTuningLabels[i] = label;
+			garageTuningBars[i] = InfernoUi.MakeSegmentBar(this, garageTuningRoot, "Tuning Bar " + statName, -40f, y, 380f, 26f, InfernoUpgrades.MaxLevel, GarageTuningFill(stat));
+			Text level = InfernoLobby.Label(this, garageTuningRoot, "Tuning Level " + statName, "0/" + InfernoUpgrades.MaxLevel, 205f, y, 70f, 30f, 22, InfernoLobby.Pearl);
+			InfernoLobby.Place(level.rectTransform, 205f, y, 70f, 30f, new Vector2(0.5f, 0.5f));
+			garageTuningLevels[i] = level;
+			string buttonName = "Upgrade " + statName[0] + statName.Substring(1).ToLowerInvariant() + " Button";   // Upgrade Engine Button, ...
+			Button button = InfernoUi.MakeButton3D(this, garageTuningRoot, buttonName, "◆ 0", 350f, y, 180f, 64f, InfernoUi.Style.Plate, 24);
+			button.onClick.AddListener(() => BuyGarageUpgrade(stat));
+			garageTuningButtons[i] = button;
+		}
+		RefreshGarageTuning();
+	}
+
+	private static Color GarageTuningFill(InfernoUpgrades.Stat stat)
+	{
+		switch (stat)
+		{
+			case InfernoUpgrades.Stat.Engine: return new Color(1f, 0.50f, 0.18f, 1f);
+			case InfernoUpgrades.Stat.Handling: return new Color(0.24f, 0.70f, 1f, 1f);
+			default: return new Color(0.76f, 0.30f, 1f, 1f);
+		}
+	}
+
+	// Shows the selected card's car: levels, prices, MAX; the buy buttons only work on an owned car.
+	private void RefreshGarageTuning()
+	{
+		if (garageTuningRoot == null || garageVehicleCards == null)
+		{
+			return;
+		}
+		bool valid = garageSelectedVehicleCardIndex >= 0 && garageSelectedVehicleCardIndex < garageVehicleCards.Length;
+		string vehicleId = valid ? garageVehicleCards[garageSelectedVehicleCardIndex].VehicleId : null;
+		bool known = InfernoCars.Contains(vehicleId);
+		bool owned = known && SupabaseGameManager.IsVehicleUnlocked(vehicleId);
+		garageTuningRoot.gameObject.SetActive(known);
+		if (!known)
+		{
+			return;
+		}
+		for (int i = 0; i < InfernoUpgrades.StatCount; i++)
+		{
+			InfernoUpgrades.Stat stat = (InfernoUpgrades.Stat)i;
+			int level = InfernoUpgrades.Level(vehicleId, stat);
+			int price = InfernoUpgrades.Price(vehicleId, stat);
+			if (garageTuningBars[i] != null)
+			{
+				InfernoUi.SetSegments(garageTuningBars[i], level);
+			}
+			if (garageTuningLevels[i] != null)
+			{
+				garageTuningLevels[i].text = level + "/" + InfernoUpgrades.MaxLevel;
+			}
+			if (garageTuningLabels[i] != null)
+			{
+				garageTuningLabels[i].color = InfernoLobby.Hex(InfernoLobby.Lilac, owned ? 1f : 0.55f);
+			}
+			Button button = garageTuningButtons[i];
+			if (button == null)
+			{
+				continue;
+			}
+			Text label = InfernoUi.ButtonLabel(button);
+			if (label != null)
+			{
+				label.text = price < 0 ? "MAX" : "◆ " + price;
+			}
+			button.interactable = owned && price >= 0 && !garagePurchaseBusy;
+		}
+	}
+
+	private void BuyGarageUpgrade(InfernoUpgrades.Stat stat)
+	{
+		if (garagePurchaseBusy || garageVehicleCards == null || garageSelectedVehicleCardIndex < 0 || garageSelectedVehicleCardIndex >= garageVehicleCards.Length)
+		{
+			return;
+		}
+		string vehicleId = garageVehicleCards[garageSelectedVehicleCardIndex].VehicleId;
+		if (!InfernoCars.Contains(vehicleId) || !SupabaseGameManager.IsVehicleUnlocked(vehicleId))
+		{
+			RefreshGarageTuning();
+			return;
+		}
+		int price = InfernoUpgrades.Price(vehicleId, stat);
+		if (price < 0)
+		{
+			return;
+		}
+		int crystals = SupabaseGameManager.Crystals;
+		if (crystals == int.MaxValue)
+		{
+			return;
+		}
+		if (crystals < price)
+		{
+			if (garagePurchaseStatusText != null)
+			{
+				garagePurchaseStatusText.text = string.Format("NEED {0} MORE", price - crystals);
+			}
+			ShowGemShop();   // an unaffordable upgrade opens the diamond shop, like an unaffordable car
+			return;
+		}
+		if (!InfernoUpgrades.Buy(this, vehicleId, stat))   // spends, saves, re-creates the active definition and refreshes the garage
+		{
+			UpdateGarageUi();
+		}
+	}
+
+	// A variant's card shows its runtime-rendered icon once the preview world can render it
+	// (InfernoCars.Icon needs a live pipeline, so the card is built with the base photo first).
+	private void RefreshGarageCardIcons()
+	{
+		if (garageVehicleCards == null || garageVehicleCardPhotos == null)
+		{
+			return;
+		}
+		for (int i = 0; i < garageVehicleCards.Length && i < garageVehicleCardPhotos.Length; i++)
+		{
+			Image photo = garageVehicleCardPhotos[i];
+			string vehicleId = garageVehicleCards[i].VehicleId;
+			if (photo == null || InfernoCars.IdFromPicture(garageVehicleCards[i].IconResource) == null)
+			{
+				continue;
+			}
+			if (photo.sprite != null && photo.sprite.name == "Icon " + vehicleId)
+			{
+				continue;
+			}
+			Sprite icon = InfernoCars.Icon(this, vehicleId);
+			if (icon != null)
+			{
+				SetGarageCardPhoto(photo, icon, true);
+			}
+		}
+	}
+
+	// original photo size: 1.55 x the slot width by 2.35 x its height (the 1:2 cut-out photos); a
+	// rendered 4:3 icon is shown at 240x180 so its car reads about as big as the photographed ones.
+	private void SetGarageCardPhoto(Image image, Sprite sprite, bool renderedIcon)
+	{
+		if (image == null || sprite == null)
+		{
+			return;
+		}
+		image.sprite = sprite;
+		image.rectTransform.sizeDelta = renderedIcon ? new Vector2(240f, 180f) : new Vector2(GarageCardPhotoSlotWidth * 1.55f, GarageCardPhotoSlotHeight * 2.35f);
 	}
 
 	private async Task PurchaseSelectedGarageVehicleAsync()
@@ -133,8 +351,16 @@ public sealed partial class ShadowRunPrototype
 		}
 		if (!await SupabaseGameManager.RequireOnlineEconomyAsync())
 		{
+			/* [user request 2026-09-27: cannot buy cars] Say why nothing happened. The button used to snap back
+			   from "CHECKING PROFILE..." to PURCHASE with the status line blank, so an account session the game
+			   could not refresh was indistinguishable from a dead button. Set after UpdateGarageUi so the
+			   refresh cannot blank it again. */
 			garagePurchaseBusy = false;
 			UpdateGarageUi();
+			if (garagePurchaseStatusText != null)
+			{
+				garagePurchaseStatusText.text = Application.internetReachability == NetworkReachability.NotReachable ? "NO INTERNET" : "SIGN IN TO BUY";
+			}
 			return;
 		}
 		if (SupabaseGameManager.IsVehicleUnlocked(vehicleId))
@@ -144,18 +370,19 @@ public sealed partial class ShadowRunPrototype
 			return;
 		}
 		int crystals = SupabaseGameManager.Crystals;
-		if (crystals < 100)
+		int price = InfernoCars.Price(vehicleId); /* [user request 2026-09-21: cars] */ // original: the literal 100 (GarageVehicleCrystalPrice) for every car
+		if (price < 0 || crystals < price)
 		{
 			garagePurchaseBusy = false;
 			if (garagePurchaseStatusText != null)
 			{
-				garagePurchaseStatusText.text = string.Format("NEED {0} MORE CRYSTALS", 100 - crystals);
+				garagePurchaseStatusText.text = price < 0 ? "NOT FOR SALE" : string.Format("NEED {0} MORE", price - crystals);   // original: "NEED {0} MORE CRYSTALS"
 			}
 			UpdateGarageUi();
 			ShowGemShop();
 			return;
 		}
-		SupabaseGameManager.SetCrystals(crystals - 100);
+		SupabaseGameManager.SetCrystals(crystals - price);   // original: crystals - 100
 		SupabaseGameManager.SetVehicleUnlocked(vehicleId, true);
 		if (garagePurchaseActionRoot != null)
 		{
@@ -239,6 +466,10 @@ public sealed partial class ShadowRunPrototype
 		garageVehicleCardFills = new Image[garageVehicleCards.Length];
 		garageVehicleLockOverlays = new Image[garageVehicleCards.Length];
 		garageVehicleActionLabels = new Text[garageVehicleCards.Length];
+		/* [user request 2026-09-21: cars] */
+		garageVehicleCardPriceTexts = new Text[garageVehicleCards.Length];
+		garageVehicleCardStatFills = new Image[garageVehicleCards.Length][];
+		garageVehicleCardPhotos = new Image[garageVehicleCards.Length];
 		for (int i = 0; i < garageVehicleCards.Length; i++)
 		{
 			Button card = MakeGarageVehicleCard(content, garageVehicleCards[i], i, Vector2.zero, new Vector2(392f, 456f));
@@ -263,78 +494,11 @@ public sealed partial class ShadowRunPrototype
 
 	private GarageVehicleCardData[] CreateGarageVehicleCards()
 	{
-		GarageVehicleCardData[] cards = new GarageVehicleCardData[4]
-		{
-			new GarageVehicleCardData
-			{
-				VehicleId = "sportcar",
-				Name = "Phantom GT",
-				Subtitle = "Hypersport / Class S",
-				Rarity = "LEGENDARY",
-				IconResource = "sportcar photo",
-				Color = new Color(0.69f, 0.38f, 1f, 1f),
-				Accent = new Color(0.86f, 0.66f, 1f, 1f),
-				Power = 0.98f,
-				Speed = 0.89f,
-				Handling = 0.88f,
-				PowerValue = "980 HP",
-				SpeedValue = "312 KM/H",
-				HandlingValue = "88%",
-				VisualLocked = !SupabaseGameManager.IsVehicleUnlocked("sportcar")
-			},
-			new GarageVehicleCardData
-			{
-				VehicleId = "flying_car",
-				Name = "Aero Wraith",
-				Subtitle = "Hover GT / Class A",
-				Rarity = "EPIC",
-				IconResource = "flyingcar photo",
-				Color = new Color(0.39f, 0.4f, 0.95f, 1f),
-				Accent = new Color(0.65f, 0.71f, 0.99f, 1f),
-				Power = 0.72f,
-				Speed = 0.81f,
-				Handling = 0.72f,
-				PowerValue = "720 HP",
-				SpeedValue = "285 KM/H",
-				HandlingValue = "72%",
-				VisualLocked = !SupabaseGameManager.IsVehicleUnlocked("flying_car")
-			},
-			new GarageVehicleCardData
-			{
-				VehicleId = "infal_model",
-				Name = "IFNAL P900",
-				Subtitle = "Prototype / Class S+",
-				Rarity = "MYTHIC",
-				IconResource = "impala photo",
-				Color = new Color(0.96f, 0.25f, 0.37f, 1f),
-				Accent = new Color(0.99f, 0.64f, 0.69f, 1f),
-				Power = 0.94f,
-				Speed = 0.93f,
-				Handling = 0.87f,
-				PowerValue = "940 HP",
-				SpeedValue = "326 KM/H",
-				HandlingValue = "87%",
-				VisualLocked = !SupabaseGameManager.IsVehicleUnlocked("infal_model")
-			},
-			new GarageVehicleCardData
-			{
-				VehicleId = "car3",
-				Name = "Cayman GT4",
-				Subtitle = "Track GT / Class S",
-				Rarity = "LEGENDARY",
-				IconResource = "porsche photo",
-				Color = new Color(0.18f, 0.7f, 0.95f, 1f),
-				Accent = new Color(0.54f, 0.86f, 1f, 1f),
-				Power = 0.86f,
-				Speed = 0.88f,
-				Handling = 0.94f,
-				PowerValue = "860 HP",
-				SpeedValue = "304 KM/H",
-				HandlingValue = "94%",
-				VisualLocked = !SupabaseGameManager.IsVehicleUnlocked("car3")
-			}
-		};
-		return InfernoGarage.AppendCards(this, cards); /* [InfernoLobby patch] */
+		/* [user request 2026-09-21: cars] */
+		// original: four hand-written cards (sportcar "Phantom GT" LEGENDARY, flying_car "Aero Wraith" EPIC,
+		// infal_model "IFNAL P900" MYTHIC, car3 "Cayman GT4" LEGENDARY) + InfernoGarage.AppendCards (25 editions);
+		// the catalogue's ten cards come in price order with rarity-coloured tints.
+		return InfernoGarage.AppendCards(this, InfernoCars.Cards(this));
 	}
 
 	private Button MakeGarageVehicleCard(Transform parent, GarageVehicleCardData data, int index, Vector2 pos, Vector2 size)
@@ -377,28 +541,57 @@ public sealed partial class ShadowRunPrototype
 		{
 			Image photoImage = new GameObject("Car Photo").AddComponent<Image>();
 			photoImage.transform.SetParent(photoSlot);
-			photoImage.sprite = photo;
 			photoImage.color = Color.white;
 			photoImage.preserveAspect = true;
 			photoImage.raycastTarget = false;
 			RectTransform photoRect = photoImage.rectTransform;
 			ApplyAnchor(photoRect, TextAnchor.MiddleCenter);
 			photoRect.anchoredPosition = new Vector2(0f, 6f);
-			photoRect.sizeDelta = new Vector2(photoSlot.sizeDelta.x * 1.55f, photoSlot.sizeDelta.y * 2.35f);
+			/* [user request 2026-09-21: cars] */ // original: photoImage.sprite = photo; photoRect.sizeDelta = new Vector2(photoSlot.sizeDelta.x * 1.55f, photoSlot.sizeDelta.y * 2.35f);
+			SetGarageCardPhoto(photoImage, photo, InfernoCars.HasIcon(data.VehicleId) && photo.name == "Icon " + data.VehicleId);
+			garageVehicleCardPhotos[index] = photoImage;
 		}
 		RectTransform info = new GameObject("Info Panel").AddComponent<RectTransform>();
 		info.SetParent(rect, false);
 		ApplyAnchor(info, TextAnchor.LowerCenter);
-		info.anchoredPosition = new Vector2(0f, 22f);
-		info.sizeDelta = new Vector2(size.x - 54f, 150f);
-		Text name = MakeText(info, data.Name, 28, TextAnchor.UpperLeft, Vector2.zero);
+		info.anchoredPosition = new Vector2(0f, GarageCardInfoBottom);
+		info.sizeDelta = new Vector2(size.x - 54f, GarageCardInfoHeight);
+		/* [user request 2026-09-27: card data] the car's data reads bigger and brighter inside the same card: every row's
+		   height, font and y comes from the GarageCard* constants (original values noted there); the rows now end 30 px
+		   above the card edge instead of 57. */
+		Text name = MakeText(info, data.Name, GarageCardNameFontMax, TextAnchor.UpperLeft, Vector2.zero);   // original: 28
 		name.fontStyle = FontStyle.Bold;
 		name.color = Color.white;
-		name.GetComponent<RectTransform>().sizeDelta = new Vector2(info.sizeDelta.x, 36f);
-		Text subtitle = MakeText(info, data.Subtitle, 17, TextAnchor.UpperLeft, new Vector2(2f, -34f));
-		subtitle.color = new Color(0.58f, 0.5f, 0.7f, 0.85f);
-		subtitle.GetComponent<RectTransform>().sizeDelta = new Vector2(info.sizeDelta.x, 28f);
-		MakeGarageCardStat(info, "POWER", data.PowerValue, data.Power, data.Color, new Vector2(0f, -78f), info.sizeDelta.x, false);
+		name.GetComponent<RectTransform>().sizeDelta = new Vector2(info.sizeDelta.x, GarageCardNameHeight);   // original: 36f
+		/* [user request 2026-09-21: no overlaps] long model names (AERO WRAITH X, CAYMAN CLUBSPORT) wrapped into the
+		   subtitle: name and subtitle shrink to one line instead (best fit, originally 18..28 / 12..17) and the subtitle
+		   starts under the name's rect (was -34). */
+		name.horizontalOverflow = HorizontalWrapMode.Wrap;
+		name.verticalOverflow = VerticalWrapMode.Truncate;
+		name.resizeTextForBestFit = true;
+		name.resizeTextMinSize = GarageCardNameFontMin;
+		name.resizeTextMaxSize = GarageCardNameFontMax;
+		Text subtitle = MakeText(info, data.Subtitle, GarageCardSubtitleFontMax, TextAnchor.UpperLeft, new Vector2(2f, -GarageCardNameHeight));   // original: 17 at (2f, -36f)
+		subtitle.color = new Color(0.78f, 0.7f, 0.92f, 1f);   // original: (0.58f, 0.5f, 0.7f, 0.85f)
+		subtitle.GetComponent<RectTransform>().sizeDelta = new Vector2(info.sizeDelta.x - 4f, GarageCardSubtitleHeight);   // original: (info.sizeDelta.x, 28f), then 24f
+		subtitle.horizontalOverflow = HorizontalWrapMode.Wrap;
+		subtitle.verticalOverflow = VerticalWrapMode.Truncate;
+		subtitle.resizeTextForBestFit = true;
+		subtitle.resizeTextMinSize = GarageCardSubtitleFontMin;
+		subtitle.resizeTextMaxSize = GarageCardSubtitleFontMax;
+		/* [user request 2026-09-21: cars] */ // original: MakeGarageCardStat(info, "POWER", data.PowerValue, data.Power, data.Color, new Vector2(0f, -78f), info.sizeDelta.x, false);
+		// Info panel rows (y from its top, 150 tall): name 0..-42, subtitle -42..-70, price row -74..-106,
+		// three mini-bar columns (label -112..-132, bar -134..-142) at x 0 / 116 / 232, 106 wide.
+		Text priceRow = MakeText(info, "◆ 0", GarageCardPriceFont, TextAnchor.UpperLeft, new Vector2(4f, GarageCardPriceY));   // x 4 (was 0, then 3): the diamond glyph's left bearing must stay inside the panel (layout audit)
+		priceRow.fontStyle = FontStyle.Bold;
+		priceRow.color = InfernoLobby.Hex(InfernoLobby.Pearl);
+		priceRow.raycastTarget = false;
+		priceRow.GetComponent<RectTransform>().sizeDelta = new Vector2(info.sizeDelta.x - 8f, GarageCardPriceHeight);   // original: (info.sizeDelta.x - 6f, 22f)
+		garageVehicleCardPriceTexts[index] = priceRow;
+		garageVehicleCardStatFills[index] = new Image[InfernoUpgrades.StatCount];
+		garageVehicleCardStatFills[index][0] = MakeGarageCardMiniStat(info, "POWER", data.Power, data.Color, new Vector2(0f, GarageCardStatLabelY));
+		garageVehicleCardStatFills[index][1] = MakeGarageCardMiniStat(info, "HANDLING", data.Handling, data.Color, new Vector2(GarageMiniBarWidth + GarageMiniBarGap, GarageCardStatLabelY));
+		garageVehicleCardStatFills[index][2] = MakeGarageCardMiniStat(info, "NITRO", data.Speed, data.Color, new Vector2(2f * (GarageMiniBarWidth + GarageMiniBarGap), GarageCardStatLabelY));
 		Text actionLabel = MakeText(rect, "", 1, TextAnchor.MiddleCenter, Vector2.zero);
 		actionLabel.color = Color.clear;
 		actionLabel.GetComponent<RectTransform>().sizeDelta = Vector2.one;
@@ -410,12 +603,17 @@ public sealed partial class ShadowRunPrototype
 		lockMask.raycastTarget = false;
 		lockMask.gameObject.AddComponent<Mask>().showMaskGraphic = false;
 		garageVehicleLockOverlays[index] = lockMask;
-		Image blur = MakeUiBlock(lockMask.transform, "249 Blur Texture", Vector2.zero, lockSize, TextAnchor.MiddleCenter, new Color(1f, 1f, 1f, 0.2f));
-		blur.sprite = LoadResourceSprite("249");
-		blur.type = Image.Type.Simple;
-		blur.preserveAspect = false;
+		/* [user request 2026-09-22: cars] */
+		// original: the shipped "249" blur strip (white, alpha 0.2, the full mask) with the lock at y 58 and a dark "LOCKED" at y 4.
+		// A translucent dark tint dims the photo, name and subtitle (card top 220 down to -120, just above the
+		// price row at -120..-142, so the price stays bright in the rarity colour); lock and label are centred on
+		// the photo slot (3..145): icon 72 px at 94 (58..130), text 34 px at 38 (21..55), glow behind the icon.
+		/* [user request 2026-09-27: card data] */ // original: new Vector2(0f, 50f), new Vector2(lockSize.x, 340f) - the strip's bottom sat on the old price row's top (108 above the card edge)
+		float blurTop = size.y * 0.5f - 8f;   // the mask's top edge (220)
+		float blurBottom = GarageCardInfoBottom + GarageCardInfoHeight + GarageCardPriceY - size.y * 0.5f;   // the price row's top, in card-centre coordinates (-130)
+		Image blur = MakeUiBlock(lockMask.transform, "249 Blur Texture", new Vector2(0f, (blurTop + blurBottom) * 0.5f), new Vector2(lockSize.x, blurTop - blurBottom), TextAnchor.MiddleCenter, new Color(0.02f, 0.01f, 0.05f, 0.6f));
 		blur.raycastTarget = false;
-		Image lockGlow = MakeUiBlock(lockMask.transform, "Lock Glow", new Vector2(0f, 58f), new Vector2(146f, 146f), TextAnchor.MiddleCenter, new Color(data.Color.r, data.Color.g, data.Color.b, 0.22f));
+		Image lockGlow = MakeUiBlock(lockMask.transform, "Lock Glow", new Vector2(0f, 94f), new Vector2(146f, 146f), TextAnchor.MiddleCenter, new Color(data.Color.r, data.Color.g, data.Color.b, 0.22f));   // original: y 58
 		lockGlow.sprite = caseRadialGlowSprite;
 		lockGlow.raycastTarget = false;
 		Sprite lockSprite = GetGarageLockSprite();
@@ -429,12 +627,13 @@ public sealed partial class ShadowRunPrototype
 			lockIcon.color = Color.white;
 			RectTransform lockRect = lockIcon.rectTransform;
 			ApplyAnchor(lockRect, TextAnchor.MiddleCenter);
-			lockRect.anchoredPosition = new Vector2(0f, 58f);
+			lockRect.anchoredPosition = new Vector2(0f, 94f);   // original: 58f
 			lockRect.sizeDelta = new Vector2(72f, 72f);
 		}
-		Text lockedText = MakeText(lockMask.transform, "LOCKED", 24, TextAnchor.MiddleCenter, new Vector2(0f, 4f));
+		Text lockedText = MakeText(lockMask.transform, "LOCKED", 24, TextAnchor.MiddleCenter, new Vector2(0f, 38f));   // original: (0, 4)
 		lockedText.fontStyle = FontStyle.Bold;
-		lockedText.color = new Color(0.18f, 0.11f, 0.28f, 0.96f);
+		lockedText.color = new Color(0.92f, 0.86f, 1f, 0.96f);   // original: (0.18, 0.11, 0.28, 0.96) on the light blur strip
+		lockedText.raycastTarget = false;
 		lockedText.GetComponent<RectTransform>().sizeDelta = new Vector2(190f, 34f);
 		lockMask.gameObject.SetActive(data.VisualLocked);
 		Image surface = MakeUiBlock(rect, "Full Card Interaction Surface", Vector2.zero, size, TextAnchor.MiddleCenter, new Color(1f, 1f, 1f, 0.001f));
@@ -509,6 +708,28 @@ public sealed partial class ShadowRunPrototype
 		texture.Apply(false, true);
 		garageVehicleCardFillSprite = Sprite.Create(texture, new Rect(0f, 0f, 192f, 256f), new Vector2(0.5f, 0.5f), 100f, 0, SpriteMeshType.FullRect, new Vector4(22f, 22f, 22f, 22f));
 		return garageVehicleCardFillSprite;
+	}
+
+	/* [user request 2026-09-21: cars] */
+	// One of the card's three mini bars (POWER / HANDLING / NITRO): a 15 px label over a 106x8 bar
+	// /* [user request 2026-09-27: card data] */ (original: 12 px over 106x5, dimmer label, bar alphas 0.085 / 0.88);
+	// returns the fill so UpdateGarageVehicleCardVisuals can grow it with the upgrade levels.
+	private Image MakeGarageCardMiniStat(Transform parent, string label, float amount, Color color, Vector2 pos)
+	{
+		Text labelText = MakeText(parent, label, GarageCardStatLabelFont, TextAnchor.UpperLeft, pos);
+		labelText.fontStyle = FontStyle.Bold;
+		labelText.color = new Color(0.86f, 0.78f, 0.97f, 0.96f);   // original: (0.7f, 0.6f, 0.84f, 0.72f)
+		labelText.raycastTarget = false;
+		labelText.GetComponent<RectTransform>().sizeDelta = new Vector2(GarageMiniBarWidth, GarageCardStatLabelHeight);
+		Image barBackground = MakeUiBlock(parent, label + " Bar BG", new Vector2(pos.x, pos.y - GarageMiniBarOffset), new Vector2(GarageMiniBarWidth, GarageMiniBarHeight), TextAnchor.UpperLeft, new Color(1f, 1f, 1f, 0.16f));
+		barBackground.sprite = roundedGlassSprite;
+		barBackground.type = Image.Type.Sliced;
+		barBackground.raycastTarget = false;
+		Image barFill = MakeUiBlock(barBackground.transform, label + " Bar Fill", Vector2.zero, new Vector2(Mathf.Clamp01(amount) * GarageMiniBarWidth, GarageMiniBarHeight), TextAnchor.MiddleLeft, new Color(color.r, color.g, color.b, 1f));
+		barFill.sprite = roundedGlassSprite;
+		barFill.type = Image.Type.Sliced;
+		barFill.raycastTarget = false;
+		return barFill;
 	}
 
 	private void MakeGarageCardStat(Transform parent, string label, string value, float amount, Color color, Vector2 pos, float width, bool dimmed)
@@ -966,8 +1187,8 @@ public sealed partial class ShadowRunPrototype
 		ceiling.transform.localPosition = new Vector3(-2.3f, 4f, -2.4f);
 		ceiling.type = LightType.Spot;
 		ceiling.range = 12f;
-		ceiling.spotAngle = 45f;
-		ceiling.intensity = 4.8f;
+		ceiling.spotAngle = 56f; /* [user request 2026-09-20: brighter cars] */ // original: 45f
+		ceiling.intensity = 6.4f; /* [user request 2026-09-20: brighter cars] */ // original: 4.8f
 		ceiling.color = new Color(1f, 0.86f, 0.78f);
 		ceiling.transform.LookAt(garagePreviewRoot.position + new Vector3(0f, 0.25f, -0.55f));
 		Light rim = new GameObject("Garage Preview Rim Light").AddComponent<Light>();
@@ -984,17 +1205,34 @@ public sealed partial class ShadowRunPrototype
 		wallNeon.range = 11f;
 		wallNeon.intensity = 3.4f;
 		wallNeon.color = new Color(1f, 0.02f, 0.04f);
-		Light frontFill = new GameObject("Garage Preview Weak Front Fill").AddComponent<Light>();
+		Light frontFill = new GameObject("Garage Preview Fill Light").AddComponent<Light>(); /* [user request 2026-09-20: brighter cars] */ // original: "Garage Preview Weak Front Fill"
 		frontFill.transform.SetParent(garagePreviewRoot);
-		frontFill.transform.localPosition = new Vector3(-3f, 1.5f, -5.5f);
+		frontFill.transform.localPosition = new Vector3(-3.2f, 2.1f, -3.2f); /* [user request 2026-09-20: brighter cars] */ // original: new Vector3(-3f, 1.5f, -5.5f)
 		frontFill.type = LightType.Point;
-		frontFill.range = 7f;
-		frontFill.intensity = 0.8f;
-		frontFill.color = new Color(0.74f, 0.82f, 0.95f);
+		frontFill.range = 12f; /* [user request 2026-09-20: brighter cars] */ // original: 7f
+		frontFill.intensity = 4.5f; /* [user request 2026-09-20: brighter cars] */ // original: 0.8f
+		frontFill.color = new Color(0.78f, 0.86f, 1f); /* [user request 2026-09-20: brighter cars] */ // original: new Color(0.74f, 0.82f, 0.95f)
+		frontFill.shadows = LightShadows.None; /* [user request 2026-09-20: brighter cars] */
+		frontFill.renderMode = LightRenderMode.ForcePixel; /* [user request 2026-09-20: brighter cars] */
+		/* [user request 2026-09-20: brighter cars] */ // Warm-white key light from the upper front on the camera side so paint colour and chrome read on the pad.
+		Light keyLight = new GameObject("Garage Preview Key Light").AddComponent<Light>();
+		keyLight.transform.SetParent(garagePreviewRoot);
+		keyLight.transform.localPosition = new Vector3(2.1f, 3.1f, -3.7f);
+		keyLight.type = LightType.Spot;
+		keyLight.range = 16f;
+		keyLight.spotAngle = 70f;
+		keyLight.innerSpotAngle = 34f;
+		keyLight.intensity = 9.5f;
+		keyLight.color = new Color(1f, 0.94f, 0.86f);
+		keyLight.shadows = LightShadows.None;
+		keyLight.renderMode = LightRenderMode.ForcePixel;
+		keyLight.transform.LookAt(garagePreviewRoot.position + new Vector3(0.25f, 0.45f, -0.75f));
 		garagePreviewCamera = new GameObject("Garage Preview Camera").AddComponent<Camera>();
 		garagePreviewCamera.transform.SetParent(garagePreviewRoot);
 		garagePreviewCamera.transform.localPosition = new Vector3(3.35f, 1.2f, -5.8f);
-		garagePreviewCamera.transform.LookAt(garagePreviewRoot.position + new Vector3(0f, 0.55f, -0.25f));
+		/* [user request 2026-09-21: cars] */ // original: new Vector3(0f, 0.55f, -0.25f) — aiming 0.15 lower raises the car ~70 px in the frame (frame half-height 2.05 m over 960 px at the car's 6 m),
+		// so it sits centred in the 630..1304 band between the action row / tuning card and the card carousel instead of 32 px above the action row
+		garagePreviewCamera.transform.LookAt(garagePreviewRoot.position + new Vector3(0f, 0.40f, -0.25f));
 		garagePreviewCamera.clearFlags = CameraClearFlags.Color;
 		garagePreviewCamera.backgroundColor = new Color(0f, 0f, 0f, 0f);
 		garagePreviewCamera.cullingMask = 536870912;
@@ -1157,7 +1395,7 @@ public sealed partial class ShadowRunPrototype
 				{
 					continue;
 				}
-				material.color = Color.Lerp(material.color, new Color(0.015f, 0.012f, 0.014f, material.color.a), 0.18f);
+				material.color = Color.Lerp(material.color, new Color(0.015f, 0.012f, 0.014f, material.color.a), 0.08f); /* [user request 2026-09-20: brighter cars] */ // original: 0.18f
 				material.EnableKeyword("_EMISSION");
 				material.SetColor("_EmissionColor", Color.black);
 				material.renderQueue = 2000;
@@ -1240,6 +1478,7 @@ public sealed partial class ShadowRunPrototype
 		overlayTag.text = "";
 		overlayStats.text = "";
 		SelectMenuTab(0, false);
+		RefreshGarageCardIcons(); /* [user request 2026-09-21: cars] */
 		UpdateGarageUi();
 	}
 
@@ -1316,6 +1555,29 @@ public sealed partial class ShadowRunPrototype
 				garageVehicleActionLabels[i].text = "";
 				garageVehicleActionLabels[i].color = Color.clear;
 			}
+			/* [user request 2026-09-21: cars] */ // price row ("◆ 650" / OWNED / SELECTED) and the three mini bars with the upgrade levels
+			bool active = string.Equals(ActiveVehicle.Id, card.VehicleId, StringComparison.OrdinalIgnoreCase);
+			if (garageVehicleCardPriceTexts != null && i < garageVehicleCardPriceTexts.Length && garageVehicleCardPriceTexts[i] != null)
+			{
+				Text priceRow = garageVehicleCardPriceTexts[i];
+				int price = InfernoCars.Price(card.VehicleId);
+				priceRow.text = active ? "SELECTED" : (!card.VisualLocked ? "OWNED" : (price >= 0 ? "◆ " + price : "◆ —"));
+				priceRow.color = active ? InfernoLobby.Hex(InfernoLobby.Blossom) : (!card.VisualLocked ? InfernoLobby.Hex(InfernoLobby.Lilac) : card.Color);   // a locked car's price in its rarity colour /* [user request 2026-09-22: cars] */
+			}
+			if (garageVehicleCardStatFills != null && i < garageVehicleCardStatFills.Length && garageVehicleCardStatFills[i] != null)
+			{
+				card.Power = InfernoCars.Stat(card.VehicleId, InfernoUpgrades.Stat.Engine);
+				card.Handling = InfernoCars.Stat(card.VehicleId, InfernoUpgrades.Stat.Handling);
+				card.Speed = InfernoCars.Stat(card.VehicleId, InfernoUpgrades.Stat.Nitro);
+				float[] amounts = { card.Power, card.Handling, card.Speed };
+				for (int s = 0; s < garageVehicleCardStatFills[i].Length && s < amounts.Length; s++)
+				{
+					if (garageVehicleCardStatFills[i][s] != null)
+					{
+						garageVehicleCardStatFills[i][s].rectTransform.sizeDelta = new Vector2(Mathf.Clamp01(amounts[s]) * GarageMiniBarWidth, GarageMiniBarHeight);   /* [user request 2026-09-27: card data] */ // original: 5f
+					}
+				}
+			}
 		}
 		bool showPurchase = false;
 		if (garageSelectedVehicleCardIndex >= 0 && garageSelectedVehicleCardIndex < garageVehicleCards.Length)
@@ -1334,8 +1596,11 @@ public sealed partial class ShadowRunPrototype
 		if (showPurchase && garagePurchaseButtonText != null)
 		{
 			int crystals = SupabaseGameManager.Crystals;
-			garagePurchaseButtonText.text = garagePurchaseBusy ? "Syncing..." : (crystals >= 100 ? string.Format("Purchase for {0}", 100) : string.Format("Need {0} more to purchase", 100 - crystals));
+			/* [user request 2026-09-21: cars] */ // original: crystals >= 100 ? "Purchase for 100" : "Need {100 - crystals} more to purchase"
+			int price = InfernoCars.Price(garageVehicleCards[garageSelectedVehicleCardIndex].VehicleId);
+			garagePurchaseButtonText.text = garagePurchaseBusy ? "Syncing..." : (price < 0 ? "NOT FOR SALE" : (crystals >= price ? string.Format("PURCHASE · {0} ◆", price) : string.Format("NEED {0} MORE", price - crystals)));
 		}
+		RefreshGarageTuning(); /* [user request 2026-09-21: cars] */
 	}
 
 	private void SetGarageVehicleButtonVisual(Button button, Text label, bool selected)

@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <projectSettings>
+  <projectSetting name="com.google.external-dependency-managerAnalyticsCookie" value="a1ee8bfef93843219cf5438d38285a86" />
+  <projectSetting name="com.google.external-dependency-managerAnalyticsEnabled" value="True" />
   <projectSetting name="Google.VersionHandler.VerboseLoggingEnabled" value="False" />
   <projectSetting name="GooglePlayServices.AutoResolutionDisabledWarning" value="False" />
   <projectSetting name="GooglePlayServices.PatchMainTemplateGradle" value="True" />

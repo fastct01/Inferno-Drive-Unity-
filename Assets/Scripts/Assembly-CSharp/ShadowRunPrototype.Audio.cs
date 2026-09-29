@@ -292,6 +292,8 @@ public sealed partial class ShadowRunPrototype
 
 	private void UpdateWeatherAudioMute()
 	{
+		/* [user request 2026-09-21: maps] the map's own rain loop (the weather stub's AudioModule is inert) */
+		InfernoMaps.SetRainAudioMuted(this, !running || paused);
 		if (weatherAudioModule == null)
 		{
 			return;
