@@ -1137,9 +1137,16 @@ public sealed partial class ShadowRunPrototype
 			Button retry = game.MakeProfileActionButton(root, "TRY AGAIN", new Vector2(0f, -380f), new Vector2(720f, 150f), true, false, out _, true, true);
 			game.gameOverRetryButton = retry;
 			Bind(game, retry, game.StartRun);
-			Button openCase = game.MakeProfileActionButton(root, "OPEN CASE", new Vector2(0f, -190f), new Vector2(720f, 110f), false, false, out _, true, false);
-			// Keep the standard case flow and return to this result when it closes.
-			Connect(game, openCase, 5);
+			/* [user request 2026-09-29: loss case box] "add the case box for the user to open when the user losts":
+			   the flat OPEN CASE plate is now a real case box - the lobby "Cases" card at 280x380, built in
+			   Inferno/InfernoGameOverCase.cs - dropped into the band the plate leaves free (the stats card's
+			   bottom edge at y 100 down to the TRY AGAIN glow at y -294; the box is y -287..93, 7 px of air at
+			   each end), so nothing else on this screen moves. It keeps the plate's GameObject name and its
+			   Connect index 5, so everything that drives this screen by name still works.
+			   original: Button openCase = game.MakeProfileActionButton(root, "OPEN CASE", new Vector2(0f, -190f), new Vector2(720f, 110f), false, false, out _, true, false);
+			   original: // Keep the standard case flow and return to this result when it closes.
+			   original: Connect(game, openCase, 5); */
+			BuildCaseBox(game, root);
 			Button menu = game.MakeProfileActionButton(root, "BACK TO MENU", new Vector2(0f, -560f), new Vector2(720f, 110f), false, false, out _, true, false);
 			game.gameOverMenuButton = menu;
 			Bind(game, menu, game.ShowMainMenu);

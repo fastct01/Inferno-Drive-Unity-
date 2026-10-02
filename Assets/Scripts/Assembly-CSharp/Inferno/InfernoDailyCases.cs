@@ -63,6 +63,11 @@ public sealed partial class ShadowRunPrototype
 		// Once a second from UpdateDailyGoalsTimer and whenever the case screen closes.
 		public static void RefreshCard()
 		{
+			/* [user request 2026-09-29: loss case box] the same tick feeds the loss screen's case box, which
+			   keeps its own Text because this class stores exactly ONE s_cardSubtitle (binding the box here
+			   would freeze the lobby card's caption at ""). Before the guard below, so the box still ticks if
+			   the lobby card was never built. */
+			InfernoLobby.RefreshCaseBox();
 			if (s_cardSubtitle == null) return;
 			int left = Remaining();
 			// one line under the card title; the OPEN CASE outline button sits below it

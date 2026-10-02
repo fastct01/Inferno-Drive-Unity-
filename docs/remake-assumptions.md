@@ -503,3 +503,43 @@ pairing of the shipped iOS pod 5.9.0.0.
     every dot's rect compared with its track's - 15 of 15 inside, capture `Logs/hud-shots/settings-sliders.png`.
   - Not changed: the knob still travels so that its centre reaches the track's ends, which leaves half of it past the
     bar at 0 % and 100 %. That is how a slider handle normally behaves and the user asked only about the dots.
+
+- 2026-09-29 "when I press go in the box with cases the game should start instead of case opening, and add the case
+  box for the user to open when the user loses" (tags `[user request 2026-09-29: GO starts the run]` and
+  `[user request 2026-09-29: loss case box]`; designed by a four-analyst + two-designer + judge agent panel and verified
+  live in the Editor). Two changes, both verified in Play mode:
+  - **GO always starts the run** `Inferno/InfernoLobbyStyle.cs` `GoalGo`: the daily-goals row whose goal is
+    `DailyGoalKind.CasesOpened` used to open the case screen from its GO key (`Click(game, 5)`); every GO key now taps
+    the PLAY plate like the other two rows. Assumption: "the box with cases" is that goal row, because the three GO
+    keys inside the daily-goals card are the only controls in the game labelled GO and that row's key was the only one
+    that did not start a run (the case card's own key reads OPEN CASE and the whole card is the button). Today's goal
+    roll happens to put the cases goal in the top row, next to the case card. Nothing else changes: GO never advanced
+    that goal anyway (only `RegisterDailyCaseOpened` does), the row still completes and claims, and the case screen is
+    still reached from the lobby card and now from the loss screen.
+  - **A real case box on the loss screen** new file `Inferno/InfernoGameOverCase.cs`, called from `InfernoLobby.cs`
+    `BuildGameOver`: the flat 720x110 "OPEN CASE" plate is replaced by the lobby "Cases" card rebuilt at 280x380
+    (scale 380/483 = 0.7867, cuts TL/BR 14, TR/BL 0) with the live 990x630 crate render, "N SERIES CASE", the daily
+    allowance line and the outlined OPEN CASE key. It sits at x -140..140, y -287..93, the band the plate leaves free
+    between the stats card (bottom y 100) and the TRY AGAIN glow (top y -294), so no other element on the loss screen
+    moves. The whole box is the Button (Connect index 5 -> ShowCaseOverlay), and it keeps the plate's GameObject name
+    "OPEN CASE Profile Button", which is the by-name contract used by SmokeTests and the inferno-screens skill, so no
+    test needed editing. Its own `UiScreenLink.onShown` binds the render texture once, calls `ResetCasePreviewPose`
+    (a finished opening leaves the lid at 76 degrees and `ResetCaseOpening(false)` skips the pose reset) and switches
+    the preview camera on; `onHidden` is deliberately null, because `CaseVisibility` disables this root in order to
+    show the case sheet, which renders the same camera. The allowance line ticks from
+    `InfernoDailyCases.RefreshCard`, called once a second by `UpdateDailyGoalsTimer`, and reads "N OF 3 LEFT TODAY"
+    or "NEXT IN hh:mm:ss" once the day's three cases are used up. Tapping it at 0 remaining still opens the sheet,
+    which is what the lobby card does; the sheet states the countdown itself.
+  - Verified live: pressing GO on the cases goal started a run (HUD up, no case sheet); the loss screen then showed
+    the box at exactly the specified rect with the crate bound and "3 OF 3 LEFT TODAY"; stats, TRY AGAIN and BACK TO
+    MENU measured byte-identical to before; `Inferno Drive/Audit Layout` clean; tapping the box opened the case sheet
+    (gem counter correctly reappearing) and closing it returned to the loss screen with the box intact. Capture
+    `/tmp/inferno-shots/claude-140-gameover-case.png`. Note for future captures: on NEON NIGHT the `Pulsar Night
+    Overlay Camera` (a URP overlay camera) draws over the UI in the canvas-to-camera capture trick, which is why that
+    capture shows a dark moon disc over the subtitle. Players never see it, because a Screen-Space-Overlay canvas
+    draws after every camera; it is an artefact of the capture method only.
+  - Bugs found by the panel while reading the case flow, all pre-existing and NOT fixed here: closing the sheet during
+    the lid animation still spends one of the three daily cases with no prize; `RegisterDailyCaseOpened` is skipped on
+    the fallback path when the preview world fails to build, so the cases goal never progresses there;
+    `EnsureCasePreviewWorld` leaks three GameObjects and warns every frame if the crate models are missing; and
+    `caseHomeCardRequiresFreshPointerDown` is written but never read since the old home card was replaced.
